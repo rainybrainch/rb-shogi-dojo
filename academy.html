@@ -383,6 +383,17 @@ a{text-decoration:none;color:inherit}
   </div>
 </div>
 
+<!-- LEARNING PATH / PROGRESS SUMMARY -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">学習ロードマップ</div>
+    <div class="section-badge">ROAD</div>
+  </div>
+  <div id="roadmapCard" style="background:var(--card);border:2px solid var(--border);border-radius:14px;overflow:hidden">
+    <!-- rows filled by JS -->
+  </div>
+</div>
+
 <!-- RB将棋対局道場 -->
 <div class="section">
   <div class="section-header">
@@ -843,12 +854,49 @@ function renderWeekDots(){
   }
 }
 
+function renderRoadmap(){
+  const tsume=parseInt(localStorage.getItem('rb_tsume_solved')||'0');
+  const games=JSON.parse(localStorage.getItem('rb_multi_stats')||'{}');
+  const totalGames=(games.win||0)+(games.loss||0)+(games.draw||0);
+  const josekiStudied=Object.values(JSON.parse(localStorage.getItem('rb_joseki_studied')||'{}')).filter(Boolean).length;
+  const kifuFavs=(JSON.parse(localStorage.getItem('rb_kifu_favs')||'[]')).length;
+  const rating=parseFloat(localStorage.getItem('rb_rating')||'0');
+  const steps=[
+    {label:'詰将棋デビュー',desc:'詰将棋を1問クリア',done:tsume>=1,icon:'🧩',link:'tsume.html'},
+    {label:'10問突破',desc:`詰将棋 ${tsume}/10問クリア`,done:tsume>=10,pct:Math.min(100,tsume/10*100),icon:'🧩',link:'tsume.html'},
+    {label:'初対局',desc:'AIと対局を1局完了',done:totalGames>=1,icon:'⚔️',link:'multi.html'},
+    {label:'10局達成',desc:`${totalGames}/10局完了`,done:totalGames>=10,pct:Math.min(100,totalGames/10*100),icon:'⚔️',link:'play.html'},
+    {label:'定跡入門',desc:'囲い・定跡を3つ学習',done:josekiStudied>=3,pct:Math.min(100,josekiStudied/3*100),icon:'📐',link:'joseki.html'},
+    {label:'棋譜鑑賞',desc:'名局をブックマーク',done:kifuFavs>=1,icon:'📜',link:'kifu.html'},
+    {label:'初段到達',desc:`レーティング ${Math.round(rating)}/1200`,done:rating>=1200,pct:Math.min(100,rating/1200*100),icon:'🏆',link:'multi.html'},
+  ];
+  const card=document.getElementById('roadmapCard');
+  if(!card)return;
+  card.innerHTML=steps.map((s,i)=>`
+    <a href="${s.link}" style="display:flex;align-items:center;gap:12px;padding:12px 16px;
+      border-bottom:1px solid var(--border);text-decoration:none;
+      background:${s.done?'rgba(76,175,125,.06)':'transparent'}">
+      <div style="font-size:1.5rem;flex-shrink:0">${s.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.78rem;font-weight:700;color:${s.done?'var(--green)':'#fff'};display:flex;align-items:center;gap:6px">
+          ${s.done?'✓ ':''}${s.label}
+        </div>
+        <div style="font-size:.62rem;color:var(--muted);margin-top:2px">${s.desc}</div>
+        ${s.pct!==undefined&&!s.done?`<div style="height:3px;background:var(--border);border-radius:2px;margin-top:6px">
+          <div style="height:100%;width:${s.pct}%;background:var(--sky);border-radius:2px;transition:.4s"></div>
+        </div>`:''}
+      </div>
+      <div style="color:var(--muted);font-size:.9rem;flex-shrink:0">${s.done?'✓':'›'}</div>
+    </a>`).join('');
+}
+
 loadStats();
 renderDailyBoard();
 renderWelcome();
 renderGoal();
 renderProverb();
 renderWeekDots();
+renderRoadmap();
 </script>
 </body>
 </html>
