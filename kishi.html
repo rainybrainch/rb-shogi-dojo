@@ -89,10 +89,17 @@ a{text-decoration:none;color:inherit}
   <div class="header-title">棋士図鑑</div>
 </header>
 
+<div style="margin:14px 16px 0;background:linear-gradient(135deg,rgba(245,200,66,.06),rgba(91,200,232,.04));border:2px solid rgba(245,200,66,.2);border-radius:14px;padding:14px 16px" id="dailyQuoteCard">
+  <div style="font-size:.58rem;color:var(--gold);font-family:'Dela Gothic One',sans-serif;letter-spacing:.1em;margin-bottom:6px">💬 今日の棋士名言</div>
+  <div style="font-size:.9rem;color:#fff;font-weight:700;line-height:1.5;margin-bottom:6px" id="quoteText"></div>
+  <div style="font-size:.65rem;color:var(--muted)" id="quoteAuthor"></div>
+</div>
+
 <div class="search-wrap">
   <span class="search-icon">🔍</span>
   <input class="search-input" type="text" placeholder="棋士名で検索…" id="searchInput" oninput="onSearch(this.value)">
 </div>
+<div style="padding:0 16px 4px;font-size:.65rem;color:var(--muted)" id="playerCountBadge">全 0名</div>
 <div class="filter-row">
   <button class="filter-btn active" data-cat="all" onclick="filterPlayers('all',this)">全員</button>
   <button class="filter-btn" data-cat="legend" onclick="filterPlayers('legend',this)">伝説</button>
@@ -251,6 +258,8 @@ function renderPlayers(filter){
   if(filter==='fav')list=PLAYERS.filter(p=>favs.includes(p.id));
   else if(filter!=='all')list=PLAYERS.filter(p=>p.category===filter);
   if(currentSearch)list=list.filter(p=>p.name.includes(currentSearch)||p.style.includes(currentSearch)||p.title.includes(currentSearch));
+  const badge=document.getElementById('playerCountBadge');
+  if(badge)badge.textContent=filter==='all'&&!currentSearch?`全 ${list.length}名`:`${list.length}名表示中`;
   if(list.length===0){
     grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted);font-size:.82rem">該当する棋士がいません</div>';
     return;
@@ -327,6 +336,18 @@ const hash=location.hash.replace('#','');
 if(hash){const p=PLAYERS.find(x=>x.id===hash||x.name.includes(hash));if(p)setTimeout(()=>openModal(p.id),300);}
 
 renderPlayers('all');
+
+// Daily quote from players
+(function(){
+  const withQuote=PLAYERS.filter(p=>p.quote);
+  if(!withQuote.length)return;
+  const dayOfYear=Math.floor((Date.now()-new Date(new Date().getFullYear(),0,1))/86400000);
+  const p=withQuote[dayOfYear%withQuote.length];
+  const qt=document.getElementById('quoteText');
+  const qa=document.getElementById('quoteAuthor');
+  if(qt)qt.textContent='「'+p.quote+'」';
+  if(qa)qa.textContent='— '+p.name+'（'+p.title.split('・')[0]+'）';
+})();
 </script>
 </body>
 </html>
