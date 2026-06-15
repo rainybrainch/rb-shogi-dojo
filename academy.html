@@ -225,6 +225,19 @@ a{text-decoration:none;color:inherit}
 .card-progress{height:3px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:8px}
 .card-progress-fill{height:100%;border-radius:2px;transition:.4s}
 
+/* RANK CARD */
+.rank-card{margin:0 20px 20px;background:var(--card);border:2px solid rgba(245,200,66,.3);
+  border-radius:14px;padding:16px 18px;display:flex;align-items:center;gap:16px;
+  box-shadow:4px 4px 0 var(--gold)}
+.rank-card-left{flex-shrink:0;text-align:center;min-width:60px}
+.rank-label{font-size:.6rem;color:var(--muted);letter-spacing:.08em;margin-bottom:4px;font-family:'Dela Gothic One',sans-serif}
+.rank-value{font-family:'Dela Gothic One',sans-serif;font-size:1.9rem;color:var(--gold);line-height:1}
+.rank-card-right{flex:1;min-width:0}
+.rank-next{font-size:.68rem;color:#ddd;margin-bottom:8px}
+.rank-bar-bg{height:6px;background:rgba(255,255,255,.1);border-radius:3px;margin-bottom:8px}
+.rank-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--sky));border-radius:3px;transition:.5s;min-width:4px}
+.rank-msg{font-size:.65rem;color:var(--muted);font-style:italic}
+
 /* BOTTOM NAV */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;
   background:var(--dark2);border-top:2px solid var(--gold);
@@ -344,6 +357,19 @@ a{text-decoration:none;color:inherit}
   <div class="stat-item">
     <div class="stat-num" id="statTsume">0</div>
     <span class="stat-lbl">詰将棋</span>
+  </div>
+</div>
+
+<!-- RANK CARD -->
+<div class="rank-card" id="rankCard">
+  <div class="rank-card-left">
+    <div class="rank-label">現在の段位</div>
+    <div class="rank-value" id="rankValue">10級</div>
+  </div>
+  <div class="rank-card-right">
+    <div class="rank-next" id="rankNext">次の段位まで…</div>
+    <div class="rank-bar-bg"><div class="rank-bar-fill" id="rankBarFill" style="width:0%"></div></div>
+    <div class="rank-msg" id="rankMsg">将棋の旅を始めよう！</div>
   </div>
 </div>
 
@@ -890,6 +916,43 @@ function renderRoadmap(){
     </a>`).join('');
 }
 
+function renderRankCard(){
+  const r=parseFloat(localStorage.getItem('rb_rating')||'0');
+  const ranks=[
+    {name:'10級',min:0,max:299},
+    {name:'8級',min:300,max:499},
+    {name:'6級',min:500,max:699},
+    {name:'4級',min:700,max:899},
+    {name:'2級',min:900,max:1099},
+    {name:'初段',min:1100,max:1299},
+    {name:'二段',min:1300,max:1499},
+    {name:'三段',min:1500,max:1699},
+    {name:'四段',min:1700,max:1899},
+    {name:'五段',min:1900,max:9999},
+  ];
+  const msgs={'10級':'将棋の旅を始めよう！','8級':'基本の手筋を身につけよう。','6級':'囲いを覚えると強くなる！',
+    '4級':'定跡を学んで安定した将棋を！','2級':'あと少しで初段！','初段':'初段達成！素晴らしい。',
+    '二段':'中盤の技術を磨こう。','三段':'高段者の域に入ってきた！','四段':'プロ並みに近づいている。','五段':'頂点を目指せ！'};
+  let cur=ranks[0];
+  for(const rk of ranks){if(r>=rk.min)cur=rk;}
+  const curIdx=ranks.indexOf(cur);
+  const next=ranks[curIdx+1];
+  const rv=document.getElementById('rankValue');
+  const rn=document.getElementById('rankNext');
+  const rf=document.getElementById('rankBarFill');
+  const rm=document.getElementById('rankMsg');
+  if(rv)rv.textContent=cur.name;
+  if(rm)rm.textContent=msgs[cur.name]||'';
+  if(next){
+    const pct=Math.min(100,Math.round((r-cur.min)/(next.min-cur.min)*100));
+    if(rf)rf.style.width=pct+'%';
+    if(rn)rn.textContent='次: '+next.name+'まで あと'+Math.max(0,next.min-Math.round(r))+'点';
+  }else{
+    if(rf)rf.style.width='100%';
+    if(rn)rn.textContent='最高段位 達成！';
+  }
+}
+
 loadStats();
 renderDailyBoard();
 renderWelcome();
@@ -897,6 +960,7 @@ renderGoal();
 renderProverb();
 renderWeekDots();
 renderRoadmap();
+renderRankCard();
 </script>
 </body>
 </html>
