@@ -123,8 +123,21 @@ a{text-decoration:none;color:inherit}
 </header>
 
 <div class="tabs">
-  <div class="tab active" onclick="showTab('castles',this)" id="tab-castles">囲い</div>
-  <div class="tab" onclick="showTab('joseki',this)" id="tab-joseki">定跡</div>
+  <div class="tab active" onclick="showTab('castles',this)" id="tab-castles">囲い <span id="castleCount" style="font-size:.6rem;opacity:.7">0/8</span></div>
+  <div class="tab" onclick="showTab('joseki',this)" id="tab-joseki">定跡 <span id="josekiCount" style="font-size:.6rem;opacity:.7">0/6</span></div>
+</div>
+<div style="margin:12px 16px 0;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <div style="font-family:'Dela Gothic One',sans-serif;font-size:.75rem;color:var(--gold)">習得進捗</div>
+    <div style="font-size:.65rem;color:var(--muted)" id="masterPct">0%</div>
+  </div>
+  <div style="height:6px;background:rgba(255,255,255,.1);border-radius:3px">
+    <div id="masterBar" style="height:100%;background:linear-gradient(90deg,var(--green),var(--sky));border-radius:3px;transition:.5s;width:0%"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+    <div style="font-size:.62rem;color:var(--muted)">🏯 囲い: <span id="castleStudied" style="color:var(--sky)">0/8</span></div>
+    <div style="font-size:.62rem;color:var(--muted)">📐 定跡: <span id="josekiStudied" style="color:var(--sky)">0/6</span></div>
+  </div>
 </div>
 
 <!-- CASTLES TAB -->
@@ -543,6 +556,26 @@ function applyStudied(){
       btn.textContent=stored[k]?'★ 習得済み':'✓ '+(type==='c'?'習得':'学習済み');
     }
   });
+  // Update progress bar
+  const castleKeys=Object.keys(CASTLES);
+  const josekiKeys=Object.keys(JOSEKI_DATA);
+  const cDone=castleKeys.filter(k=>stored['c_'+k]).length;
+  const jDone=josekiKeys.filter(k=>stored['j_'+k]).length;
+  const total=castleKeys.length+josekiKeys.length;
+  const done=cDone+jDone;
+  const pct=total>0?Math.round(done/total*100):0;
+  const bar=document.getElementById('masterBar');
+  if(bar)bar.style.width=pct+'%';
+  const pctEl=document.getElementById('masterPct');
+  if(pctEl)pctEl.textContent=pct+'%';
+  const csEl=document.getElementById('castleStudied');
+  if(csEl)csEl.textContent=cDone+'/'+castleKeys.length;
+  const jsEl=document.getElementById('josekiStudied');
+  if(jsEl)jsEl.textContent=jDone+'/'+josekiKeys.length;
+  const ccEl=document.getElementById('castleCount');
+  if(ccEl)ccEl.textContent=cDone+'/'+castleKeys.length;
+  const jcEl=document.getElementById('josekiCount');
+  if(jcEl)jcEl.textContent=jDone+'/'+josekiKeys.length;
 }
 
 Object.keys(CASTLES).forEach(key=>renderCastleBoard(key,key));
