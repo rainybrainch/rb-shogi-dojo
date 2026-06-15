@@ -623,6 +623,32 @@ const PUZZLES=[
      {type:'drop',piece:'G',to:[0,7],notation:'▲2一金打'},
    ]},
 
+  // ── 1手詰め #13 ─────────────────────────────────
+  {id:28,moves:1,title:'1手詰め #13',hint:'桂馬の跳び利きを使って詰めよ',
+   pieces:[
+     {r:0,c:6,p:'k',side:'w'},   // 後手玉@3一
+     {r:2,c:4,p:'R',side:'b'},   // 先手飛@5三
+     {r:0,c:5,p:'G',side:'w'},   // 後手金@4一
+   ],
+   handB:{N:1},handW:{},
+   solution:[
+     {type:'drop',piece:'N',to:[1,7],notation:'▲2二桂打'},
+   ]},
+
+  // ── 3手詰め #8 ─────────────────────────────────
+  {id:29,moves:3,title:'3手詰め #8',hint:'角で王手して合い駒をさせよ',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},   // 後手玉@1一
+     {r:2,c:6,p:'B',side:'b'},   // 先手角@3三
+     {r:0,c:7,p:'s',side:'w'},   // 後手銀@2一
+   ],
+   handB:{G:1},handW:{},
+   solution:[
+     {type:'move',piece:'B',from:[2,6],to:[0,6],notation:'▲3一角成'},
+     {type:'move',piece:'k',from:[0,8],to:[0,7],notation:'△2一玉'},
+     {type:'drop',piece:'G',to:[0,8],notation:'▲1一金打'},
+   ]},
+
   // ── 追加5手詰め ───────────────────────────────────
   {id:27,moves:5,title:'5手詰め #5',hint:'飛車で王手をかけて逃げ道を封鎖せよ',
    pieces:[
