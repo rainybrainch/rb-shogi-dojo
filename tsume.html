@@ -98,9 +98,9 @@ a{text-decoration:none;color:inherit}
   display:grid;
   grid-template-columns:repeat(9,38px);
   grid-template-rows:repeat(9,38px);
-  border:2.5px solid #5a3810;
-  background:#c8923a;  /* wood grain base */
-  box-shadow:inset 0 0 0 1px #b07830,2px 2px 10px rgba(0,0,0,.5)}
+  border:3px solid #3a1e04;
+  background-image:repeating-linear-gradient(90deg,transparent,transparent 97%,rgba(0,0,0,.07) 97%,rgba(0,0,0,.07) 100%),repeating-linear-gradient(0deg,transparent,transparent 97%,rgba(0,0,0,.07) 97%,rgba(0,0,0,.07) 100%),linear-gradient(135deg,#d4952a 0%,#bf8530 40%,#a86e20 100%);
+  box-shadow:inset 0 0 0 1.5px #d4a050,inset 0 0 20px rgba(100,50,0,.2),4px 4px 16px rgba(0,0,0,.6)}
 .sq{
   width:38px;height:38px;
   display:flex;align-items:center;justify-content:center;
@@ -121,8 +121,7 @@ a{text-decoration:none;color:inherit}
 .piece-svg{
   width:34px;height:34px;
   pointer-events:none;display:block;
-  filter:drop-shadow(0px 1px 2px rgba(0,0,0,.35))}
-.piece-svg.promoted polygon{fill:#c84040!important}
+  filter:drop-shadow(0px 2px 3px rgba(0,0,0,.5))}
 
 
 /* STATUS */
@@ -1041,26 +1040,48 @@ function resetPuzzle(){
   renderBoard();
 }
 
-// ── 駒SVG生成 ─────────────────────────────────────
-// Pentagon points for 34×34 viewBox: 五角形（将棋駒の形）
-const PIECE_PTS='17,1 33,9 33,33 1,33 1,9';
+// ── 駒SVG生成（グラデーション・陰影付き）──────────────
+const PIECE_PTS='17,1.5 32.5,9 32.5,32 1.5,32 1.5,9';
+const PIECE_HL ='17,3.5 30.5,10.5 30.5,30 3.5,30 3.5,10.5';
+
+(function injectDefs(){
+  const d=document.createElement('div');
+  d.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute">
+<defs>
+  <linearGradient id="tgPb" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#fff8e8"/><stop offset="55%" stop-color="#f2d98a"/>
+    <stop offset="100%" stop-color="#8b5c10" stop-opacity=".5"/>
+  </linearGradient>
+  <linearGradient id="tgPw" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#f0e8d0"/><stop offset="55%" stop-color="#d8c080"/>
+    <stop offset="100%" stop-color="#6a4800" stop-opacity=".5"/>
+  </linearGradient>
+  <linearGradient id="tgPp" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#ff9090"/><stop offset="55%" stop-color="#d03030"/>
+    <stop offset="100%" stop-color="#7a0808" stop-opacity=".6"/>
+  </linearGradient>
+  <filter id="tpSh" x="-20%" y="-20%" width="140%" height="140%">
+    <feDropShadow dx="0" dy="1.5" stdDeviation="1.2" flood-color="#3a1400" flood-opacity=".55"/>
+  </filter>
+</defs></svg>`;
+  document.body.insertBefore(d.firstChild,document.body.firstChild);
+})();
 
 function makePieceSvg(kanji, side, promoted){
-  // Black (先手): normal orientation, dark piece
-  // White (後手): rotated 180°, slightly lighter
   const isBk=side==='b';
-  const fill=promoted?'#c84040':isBk?'#f5e6c8':'#e8cfa8';
-  const stroke=isBk?'#3a1a00':'#3a1a00';
-  const textFill=isBk?'#1a0800':'#1a0800';
-  const fontSize=kanji.length>1?'10':'13';
-  const yOff=kanji.length>1?'19.5':'22';
-  // Two-char pieces (成銀 etc.) use smaller font
+  const gid=promoted?'tgPp':isBk?'tgPb':'tgPw';
+  const stroke=promoted?'#6a0000':isBk?'#4a2800':'#3a1a00';
+  const hlCol=promoted?'rgba(255,160,160,.3)':'rgba(255,255,220,.35)';
+  const textCol=promoted?'#fff0f0':'#180800';
+  const fs=kanji.length>1?'10':'13.5';
+  const yy=kanji.length>1?'21':'23.5';
   const rot=isBk?'':'rotate(180 17 17)';
 
-  return `<svg class="piece-svg${promoted?' promoted':''}" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg">
-  <polygon points="${PIECE_PTS}" fill="${fill}" stroke="${stroke}" stroke-width="1.2"/>
-  <text x="17" y="${yOff}" text-anchor="middle" font-size="${fontSize}" font-family="'Hiragino Kaku Gothic ProN','Meiryo',serif"
-    font-weight="bold" fill="${textFill}" transform="${rot}">${kanji}</text>
+  return`<svg class="piece-svg${promoted?' promoted':''}" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg">
+  <polygon points="${PIECE_PTS}" fill="url(#${gid})" stroke="${stroke}" stroke-width="1.3" filter="url(#tpSh)"/>
+  <polygon points="${PIECE_HL}" fill="none" stroke="${hlCol}" stroke-width=".8"/>
+  <text x="17" y="${yy}" text-anchor="middle" font-size="${fs}" font-family="'Noto Serif JP','游明朝',serif"
+    font-weight="900" fill="${textCol}" transform="${rot}">${kanji}</text>
 </svg>`;
 }
 
