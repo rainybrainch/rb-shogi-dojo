@@ -585,6 +585,60 @@ const PUZZLES=[
      {type:'move',piece:'k',from:[0,7],to:[1,7],notation:'△2二玉'},
      {type:'move',piece:'G',from:[4,5],to:[2,5],notation:'▲4三金'},
    ]},
+
+  // ── 追加1手詰め ───────────────────────────────────
+  {id:24,moves:1,title:'1手詰め #11',hint:'龍が利いている方向に金を打ち込め',
+   pieces:[
+     {r:0,c:7,p:'k',side:'w'},   // 後手玉@2一
+     {r:0,c:5,p:'+R',side:'b'},  // 先手竜@4一（横利き）
+     {r:1,c:6,p:'S',side:'w'},   // 後手銀@3二（玉の下）
+   ],
+   handB:{G:1},handW:{},
+   solution:[
+     {type:'drop',piece:'G',to:[0,8],notation:'▲1一金打'},
+   ]},
+
+  {id:25,moves:1,title:'1手詰め #12',hint:'馬の斜め利きと持ち駒を使え',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},   // 後手玉@1一
+     {r:2,c:6,p:'+B',side:'b'},  // 先手馬@3三（斜め利き）
+     {r:0,c:6,p:'G',side:'w'},   // 後手金@3一
+   ],
+   handB:{G:1},handW:{},
+   solution:[
+     {type:'drop',piece:'G',to:[1,8],notation:'▲1二金打'},
+   ]},
+
+  // ── 追加3手詰め ───────────────────────────────────
+  {id:26,moves:3,title:'3手詰め #7',hint:'桂打ちから銀で仕留める手順',
+   pieces:[
+     {r:0,c:7,p:'k',side:'w'},   // 後手玉@2一
+     {r:1,c:5,p:'R',side:'b'},   // 先手飛@4二
+     {r:0,c:5,p:'G',side:'w'},   // 後手金@4一（守り）
+   ],
+   handB:{N:1,G:1},handW:{},
+   solution:[
+     {type:'drop',piece:'N',to:[2,6],notation:'▲3三桂打'},
+     {type:'move',piece:'k',from:[0,7],to:[0,8],notation:'△1一玉'},
+     {type:'drop',piece:'G',to:[0,7],notation:'▲2一金打'},
+   ]},
+
+  // ── 追加5手詰め ───────────────────────────────────
+  {id:27,moves:5,title:'5手詰め #5',hint:'飛車で王手をかけて逃げ道を封鎖せよ',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},   // 後手玉@1一
+     {r:4,c:8,p:'R',side:'b'},   // 先手飛@1五
+     {r:0,c:6,p:'s',side:'w'},   // 後手銀@3一
+     {r:1,c:7,p:'p',side:'w'},   // 後手歩@2二
+   ],
+   handB:{G:1,S:1},handW:{},
+   solution:[
+     {type:'move',piece:'R',from:[4,8],to:[1,8],notation:'▲1二飛'},
+     {type:'move',piece:'k',from:[0,8],to:[0,7],notation:'△2一玉'},
+     {type:'drop',piece:'G',to:[0,8],notation:'▲1一金打'},
+     {type:'move',piece:'k',from:[0,7],to:[1,7],notation:'△2二玉'},
+     {type:'drop',piece:'S',to:[0,7],notation:'▲2一銀打'},
+   ]},
 ];
 
 // ── 状態 ────────────────────────────────────────
@@ -635,7 +689,7 @@ function updateStatDisplay(){
   document.getElementById('s-streak').textContent=streak;
   const pct=attempts>0?Math.round(solved.size/attempts*100):0;
   document.getElementById('s-rate').textContent=pct+'%';
-  const rank=solved.size>=15?'初段':solved.size>=10?'1級':solved.size>=6?'3級':solved.size>=3?'5級':'未達';
+  const rank=solved.size>=25?'三段':solved.size>=20?'二段':solved.size>=15?'初段':solved.size>=10?'1級':solved.size>=6?'3級':solved.size>=3?'5級':'未達';
   document.getElementById('s-rank').textContent=rank;
   document.getElementById('progressText').textContent=`${solved.size}/${PUZZLES.length}問`;
 }
