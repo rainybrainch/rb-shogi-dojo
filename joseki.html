@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>定跡・囲い図鑑 — RB将棋アカデミー</title>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--dark:#1A1A2E;--dark2:#16213E;--gold:#F5C842;--sky:#5BC8E8;--red:#E8354A;--green:#4CAF7D;--muted:#8888aa;--card:#1e1e3a;--border:rgba(245,200,66,.18)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--dark);color:#fff;font-family:'Zen Maru Gothic',sans-serif;min-height:100vh;padding-bottom:80px;
+  background-image:radial-gradient(circle,rgba(245,200,66,.055) 1px,transparent 1px);background-size:24px 24px}
+a{text-decoration:none;color:inherit}
+.header{background:var(--dark2);border-bottom:2px solid var(--gold);padding:16px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50}
+.header-back{font-size:1.2rem;cursor:pointer;color:var(--gold)}
+.header-title{font-family:'Dela Gothic One',sans-serif;font-size:1.1rem;color:var(--gold)}
+
+/* TABS */
+.tabs{display:flex;border-bottom:2px solid var(--border);position:sticky;top:57px;z-index:40;background:var(--dark)}
+.tab{flex:1;padding:12px 4px;text-align:center;font-size:.75rem;font-family:'Dela Gothic One',sans-serif;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:.15s}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+
+/* SECTION */
+.section{padding:0 16px;margin:20px 0}
+.section-header{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.section-title{font-family:'Dela Gothic One',sans-serif;font-size:1rem}
+.section-badge{font-size:.62rem;background:var(--gold);color:var(--dark);padding:2px 8px;border-radius:20px;font-weight:700}
+
+/* CASTLE GRID */
+.castle-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.castle-card{background:var(--card);border:2px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:.15s;box-shadow:4px 4px 0 rgba(245,200,66,.25)}
+.castle-card:hover{border-color:rgba(245,200,66,.5)}
+.castle-board{display:grid;grid-template-columns:repeat(5,28px);gap:2px;padding:10px;margin:0 auto;width:fit-content}
+.csq{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:.7rem;border-radius:3px;background:rgba(245,200,66,.05);border:1px solid rgba(245,200,66,.1)}
+.csq.k{background:rgba(245,200,66,.2);border-color:var(--gold)}
+.csq.g{background:rgba(91,200,232,.15);border-color:rgba(91,200,232,.3)}
+.csq.s{background:rgba(76,175,125,.12);border-color:rgba(76,175,125,.25)}
+.castle-info{padding:10px 12px 14px;border-top:1px solid var(--border)}
+.castle-name{font-family:'Dela Gothic One',sans-serif;font-size:.9rem;margin-bottom:3px}
+.castle-desc{font-size:.65rem;color:var(--muted);line-height:1.5}
+.castle-tags{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.castle-tag{font-size:.58rem;border:1px solid var(--border);border-radius:20px;padding:1px 7px;color:var(--muted)}
+
+/* JOSEKI CARDS */
+.joseki-list{display:flex;flex-direction:column;gap:12px}
+.joseki-card{background:var(--card);border:2px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;box-shadow:4px 4px 0 rgba(91,200,232,.2);transition:.15s}
+.joseki-card:hover{border-color:rgba(91,200,232,.5)}
+.joseki-header{padding:14px 16px;display:flex;align-items:center;gap:12px}
+.joseki-icon{font-size:2rem;line-height:1}
+.joseki-body{flex:1}
+.joseki-name{font-family:'Dela Gothic One',sans-serif;font-size:.95rem;margin-bottom:4px}
+.joseki-sub{font-size:.65rem;color:var(--muted)}
+.joseki-difficulty{font-size:.62rem;padding:2px 8px;border-radius:20px;font-weight:700}
+.diff-1{background:var(--green);color:var(--dark)}
+.diff-2{background:var(--sky);color:var(--dark)}
+.diff-3{background:var(--gold);color:var(--dark)}
+.diff-4{background:var(--red);color:#fff}
+.joseki-steps{padding:10px 16px 14px;border-top:1px solid var(--border);font-size:.72rem;color:#ccc;line-height:1.7}
+.step-num{color:var(--gold);font-weight:700}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:100;overflow-y:auto}
+.modal-overlay.show{display:block}
+.modal{background:var(--dark2);border:2px solid var(--gold);border-radius:18px;margin:16px;box-shadow:6px 6px 0 var(--gold)}
+.modal-header{padding:18px 18px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.modal-title{font-family:'Dela Gothic One',sans-serif;font-size:1.1rem;color:var(--gold);flex:1}
+.modal-close{cursor:pointer;color:var(--muted);font-size:1.3rem}
+.modal-board-wrap{padding:16px;display:flex;flex-direction:column;align-items:center}
+.modal-board{display:grid;gap:3px}
+.msq{width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:.85rem;border-radius:4px;background:rgba(245,200,66,.04);border:1px solid rgba(245,200,66,.1)}
+.msq.k{background:rgba(245,200,66,.2);border-color:var(--gold)}
+.msq.g{background:rgba(91,200,232,.15);border-color:rgba(91,200,232,.3)}
+.msq.s{background:rgba(76,175,125,.12);border-color:rgba(76,175,125,.25)}
+.msq.highlight{background:rgba(232,53,74,.2);border-color:var(--red)}
+.modal-body{padding:16px 18px 20px}
+.modal-section-title{font-family:'Dela Gothic One',sans-serif;font-size:.82rem;color:var(--sky);margin:14px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.modal-desc{font-size:.78rem;line-height:1.8;color:#ccc}
+.pros-cons{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.pro,.con{background:var(--dark);border-radius:10px;padding:10px;border:1px solid var(--border)}
+.pro-title{font-size:.65rem;font-weight:700;color:var(--green);margin-bottom:4px}
+.con-title{font-size:.65rem;font-weight:700;color:var(--red);margin-bottom:4px}
+.pro-item,.con-item{font-size:.68rem;color:#ccc;line-height:1.6}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--dark2);border-top:2px solid var(--gold);display:flex;z-index:50}
+.nav-item{flex:1;padding:10px 4px 8px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+.nav-item.active .nav-icon,.nav-item.active .nav-label{color:var(--gold)}
+.nav-icon{font-size:1.2rem;line-height:1;color:var(--muted)}
+.nav-label{font-size:.58rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<header class="header">
+  <a href="academy.html" class="header-back">←</a>
+  <div class="header-title">定跡・囲い図鑑</div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('castles',this)" id="tab-castles">囲い</div>
+  <div class="tab" onclick="showTab('joseki',this)" id="tab-joseki">定跡</div>
+</div>
+
+<!-- CASTLES TAB -->
+<div id="pane-castles">
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">居飛車の囲い</div>
+    <div class="section-badge">居飛車</div>
+  </div>
+  <div class="castle-grid">
+    <div class="castle-card" onclick="openCastle('yagura')">
+      <div class="castle-board" id="board-yagura"></div>
+      <div class="castle-info">
+        <div class="castle-name">矢倉</div>
+        <div class="castle-desc">居飛車の王道。金銀3枚で玉を固める。</div>
+        <div class="castle-tags"><span class="castle-tag">居飛車</span><span class="castle-tag">堅固</span><span class="castle-tag">基本</span></div>
+      </div>
+    </div>
+    <div class="castle-card" onclick="openCastle('anaguma')">
+      <div class="castle-board" id="board-anaguma"></div>
+      <div class="castle-info">
+        <div class="castle-name">穴熊</div>
+        <div class="castle-desc">最も堅い囲い。玉を端に潜らせる。</div>
+        <div class="castle-tags"><span class="castle-tag">居飛車</span><span class="castle-tag">最堅</span><span class="castle-tag">重厚</span></div>
+      </div>
+    </div>
+    <div class="castle-card" onclick="openCastle('katachi')">
+      <div class="castle-board" id="board-katachi"></div>
+      <div class="castle-info">
+        <div class="castle-name">舟囲い</div>
+        <div class="castle-desc">シンプルな囲い。素早く完成。</div>
+        <div class="castle-tags"><span class="castle-tag">居飛車</span><span class="castle-tag">速攻</span></div>
+      </div>
+    </div>
+    <div class="castle-card" onclick="openCastle('kinkei')">
+      <div class="castle-board" id="board-kinkei"></div>
+      <div class="castle-info">
+        <div class="castle-name">金矢倉</div>
+        <div class="castle-desc">矢倉の派生。攻守両全の形。</div>
+        <div class="castle-tags"><span class="castle-tag">居飛車</span><span class="castle-tag">応用</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">振り飛車の囲い</div>
+    <div class="section-badge">振り飛車</div>
+  </div>
+  <div class="castle-grid">
+    <div class="castle-card" onclick="openCastle('mino')">
+      <div class="castle-board" id="board-mino"></div>
+      <div class="castle-info">
+        <div class="castle-name">美濃囲い</div>
+        <div class="castle-desc">振り飛車の基本。横からの攻めに強い。</div>
+        <div class="castle-tags"><span class="castle-tag">振り飛車</span><span class="castle-tag">横攻め耐性</span><span class="castle-tag">基本</span></div>
+      </div>
+    </div>
+    <div class="castle-card" onclick="openCastle('ginmino')">
+      <div class="castle-board" id="board-ginmino"></div>
+      <div class="castle-info">
+        <div class="castle-name">銀美濃</div>
+        <div class="castle-desc">銀を加えてさらに堅固にした美濃。</div>
+        <div class="castle-tags"><span class="castle-tag">振り飛車</span><span class="castle-tag">堅固</span></div>
+      </div>
+    </div>
+    <div class="castle-card" onclick="openCastle('daruma')">
+      <div class="castle-board" id="board-daruma"></div>
+      <div class="castle-info">
+        <div class="castle-name">ダイヤモンド美濃</div>
+        <div class="castle-desc">金銀4枚の超堅陣。難易度高め。</div>
+        <div class="castle-tags"><span class="castle-tag">振り飛車</span><span class="castle-tag">上級</span></div>
+      </div>
+    </div>
+    <div class="castle-card" onclick="openCastle('nagoya')">
+      <div class="castle-board" id="board-nagoya"></div>
+      <div class="castle-info">
+        <div class="castle-name">中住まい</div>
+        <div class="castle-desc">玉を中央付近に置く囲い。</div>
+        <div class="castle-tags"><span class="castle-tag">振り飛車</span><span class="castle-tag">変則</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- JOSEKI TAB -->
+<div id="pane-joseki" style="display:none">
+<div class="section">
+  <div class="joseki-list">
+    <div class="joseki-card" onclick="openJoseki('棒銀')">
+      <div class="joseki-header">
+        <div class="joseki-icon">⚔️</div>
+        <div class="joseki-body">
+          <div class="joseki-name">棒銀戦法</div>
+          <div class="joseki-sub">居飛車・最もシンプルな攻め</div>
+        </div>
+        <div class="joseki-difficulty diff-1">初級</div>
+      </div>
+      <div class="joseki-steps">
+        <span class="step-num">1.</span> ▲7六歩 △8四歩　<span class="step-num">2.</span> ▲7八金　<span class="step-num">3.</span> 銀を3七〜3六〜3五と進出　<span class="step-num">4.</span> ▲3四銀で飛車先を突破する
+      </div>
+    </div>
+    <div class="joseki-card" onclick="openJoseki('四間飛車')">
+      <div class="joseki-header">
+        <div class="joseki-icon">🏯</div>
+        <div class="joseki-body">
+          <div class="joseki-name">四間飛車</div>
+          <div class="joseki-sub">振り飛車の王道戦法</div>
+        </div>
+        <div class="joseki-difficulty diff-2">中級</div>
+      </div>
+      <div class="joseki-steps">
+        <span class="step-num">1.</span> ▲7六歩 △8四歩　<span class="step-num">2.</span> ▲6八飛（四間に振る）　<span class="step-num">3.</span> 美濃囲いに組む　<span class="step-num">4.</span> 反撃の機会を待つ
+      </div>
+    </div>
+    <div class="joseki-card" onclick="openJoseki('中飛車')">
+      <div class="joseki-header">
+        <div class="joseki-icon">🎯</div>
+        <div class="joseki-body">
+          <div class="joseki-name">中飛車戦法</div>
+          <div class="joseki-sub">現代振り飛車の主流</div>
+        </div>
+        <div class="joseki-difficulty diff-2">中級</div>
+      </div>
+      <div class="joseki-steps">
+        <span class="step-num">1.</span> ▲5六歩（中央制圧）　<span class="step-num">2.</span> ▲5八飛（中飛車）　<span class="step-num">3.</span> ▲5五歩で中央を支配　<span class="step-num">4.</span> 積極的に攻める
+      </div>
+    </div>
+    <div class="joseki-card" onclick="openJoseki('矢倉')">
+      <div class="joseki-header">
+        <div class="joseki-icon">🏛️</div>
+        <div class="joseki-body">
+          <div class="joseki-name">矢倉定跡</div>
+          <div class="joseki-sub">居飛車の本格戦法</div>
+        </div>
+        <div class="joseki-difficulty diff-3">上級</div>
+      </div>
+      <div class="joseki-steps">
+        <span class="step-num">1.</span> ▲7六歩 △3四歩　<span class="step-num">2.</span> ▲6六歩（角道を閉じる）　<span class="step-num">3.</span> 金銀を矢倉に整備　<span class="step-num">4.</span> ▲3七銀〜▲4六銀と攻める
+      </div>
+    </div>
+    <div class="joseki-card" onclick="openJoseki('横歩取り')">
+      <div class="joseki-header">
+        <div class="joseki-icon">⚡</div>
+        <div class="joseki-body">
+          <div class="joseki-name">横歩取り</div>
+          <div class="joseki-sub">激しい攻め合いの戦型</div>
+        </div>
+        <div class="joseki-difficulty diff-4">超上級</div>
+      </div>
+      <div class="joseki-steps">
+        <span class="step-num">1.</span> ▲2六歩 △8四歩　<span class="step-num">2.</span> 飛車が横歩を取る（▲7四飛）　<span class="step-num">3.</span> 激しい戦いへ　<span class="step-num">4.</span> 研究が最重要
+      </div>
+    </div>
+    <div class="joseki-card" onclick="openJoseki('雁木')">
+      <div class="joseki-header">
+        <div class="joseki-icon">🔱</div>
+        <div class="joseki-body">
+          <div class="joseki-name">雁木囲い</div>
+          <div class="joseki-sub">現代の流行戦法</div>
+        </div>
+        <div class="joseki-difficulty diff-3">上級</div>
+      </div>
+      <div class="joseki-steps">
+        <span class="step-num">1.</span> ▲7六歩 △3四歩　<span class="step-num">2.</span> 角を6八に置いたまま　<span class="step-num">3.</span> 金銀を雁木型に組む　<span class="step-num">4.</span> 柔軟な攻守
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="dm-title">詳細</div>
+      <div class="modal-close" onclick="closeDetail()">✕</div>
+    </div>
+    <div class="modal-board-wrap">
+      <div class="modal-board" id="dm-board"></div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-desc" id="dm-desc"></div>
+      <div class="modal-section-title">長所・短所</div>
+      <div class="pros-cons">
+        <div class="pro"><div class="pro-title">✓ 長所</div><div class="pro-item" id="dm-pros"></div></div>
+        <div class="con"><div class="con-title">✗ 短所</div><div class="con-item" id="dm-cons"></div></div>
+      </div>
+      <div class="modal-section-title">使う局面</div>
+      <div class="modal-desc" id="dm-usage"></div>
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <div class="nav-item" onclick="location.href='academy.html'"><div class="nav-icon">🏠</div><div class="nav-label">ホーム</div></div>
+  <div class="nav-item" onclick="location.href='tsume.html'"><div class="nav-icon">🧩</div><div class="nav-label">詰将棋</div></div>
+  <div class="nav-item" onclick="location.href='multi.html'"><div class="nav-icon">⚔️</div><div class="nav-label">対局</div></div>
+  <div class="nav-item" onclick="location.href='kishi.html'"><div class="nav-icon">🏆</div><div class="nav-label">棋士</div></div>
+  <div class="nav-item" onclick="location.href='kifu.html'"><div class="nav-icon">📜</div><div class="nav-label">棋譜</div></div>
+</nav>
+
+<script>
+function showTab(name,btn){
+  document.getElementById('pane-castles').style.display=name==='castles'?'block':'none';
+  document.getElementById('pane-joseki').style.display=name==='joseki'?'block':'none';
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// Castle board layouts (5x5 excerpt, bottom-right area of board)
+// Format: array of 25 cells, 0=empty, 'K'=玉, 'G'=金, 'S'=銀
+const CASTLES={
+  yagura:{
+    name:'矢倉',
+    grid:['','','','','','','G','G','','','','S','K','','','','','','','','','','','',''],
+    desc:'金銀3枚で玉を上段から守る居飛車の基本囲い。対矢倉戦の定跡が豊富に研究されている。完成形は非常に堅く、持久戦向き。',
+    pros:'縦からの攻めに非常に強い\n金銀のバランスが良い\n定跡が豊富',
+    cons:'完成まで時間がかかる\n横からの攻めに弱い\n端攻めに注意が必要',
+    usage:'相矢倉や角換わりなど居飛車同士の戦いで使用。'},
+  anaguma:{
+    name:'穴熊',
+    grid:['K','L','','','','G','G','','','','S','S','','','','','','','','','','','','',''],
+    desc:'玉を端（9筋）に潜り込ませ、金銀で包む現代将棋最強の囲い。相居飛車・対振り飛車どちらでも使える。',
+    pros:'将棋で最も堅い囲いの一つ\nどんな戦型でも組める\n長期戦に有利',
+    cons:'完成に手数がかかる\n端攻めには弱い面も\n桂香が使いにくい',
+    usage:'長期戦志向の局面全般。現代棋士が最も多用する囲い。'},
+  katachi:{
+    name:'舟囲い',
+    grid:['','','','','','G','K','','','','S','','','','','','','','','','','','','',''],
+    desc:'最もシンプルな囲い。速攻を仕掛けたいときや、持久戦で途中から変化する場合に採用。',
+    pros:'素早く完成する\n攻撃参加がしやすい\n応用が利く',
+    cons:'堅さが不十分\n長期戦では不利になりやすい',
+    usage:'速攻志向の序盤や、矢倉・穴熊の途中段階として。'},
+  kinkei:{
+    name:'金矢倉',
+    grid:['','','','','','G','K','G','','','S','G','','','','','','','','','','','','',''],
+    desc:'矢倉に金を加えた形。攻守のバランスが良く、実戦でよく現れる。',
+    pros:'矢倉より攻めに参加しやすい\nバランスが良い',
+    cons:'矢倉より若干薄い\n定跡から外れやすい',
+    usage:'矢倉戦で自然に完成する中間的な形。'},
+  mino:{
+    name:'美濃囲い',
+    grid:['','','','','','K','G','','','','S','G','','','','','','','','','','','','',''],
+    desc:'振り飛車の基本囲い。金2枚と銀1枚で玉を守る。横からの攻めに強く、振り飛車には必須の知識。',
+    pros:'横からの攻めに非常に強い\n素早く完成\n形が覚えやすい',
+    cons:'縦からの攻めに弱い\n端攻めに注意\n長期戦で崩れやすい',
+    usage:'四間飛車・三間飛車・中飛車など振り飛車全般。'},
+  ginmino:{
+    name:'銀美濃',
+    grid:['','','','','','K','G','S','','','S','G','','','','','','','','','','','','',''],
+    desc:'美濃囲いに銀を加えた形。標準的な美濃より堅く、振り飛車の上級者が多用する。',
+    pros:'美濃より堅い\n縦の守りも改善\n実用的',
+    cons:'完成に1手余分にかかる\n銀が守りに固定される',
+    usage:'持久戦志向の振り飛車で。'},
+  daruma:{
+    name:'ダイヤモンド美濃',
+    grid:['','','','','','K','G','S','','','G','S','G','','','','','','','','','','','',''],
+    desc:'金銀4枚を動員した超堅陣。完成すれば難攻不落だが、手数がかかる。上級者向き。',
+    pros:'超堅固\n正面攻撃に無敵',
+    cons:'完成まで手数が多すぎる\n素早い攻めに対応困難',
+    usage:'長期持久戦で時間的余裕がある場合のみ。'},
+  nagoya:{
+    name:'中住まい',
+    grid:['','','','','','','K','','','','G','G','','','','','S','','','','','','','',''],
+    desc:'玉を中央付近に置く変則的な囲い。どちらの方向にも対応できる柔軟性がある。',
+    pros:'柔軟性が高い\n攻守どちらにも転換できる',
+    cons:'堅さが不十分\n方向性が定まりにくい',
+    usage:'戦型が定まらない序盤の一時的な形として。'},
+};
+
+const JOSEKI_DATA={
+  '棒銀':{
+    desc:'最も基本的な攻撃戦法。銀将を前線に押し出して飛車先を突破する。初心者が最初に覚える戦法。',
+    pros:'手順が簡単\n攻め方がわかりやすい\n多くの局面で使える',
+    cons:'相手に対策されやすい\n高段者には通じにくい\n定跡を覚える必要あり',
+    usage:'居飛車を持ったとき全般。相振り飛車でも使える変化あり。'},
+  '四間飛車':{
+    desc:'飛車を4筋に振る振り飛車の基本戦法。美濃囲いに組んで反撃の機会を待つ。「さばき」の将棋。',
+    pros:'守りが堅い（美濃囲い）\n相手のペースを乱しやすい\n定跡が豊富',
+    cons:'序盤が受け身になる\n積極的に攻めにくい\n居飛車穴熊への対策が必要',
+    usage:'後手番で相手の攻めを受けて立ちたいとき。'},
+  '中飛車':{
+    desc:'飛車を中央に置いて戦う現代的な振り飛車。5筋の制圧が鍵。藤井猛九段が体系化。',
+    pros:'中央の制圧力が高い\n多彩な変化\n現代で最も人気の振り飛車',
+    cons:'飛車が攻撃と守りに干渉\n対策が多い\n高度な研究が必要',
+    usage:'積極的に戦いたい振り飛車党に。'},
+  '矢倉':{
+    desc:'居飛車の王道戦法。「将棋の純文学」と呼ばれる定跡が深く研究された戦型。',
+    pros:'堅い囲いに組める\n序盤の定跡が確立\n持久戦に強い',
+    cons:'現代では急戦対策が必要\n角換わりを避けるのが難しい\n研究量が多い',
+    usage:'本格的な居飛車対局全般。'},
+  '横歩取り':{
+    desc:'序盤から激しい戦いが起きる戦型。研究の深さが勝敗を左右する超難解な定跡。',
+    pros:'積極的に戦いを仕掛けられる\n相手が不慣れなら有利\n変化が多彩',
+    cons:'膨大な定跡研究が必要\n一手の差が致命的\n初・中級者には不向き',
+    usage:'研究に自信がある上級者の居飛車対局。'},
+  '雁木':{
+    desc:'現代将棋で流行中の戦型。角道を閉じず金銀を組んで戦う。',
+    pros:'柔軟性が高い\n現代の流行型\n角換わりを避けられる',
+    cons:'定跡が現在も発展中\n対応が複雑\n手順が難しい',
+    usage:'現代の居飛車対局。矢倉の代替として。'},
+};
+
+function renderCastleBoard(id,key){
+  const el=document.getElementById(`board-${key}`);
+  if(!el||!CASTLES[key])return;
+  const {grid}=CASTLES[key];
+  el.innerHTML=grid.map(p=>{
+    const cls=p==='K'?'k':p==='G'?'g':p==='S'?'s':'';
+    return`<div class="csq${cls?' '+cls:''}">${p||''}</div>`;
+  }).join('');
+}
+
+function openCastle(key){
+  const c=CASTLES[key];if(!c)return;
+  document.getElementById('dm-title').textContent=c.name+'囲い';
+  document.getElementById('dm-desc').textContent=c.desc;
+  document.getElementById('dm-pros').innerHTML=c.pros.split('\n').map(l=>`• ${l}`).join('<br>');
+  document.getElementById('dm-cons').innerHTML=c.cons.split('\n').map(l=>`• ${l}`).join('<br>');
+  document.getElementById('dm-usage').textContent=c.usage;
+  const b=document.getElementById('dm-board');
+  b.style.gridTemplateColumns='repeat(5,38px)';
+  b.innerHTML=c.grid.map(p=>{
+    const cls=p==='K'?'k':p==='G'?'g':p==='S'?'s':'';
+    return`<div class="msq${cls?' '+cls:''}">${p||''}</div>`;
+  }).join('');
+  document.getElementById('detailModal').classList.add('show');
+  document.getElementById('detailModal').scrollTop=0;
+}
+
+function openJoseki(key){
+  const j=JOSEKI_DATA[key];if(!j)return;
+  document.getElementById('dm-title').textContent=key;
+  document.getElementById('dm-desc').textContent=j.desc;
+  document.getElementById('dm-pros').innerHTML=j.pros.split('\n').map(l=>`• ${l}`).join('<br>');
+  document.getElementById('dm-cons').innerHTML=j.cons.split('\n').map(l=>`• ${l}`).join('<br>');
+  document.getElementById('dm-usage').textContent=j.usage;
+  const b=document.getElementById('dm-board');
+  b.style.gridTemplateColumns='repeat(5,38px)';
+  b.innerHTML=Array(25).fill('<div class="msq"></div>').join('');
+  document.getElementById('detailModal').classList.add('show');
+  document.getElementById('detailModal').scrollTop=0;
+}
+
+function closeDetail(){document.getElementById('detailModal').classList.remove('show');}
+
+Object.keys(CASTLES).forEach(key=>renderCastleBoard(key,key));
+
+const hash=location.hash.replace('#','');
+if(hash==='castles')showTab('castles',document.getElementById('tab-castles'));
+if(hash==='joseki')showTab('joseki',document.getElementById('tab-joseki'));
+</script>
+</body>
+</html>

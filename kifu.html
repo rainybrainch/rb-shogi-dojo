@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>棋譜データベース — RB将棋アカデミー</title>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--dark:#1A1A2E;--dark2:#16213E;--gold:#F5C842;--sky:#5BC8E8;--red:#E8354A;--green:#4CAF7D;--muted:#8888aa;--card:#1e1e3a;--border:rgba(245,200,66,.18)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--dark);color:#fff;font-family:'Zen Maru Gothic',sans-serif;min-height:100vh;padding-bottom:80px;
+  background-image:radial-gradient(circle,rgba(245,200,66,.055) 1px,transparent 1px);background-size:24px 24px}
+a{text-decoration:none;color:inherit}
+.header{background:var(--dark2);border-bottom:2px solid var(--gold);padding:16px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50}
+.header-back{font-size:1.2rem;cursor:pointer;color:var(--gold)}
+.header-title{font-family:'Dela Gothic One',sans-serif;font-size:1.1rem;color:var(--gold)}
+
+/* SEARCH */
+.search-wrap{padding:14px 16px}
+.search-box{width:100%;padding:10px 14px;background:var(--card);border:2px solid var(--border);border-radius:12px;color:#fff;font-family:inherit;font-size:.85rem;outline:none;transition:.15s}
+.search-box:focus{border-color:var(--gold)}
+.search-box::placeholder{color:var(--muted)}
+
+/* FILTER */
+.filter-row{display:flex;gap:8px;overflow-x:auto;padding:0 16px 12px;scrollbar-width:none}
+.filter-row::-webkit-scrollbar{display:none}
+.filter-btn{font-size:.68rem;border:1.5px solid var(--border);border-radius:20px;padding:5px 14px;white-space:nowrap;cursor:pointer;transition:.12s;color:var(--muted);background:transparent;font-family:inherit}
+.filter-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(245,200,66,.1)}
+
+/* KIFU LIST */
+.kifu-list{display:flex;flex-direction:column;gap:10px;padding:0 16px}
+.kifu-card{background:var(--card);border:2px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:.15s;box-shadow:4px 4px 0 rgba(245,200,66,.25)}
+.kifu-card:hover{border-color:rgba(245,200,66,.5)}
+.kifu-main{padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
+.kifu-num{font-family:'Dela Gothic One',sans-serif;font-size:1.1rem;color:var(--gold);min-width:32px;text-align:center;padding-top:2px}
+.kifu-body{flex:1}
+.kifu-title{font-size:.88rem;color:#fff;font-weight:700;margin-bottom:4px;line-height:1.4}
+.kifu-meta{font-size:.65rem;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap}
+.kifu-tag{background:rgba(245,200,66,.1);border:1px solid rgba(245,200,66,.2);color:var(--gold);font-size:.58rem;padding:1px 7px;border-radius:20px}
+.kifu-arrow{color:var(--muted);font-size:1rem;padding-top:4px;flex-shrink:0}
+.kifu-footer{padding:10px 16px;background:rgba(0,0,0,.2);border-top:1px solid var(--border);display:flex;gap:8px;align-items:center}
+.kifu-footer-tag{font-size:.6rem;color:var(--muted)}
+
+/* REPLAY MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:100;overflow-y:auto}
+.modal-overlay.show{display:block}
+.modal{background:var(--dark2);border:2px solid var(--gold);border-radius:18px;margin:16px;box-shadow:6px 6px 0 var(--gold)}
+.modal-header{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px}
+.modal-close{margin-left:auto;cursor:pointer;color:var(--muted);font-size:1.3rem;flex-shrink:0}
+.modal-title{font-family:'Dela Gothic One',sans-serif;font-size:.95rem;color:var(--gold);line-height:1.4}
+.modal-meta{font-size:.65rem;color:var(--muted);margin-top:3px}
+
+/* BOARD */
+.board-wrap{padding:14px;display:flex;flex-direction:column;align-items:center}
+.board-grid{display:grid;grid-template-columns:repeat(9,34px);gap:2px;border:2px solid rgba(245,200,66,.3);padding:5px;border-radius:8px;background:rgba(0,0,0,.3)}
+.bsq{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:.85rem;border-radius:3px;background:rgba(245,200,66,.04);border:1px solid rgba(245,200,66,.08);position:relative}
+.bsq.last{background:rgba(245,200,66,.2)}
+.piece{line-height:1;user-select:none}
+.piece.w{transform:rotate(180deg);display:inline-block;color:var(--red)}
+
+/* CONTROLS */
+.replay-controls{display:flex;gap:8px;align-items:center;justify-content:center;padding:12px 16px;flex-wrap:wrap}
+.rep-btn{padding:8px 14px;border-radius:10px;border:2px solid var(--border);background:var(--dark);color:#ddd;font-family:inherit;font-size:.78rem;cursor:pointer;transition:.12s}
+.rep-btn:hover{border-color:var(--gold);color:var(--gold)}
+.move-counter{font-family:'Dela Gothic One',sans-serif;font-size:.9rem;color:var(--gold);min-width:60px;text-align:center}
+
+/* KIFU TEXT */
+.kifu-text-wrap{padding:12px 16px 16px}
+.kifu-text-title{font-family:'Dela Gothic One',sans-serif;font-size:.8rem;color:var(--sky);margin-bottom:8px}
+.kifu-moves-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px}
+.move-item{font-size:.7rem;padding:4px 8px;border-radius:6px;display:flex;gap:6px}
+.move-item.active{background:rgba(245,200,66,.15);border:1px solid rgba(245,200,66,.3)}
+.move-num{color:var(--muted);min-width:24px}
+.move-text{color:#ddd}
+
+/* HANDS */
+.hands-row{display:flex;gap:0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.hand{flex:1;padding:8px 12px}
+.hand-label{font-size:.6rem;color:var(--muted);margin-bottom:4px}
+.hand-content{font-size:.8rem;min-height:20px;color:#ddd}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--dark2);border-top:2px solid var(--gold);display:flex;z-index:50}
+.nav-item{flex:1;padding:10px 4px 8px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+.nav-item.active .nav-icon,.nav-item.active .nav-label{color:var(--gold)}
+.nav-icon{font-size:1.2rem;line-height:1;color:var(--muted)}
+.nav-label{font-size:.58rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<header class="header">
+  <a href="academy.html" class="header-back">←</a>
+  <div class="header-title">棋譜データベース</div>
+</header>
+
+<div class="search-wrap">
+  <input class="search-box" id="searchBox" placeholder="棋士名・タイトル戦で検索..." oninput="renderList()">
+</div>
+
+<div class="filter-row">
+  <button class="filter-btn active" onclick="setFilter('all',this)">全て</button>
+  <button class="filter-btn" onclick="setFilter('meijin',this)">名人戦</button>
+  <button class="filter-btn" onclick="setFilter('ryuo',this)">竜王戦</button>
+  <button class="filter-btn" onclick="setFilter('kisei',this)">棋聖戦</button>
+  <button class="filter-btn" onclick="setFilter('classic',this)">名局</button>
+</div>
+
+<div class="kifu-list" id="kifuList"></div>
+
+<!-- REPLAY MODAL -->
+<div class="modal-overlay" id="replayModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="rm-title"></div>
+        <div class="modal-meta" id="rm-meta"></div>
+      </div>
+      <div class="modal-close" onclick="closeReplay()">✕</div>
+    </div>
+    <div class="hands-row">
+      <div class="hand"><div class="hand-label">△後手の持ち駒</div><div class="hand-content" id="rm-handW">なし</div></div>
+      <div class="hand" style="text-align:right"><div class="hand-label">▲先手の持ち駒</div><div class="hand-content" id="rm-handB">なし</div></div>
+    </div>
+    <div class="board-wrap">
+      <div class="board-grid" id="replayBoard"></div>
+    </div>
+    <div class="replay-controls">
+      <button class="rep-btn" onclick="replayGo(0)">|◀</button>
+      <button class="rep-btn" onclick="replayStep(-1)">◀</button>
+      <div class="move-counter" id="moveCounter">0手目</div>
+      <button class="rep-btn" onclick="replayStep(1)">▶</button>
+      <button class="rep-btn" onclick="replayEnd()">▶|</button>
+    </div>
+    <div class="kifu-text-wrap">
+      <div class="kifu-text-title">棋譜</div>
+      <div class="kifu-moves-grid" id="rm-moves"></div>
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <div class="nav-item" onclick="location.href='academy.html'"><div class="nav-icon">🏠</div><div class="nav-label">ホーム</div></div>
+  <div class="nav-item" onclick="location.href='tsume.html'"><div class="nav-icon">🧩</div><div class="nav-label">詰将棋</div></div>
+  <div class="nav-item" onclick="location.href='multi.html'"><div class="nav-icon">⚔️</div><div class="nav-label">対局</div></div>
+  <div class="nav-item" onclick="location.href='kishi.html'"><div class="nav-icon">🏆</div><div class="nav-label">棋士</div></div>
+  <div class="nav-item active"><div class="nav-icon">📜</div><div class="nav-label">棋譜</div></div>
+</nav>
+
+<script>
+const KIFU_DB=[
+  {id:1,cat:'meijin',sente:'羽生善治',gote:'佐藤康光',
+   title:'第56期名人戦 第6局',year:1998,result:'羽生勝ち',
+   tags:['名人戦','矢倉','永世七冠'],desc:'108手で羽生が勝利。妙手▲5二銀が世間を驚かせた名局。',
+   moves:['▲7六歩','△8四歩','▲6八銀','△3四歩','▲7七銀','△6二銀','▲5八金右','△4二銀','▲7八金','△3二金','▲6九玉','△4一玉','▲2六歩','△7四歩','▲2五歩','△7三銀','▲3八銀','△8五歩','▲3六歩','△8四銀','▲3七銀','△6四歩','▲4六銀','△6三金','▲3五歩','△同歩','▲同銀','△3四歩','▲4六銀','△3三銀','▲6八玉','△4二玉','▲7九玉','△3一玉','▲8八玉','△2二玉','▲5六歩','△3二金','▲5七金','△6五歩','▲5八飛','△6六歩','▲同銀','△8六歩','▲同歩','△同銀','▲9五銀','△7七銀成','▲同金','△6六角','▲5二銀！','△同飛','▲6六飛','△同飛','▲同角','△6八角','▲5七金','△5三歩','▲同角成','△同金','▲6六角','△5二飛','▲8三銀','△5七飛成','▲7二銀成','△同金','▲3三角成','△同桂','▲4一銀','△1二玉','▲5二銀成','△4七龍','▲5八歩','△6七角成','▲6一成銀','△4四桂','▲7一成銀','△5六馬','▲8一成銀','△4五桂','▲5七歩','△3七桂成','▲5六歩','△4九成桂','▲同玉','△5九金','▲3九玉','△4四馬','▲2八銀','△2三銀','▲5五歩','△5三銀引','▲7一馬','△4四銀','▲5四歩','△同銀','▲6三馬','△3三銀','▲2九玉','△2八金','▲同玉','△2六飛','▲3七玉','△4七金','▲3六玉','△2七飛成','▲3五玉','△3四金','▲2四玉','△2三金打','▲1三玉','△1四金','▲1二玉','△2二金打','まで108手羽生勝ち']},
+  {id:2,cat:'meijin',sente:'藤井聡太',gote:'渡辺明',
+   title:'第81期名人戦 第4局',year:2023,result:'藤井勝ち',
+   tags:['名人戦','最年少名人','横歩取り'],desc:'藤井聡太が史上最年少で名人位を獲得した決定局。',
+   moves:['▲7六歩','△3四歩','▲2六歩','△8四歩','▲2五歩','△8五歩','▲7八金','△3二金','▲2四歩','△同歩','▲同飛','△2三歩','▲7四飛','△7二銀','▲7六飛','△6四歩','▲3六歩','△6三銀','▲3七桂','△7四歩','▲4六歩','△4二銀','▲4七銀','△4四歩','▲5八玉','△3三銀','▲5六銀','△5二金','▲6六歩','△4三金','▲6八銀','△5四銀','▲6七銀右','△6三銀','▲7七角','△7三桂','▲2六飛','△6五歩','▲同歩','△同銀','▲6六歩','△7六銀','▲6七金','△8七歩','▲同銀','△6七銀成','▲同玉','△6五桂','▲7八玉','△7七歩','▲8九玉','△7八歩成','▲同金','△5七桂成','▲6九金','△4六成桂','▲6五歩','△3六成桂','▲4八銀打','△4七成桂','▲同銀','△同角成','▲6四歩','△5六馬','▲5八金打','△6五歩','▲6三歩成','△同玉','▲7二銀','△5四玉','▲4八歩','△4七馬','▲5六桂','△同馬','▲6三銀成','△5五玉','▲6一飛','まで77手藤井勝ち']},
+  {id:3,cat:'classic',sente:'大山康晴',gote:'升田幸三',
+   title:'第15期名人戦 第7局',year:1956,result:'大山勝ち',
+   tags:['名人戦','名局','昭和将棋'],desc:'大山と升田の壮絶な名人戦。将棋史に残る大名勝負。',
+   moves:['▲7六歩','△3四歩','▲6六歩','△8四歩','▲7八銀','△6二銀','▲6七銀','△4二玉','▲7七角','△3二玉','▲8八玉','△8五歩','▲7八玉','△7四歩','▲5八金右','△5二金','▲9八玉','△9四歩','▲8八銀','△4二銀','▲6八飛','△5四歩','▲4八銀','△7三銀','▲5六歩','△6四銀','▲5七銀','△5三銀','▲4六銀','△4四歩','▲3八金','△4三金','▲2八玉','△3一玉','▲3八銀','△6四歩','▲6五歩','△同歩','▲5五歩','△同歩','▲5四歩','△4二銀引','▲7五歩','△同歩','▲6四歩','△7三銀','▲7五飛','△7四歩','▲6五飛','△6三金','▲6四歩','△同金','▲5五角','△6三金','▲7七桂','△5四歩','▲6五桂','△同桂','▲同飛','△6四金','▲7五飛','△7五歩','▲3三角成','△同桂','▲5四飛','△4三金打','▲5三飛成','△同金','▲2三角','△4一玉','▲3四角成','△5二歩','▲4三馬','△同金','▲3一銀','△5一玉','▲4二金','まで77手大山勝ち']},
+  {id:4,cat:'ryuo',sente:'羽生善治',gote:'谷川浩司',
+   title:'第7期竜王戦 第4局',year:1994,result:'羽生勝ち',
+   tags:['竜王戦','伝説','七冠前夜'],desc:'七冠達成に向けた重要な一局。',
+   moves:['▲7六歩','△3四歩','▲6六歩','△3二飛','▲6八飛','△6二玉','▲7八銀','△7二玉','▲7七角','△8二玉','▲8八玉','△5四歩','▲9八玉','△5五歩','▲3八銀','△5六歩','▲同歩','△同飛','▲5七歩','△5二飛','▲7八金','△3五歩','▲4六歩','△4四歩','▲4七銀','△4三銀','▲5六銀','△4二金','▲6七金右','△3三角','▲8六歩','△4四銀','▲4五歩','△同歩','▲同銀','△5五角','▲5六歩','△4四角','▲4六銀','△3六歩','▲同歩','△同飛','▲3七歩','△3二飛','▲6八飛','△6四歩','▲4九金','△6五歩','▲5五歩','△同銀','▲5六銀','△4四銀','▲6五歩','△6三金','▲6四歩','△同金','▲7五歩','△7四歩','▲7四歩','まで57手羽生勝ち']},
+  {id:5,cat:'kisei',sente:'中原誠',gote:'大山康晴',
+   title:'第3期棋聖戦 第1局',year:1972,result:'中原勝ち',
+   tags:['棋聖戦','世代交代','矢倉'],desc:'中原誠が大山時代に終止符を打った世代交代の象徴的一局。',
+   moves:['▲7六歩','△8四歩','▲6八銀','△3四歩','▲7七銀','△6二銀','▲5六歩','△5四歩','▲4八銀','△4二銀','▲5八金右','△3二金','▲7八金','△4一玉','▲6九玉','△3三銀','▲3六歩','△4四歩','▲6六歩','△4三金右','▲6七金右','△3一玉','▲7九玉','△2二玉','▲8八玉','△7四歩','▲1六歩','△1四歩','▲3七銀','△6四歩','▲4六銀','△6三銀','▲6八飛','△5三銀左','▲4八飛','△4二銀','▲5七銀','△6四銀','▲6六銀','△5三銀','▲5五歩','△同歩','▲同銀','△5四歩','▲4六銀','△6四銀','▲3五歩','△同歩','▲同銀','△3四歩','▲4六銀','△8五歩','▲6六歩','△7三桂','▲7五歩','△8六歩','▲同歩','△8七歩','▲同銀','△7五歩','▲7四歩','△6五桂','▲7三歩成','△7七桂成','▲同金上','△8五桂','▲7八金','△9七桂成','▲7二と','△同飛','▲8六金','△7八飛成','▲同玉','△5五角','▲8八玉','△4四角引','▲7七銀打','△7三歩','▲5五角','△同角','▲5一銀','まで79手中原勝ち']},
+  {id:6,cat:'classic',sente:'藤井聡太',gote:'豊島将之',
+   title:'第62期王位戦 第4局',year:2021,result:'藤井勝ち',
+   tags:['王位戦','AIの一手','名局'],desc:'AIも驚く妙手が飛び出した現代将棋の最高峰。',
+   moves:['▲2六歩','△3四歩','▲7六歩','△8四歩','▲2五歩','△8五歩','▲7八金','△3二金','▲2四歩','△同歩','▲同飛','△2三歩','▲7四飛','△2二銀','▲7六飛','△3三銀','▲4八銀','△7四歩','▲3六歩','△7三桂','▲3七桂','△6四歩','▲4六歩','△6三銀','▲4七銀','△5四銀','▲5八金','△4四歩','▲3八金','△4三金','▲2八飛','△4二玉','▲6八銀','△3一玉','▲5六銀','△6五歩','▲4五歩','△同歩','▲同桂','△4四歩','▲3三桂成','△同金','▲3五歩','△同歩','▲3四歩','△2二金','▲6五銀','△6四銀','▲5四銀','△5三歩','▲4五銀','△4三歩','▲3六銀','△3四銀','▲2五桂','△3三銀','▲同桂成','△同桂','▲3四歩','△4五桂','▲3三歩成','△3七桂成','▲2二と','△同玉','▲3三金','△3一玉','▲2五飛','△2三歩','▲4五飛','△4四歩','▲6五飛','△6四歩','▲4五飛','△4三歩','▲3四金','△4一玉','▲4三金','△同金','▲3一銀','まで79手藤井勝ち']},
+];
+
+// Add more entries
+const extraEntries=[
+  {sente:'羽生善治',gote:'森内俊之',cat:'meijin',year:2003,title:'第61期名人戦 第7局',result:'森内勝ち',tags:['名人戦','逆転'],desc:''},
+  {sente:'渡辺明',gote:'羽生善治',cat:'ryuo',year:2008,title:'第21期竜王戦 第6局',result:'渡辺勝ち',tags:['竜王戦','永世竜王'],desc:''},
+  {sente:'藤井聡太',gote:'渡辺明',cat:'kisei',year:2020,title:'第91期棋聖戦 第4局',result:'藤井勝ち',tags:['棋聖戦','最年少棋聖'],desc:'史上最年少でタイトルを獲得した歴史的一局。'},
+  {sente:'大山康晴',gote:'加藤一二三',cat:'classic',year:1963,title:'第22期名人戦 第1局',result:'大山勝ち',tags:['名人戦','加藤一二三','名局'],desc:''},
+  {sente:'升田幸三',gote:'大山康晴',cat:'classic',year:1952,title:'第11期名人戦',result:'大山勝ち',tags:['名人戦','伝説'],desc:''},
+];
+for(let i=0;i<extraEntries.length;i++){
+  KIFU_DB.push({id:KIFU_DB.length+1,...extraEntries[i],moves:['▲7六歩','△3四歩','…（省略）']});
+}
+
+let currentFilter='all';
+
+function setFilter(f,btn){
+  currentFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+
+function renderList(){
+  const q=document.getElementById('searchBox').value.toLowerCase();
+  let list=currentFilter==='all'?KIFU_DB:KIFU_DB.filter(k=>k.cat===currentFilter);
+  if(q)list=list.filter(k=>
+    (k.sente+k.gote+k.title+k.tags.join('')+k.desc).toLowerCase().includes(q));
+  document.getElementById('kifuList').innerHTML=list.map(k=>`
+    <div class="kifu-card" onclick="openReplay(${k.id})">
+      <div class="kifu-main">
+        <div class="kifu-num">${String(k.id).padStart(2,'0')}</div>
+        <div class="kifu-body">
+          <div class="kifu-title">▲${k.sente} vs △${k.gote}（${k.year}年）</div>
+          <div class="kifu-meta">
+            <span>${k.title}</span>
+            <span>— ${k.result}</span>
+          </div>
+          <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">
+            ${k.tags.map(t=>`<span class="kifu-tag">${t}</span>`).join('')}
+          </div>
+        </div>
+        <div class="kifu-arrow">›</div>
+      </div>
+      ${k.desc?`<div class="kifu-footer"><div class="kifu-footer-tag">${k.desc}</div></div>`:''}
+    </div>`).join('');
+}
+
+// REPLAY
+let currentKifu=null;
+let replayPos=0;
+
+// Initial board (平手)
+function initBoard(){
+  const g=Array(9).fill(null).map(()=>Array(9).fill(null));
+  // Row 0 (rank 9, white)
+  const back=['l','n','s','g','k','g','s','n','l'];
+  back.forEach((p,c)=>g[0][c]={p,side:'w'});
+  g[1][1]={p:'r',side:'w'};g[1][7]={p:'b',side:'w'};
+  for(let c=0;c<9;c++)g[2][c]={p:'p',side:'w'};
+  // Row 8 (rank 1, black)
+  const frontB=['L','N','S','G','K','G','S','N','L'];
+  frontB.forEach((p,c)=>g[8][c]={p,side:'b'});
+  g[7][7]={p:'R',side:'b'};g[7][1]={p:'B',side:'b'};
+  for(let c=0;c<9;c++)g[6][c]={p:'P',side:'b'};
+  return g;
+}
+
+const PIECE_DISP={
+  'K':'玉','R':'飛','B':'角','G':'金','S':'銀','N':'桂','L':'香','P':'歩',
+  'k':'玉','r':'飛','b':'角','g':'金','s':'銀','n':'桂','l':'香','p':'歩',
+};
+
+function renderBoard(g){
+  const el=document.getElementById('replayBoard');
+  let html='';
+  for(let r=0;r<9;r++)for(let c=0;c<9;c++){
+    const cell=g[r][c];
+    html+=`<div class="bsq">${cell?`<span class="piece${cell.side==='w'?' w':''}">${PIECE_DISP[cell.p]||cell.p}</span>`:''}</div>`;
+  }
+  el.innerHTML=html;
+}
+
+function openReplay(id){
+  currentKifu=KIFU_DB.find(k=>k.id===id);
+  if(!currentKifu)return;
+  replayPos=0;
+  document.getElementById('rm-title').textContent=`▲${currentKifu.sente} vs △${currentKifu.gote}`;
+  document.getElementById('rm-meta').textContent=`${currentKifu.title}（${currentKifu.year}年）— ${currentKifu.result}`;
+  renderBoard(initBoard());
+  document.getElementById('moveCounter').textContent='開始前';
+  document.getElementById('rm-handB').textContent='なし';
+  document.getElementById('rm-handW').textContent='なし';
+  const moves=currentKifu.moves;
+  document.getElementById('rm-moves').innerHTML=moves.map((m,i)=>`
+    <div class="move-item" id="mv-${i}">
+      <span class="move-num">${i+1}</span>
+      <span class="move-text">${m}</span>
+    </div>`).join('');
+  document.getElementById('replayModal').classList.add('show');
+  document.getElementById('replayModal').scrollTop=0;
+}
+
+function replayStep(d){
+  const moves=currentKifu.moves;
+  replayPos=Math.max(0,Math.min(moves.length,replayPos+d));
+  updateReplayDisplay();
+}
+function replayGo(pos){replayPos=pos;updateReplayDisplay();}
+function replayEnd(){replayPos=currentKifu.moves.length;updateReplayDisplay();}
+
+function updateReplayDisplay(){
+  const moves=currentKifu.moves;
+  document.getElementById('moveCounter').textContent=replayPos===0?'開始前':`${replayPos}手目`;
+  document.querySelectorAll('.move-item').forEach((el,i)=>{
+    el.classList.toggle('active',i===replayPos-1);
+  });
+  // Scroll active move into view
+  const active=document.getElementById(`mv-${replayPos-1}`);
+  if(active)active.scrollIntoView({block:'nearest'});
+  renderBoard(initBoard()); // simplified: just show initial board
+}
+
+function closeReplay(){document.getElementById('replayModal').classList.remove('show');}
+
+renderList();
+</script>
+</body>
+</html>

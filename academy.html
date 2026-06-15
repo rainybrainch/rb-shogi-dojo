@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RB将棋アカデミー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --dark:#1A1A2E;--dark2:#16213E;--dark3:#0F3460;
+  --gold:#F5C842;--sky:#5BC8E8;--red:#E8354A;--green:#4CAF7D;
+  --muted:#8888aa;--card:#1e1e3a;--border:rgba(245,200,66,.18);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--dark);color:#fff;font-family:'Zen Maru Gothic',sans-serif;
+  min-height:100vh;padding-bottom:80px;
+  background-image:radial-gradient(circle,rgba(245,200,66,.055) 1px,transparent 1px);
+  background-size:24px 24px;}
+a{text-decoration:none;color:inherit}
+
+/* HEADER */
+.header{background:var(--dark2);border-bottom:2px solid var(--gold);
+  padding:16px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50}
+.header-icon{font-size:2rem;line-height:1}
+.header-title{font-family:'Dela Gothic One',sans-serif;font-size:1.35rem;color:var(--gold);letter-spacing:.04em}
+.header-sub{font-size:.72rem;color:var(--muted);letter-spacing:.06em}
+.header-badge{margin-left:auto;background:var(--gold);color:var(--dark);
+  font-size:.65rem;font-weight:700;padding:3px 10px;border-radius:20px;font-family:'Dela Gothic One',sans-serif}
+
+/* HERO */
+.hero{padding:28px 20px 20px;text-align:center}
+.hero-label{display:inline-block;background:rgba(245,200,66,.12);
+  border:1px solid var(--gold);color:var(--gold);
+  font-size:.7rem;letter-spacing:.1em;padding:4px 14px;border-radius:20px;margin-bottom:12px}
+.hero-title{font-family:'Dela Gothic One',sans-serif;font-size:2rem;line-height:1.2;
+  background:linear-gradient(135deg,#fff 0%,var(--gold) 60%,var(--sky) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-desc{font-size:.85rem;color:var(--muted);margin-top:10px;line-height:1.6;max-width:340px;margin-inline:auto}
+
+/* STATS BAR */
+.stats-bar{display:flex;gap:0;margin:20px;border:2px solid var(--border);border-radius:12px;overflow:hidden;background:var(--card)}
+.stat-item{flex:1;padding:12px 8px;text-align:center;border-right:1px solid var(--border)}
+.stat-item:last-child{border-right:none}
+.stat-num{font-family:'Dela Gothic One',sans-serif;font-size:1.25rem;color:var(--gold)}
+.stat-lbl{font-size:.6rem;color:var(--muted);margin-top:2px;display:block}
+
+/* SECTION */
+.section{padding:0 20px;margin-bottom:24px}
+.section-header{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.section-title{font-family:'Dela Gothic One',sans-serif;font-size:1rem;color:#fff}
+.section-badge{font-size:.62rem;background:var(--gold);color:var(--dark);
+  padding:2px 8px;border-radius:20px;font-weight:700}
+
+/* MAIN CARDS — 2 col */
+.main-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.main-card{background:var(--card);border:2px solid var(--border);border-radius:14px;
+  padding:18px 14px;cursor:pointer;transition:.15s;position:relative;overflow:hidden;
+  display:flex;flex-direction:column;gap:8px;
+  box-shadow:5px 5px 0 var(--gold)}
+.main-card:active{transform:translate(2px,2px);box-shadow:3px 3px 0 var(--gold)}
+.main-card.sky{box-shadow:5px 5px 0 var(--sky);border-color:rgba(91,200,232,.25)}
+.main-card.sky:active{box-shadow:3px 3px 0 var(--sky)}
+.main-card.red{box-shadow:5px 5px 0 var(--red);border-color:rgba(232,53,74,.25)}
+.main-card.red:active{box-shadow:3px 3px 0 var(--red)}
+.main-card.green{box-shadow:5px 5px 0 var(--green);border-color:rgba(76,175,125,.25)}
+.main-card.green:active{box-shadow:3px 3px 0 var(--green)}
+.card-icon{font-size:2rem}
+.card-title{font-family:'Dela Gothic One',sans-serif;font-size:.95rem;color:#fff;line-height:1.2}
+.card-desc{font-size:.68rem;color:var(--muted);line-height:1.5}
+.card-count{font-size:.62rem;color:var(--gold);font-weight:700;
+  background:rgba(245,200,66,.1);padding:2px 8px;border-radius:20px;width:fit-content;margin-top:4px}
+.card-count.sky{color:var(--sky);background:rgba(91,200,232,.1)}
+.card-count.red{color:var(--red);background:rgba(232,53,74,.1)}
+.card-count.green{color:var(--green);background:rgba(76,175,125,.1)}
+
+/* FEATURED SECTION — single wide card */
+.featured-card{background:var(--card);border:2px solid var(--border);border-radius:14px;
+  overflow:hidden;box-shadow:5px 5px 0 var(--sky)}
+.featured-inner{padding:18px 18px 14px;display:flex;gap:14px;align-items:flex-start}
+.featured-icon{font-size:2.8rem;line-height:1;flex-shrink:0}
+.featured-body{}
+.featured-title{font-family:'Dela Gothic One',sans-serif;font-size:1.1rem;color:var(--sky);margin-bottom:4px}
+.featured-desc{font-size:.72rem;color:var(--muted);line-height:1.6}
+.featured-tags{display:flex;flex-wrap:wrap;gap:6px;padding:10px 18px 16px;border-top:1px solid var(--border)}
+.featured-tag{font-size:.62rem;border:1px solid var(--border);border-radius:20px;
+  padding:3px 10px;color:var(--muted);cursor:pointer;transition:.1s}
+.featured-tag:hover{border-color:var(--sky);color:var(--sky)}
+
+/* PLAYER PREVIEW */
+.player-scroll{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;
+  scrollbar-width:none}
+.player-scroll::-webkit-scrollbar{display:none}
+.player-card{background:var(--card);border:2px solid var(--border);border-radius:12px;
+  padding:14px 12px;min-width:130px;text-align:center;flex-shrink:0;cursor:pointer;
+  transition:.15s;box-shadow:4px 4px 0 var(--gold)}
+.player-card:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--gold)}
+.player-avatar{font-size:2.2rem;margin-bottom:6px}
+.player-name{font-family:'Dela Gothic One',sans-serif;font-size:.8rem;color:#fff;margin-bottom:2px}
+.player-title{font-size:.62rem;color:var(--gold)}
+.player-era{font-size:.58rem;color:var(--muted)}
+
+/* TODAY PUZZLE */
+.puzzle-card{background:linear-gradient(135deg,var(--dark3) 0%,#1a0a2e 100%);
+  border:2px solid rgba(91,200,232,.3);border-radius:14px;
+  padding:18px;box-shadow:5px 5px 0 var(--sky);cursor:pointer;transition:.15s}
+.puzzle-card:active{transform:translate(2px,2px);box-shadow:3px 3px 0 var(--sky)}
+.puzzle-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.puzzle-badge{background:var(--sky);color:var(--dark);font-size:.65rem;font-weight:700;
+  padding:3px 10px;border-radius:20px;font-family:'Dela Gothic One',sans-serif}
+.puzzle-title{font-family:'Dela Gothic One',sans-serif;font-size:1rem;color:var(--sky)}
+.puzzle-board-mini{display:grid;grid-template-columns:repeat(5,32px);gap:2px;margin:12px auto;width:fit-content}
+.mini-sq{width:32px;height:32px;background:rgba(245,200,66,.06);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:1rem;border-radius:4px}
+.mini-sq.k{background:rgba(245,200,66,.18);border-color:var(--gold)}
+.mini-sq.a{background:rgba(91,200,232,.18);border-color:var(--sky)}
+.puzzle-hint{font-size:.7rem;color:var(--muted);text-align:center;margin-top:8px}
+.puzzle-btn{display:block;text-align:center;margin-top:14px;
+  background:var(--sky);color:var(--dark);font-family:'Dela Gothic One',sans-serif;
+  font-size:.85rem;padding:10px;border-radius:10px;
+  border:2px solid var(--sky);box-shadow:3px 3px 0 rgba(91,200,232,.4)}
+
+/* RECENT KIFU */
+.kifu-list{display:flex;flex-direction:column;gap:10px}
+.kifu-item{background:var(--card);border:2px solid var(--border);border-radius:12px;
+  padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:.15s}
+.kifu-item:hover{border-color:rgba(245,200,66,.4)}
+.kifu-num{font-family:'Dela Gothic One',sans-serif;font-size:1rem;color:var(--gold);
+  width:28px;text-align:center;flex-shrink:0}
+.kifu-body{flex:1}
+.kifu-title{font-size:.82rem;color:#fff;font-weight:700}
+.kifu-meta{font-size:.62rem;color:var(--muted);margin-top:2px}
+.kifu-arrow{color:var(--muted);font-size:.9rem;flex-shrink:0}
+
+/* QUICK START */
+.quick-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.quick-btn{background:var(--card);border:2px solid var(--border);border-radius:12px;
+  padding:14px 8px;text-align:center;cursor:pointer;transition:.15s;
+  box-shadow:4px 4px 0 rgba(245,200,66,.3)}
+.quick-btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 rgba(245,200,66,.3)}
+.quick-btn-icon{font-size:1.6rem;margin-bottom:6px}
+.quick-btn-label{font-size:.65rem;color:#ddd;font-weight:700;line-height:1.3}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;
+  background:var(--dark2);border-top:2px solid var(--gold);
+  display:flex;z-index:50}
+.nav-item{flex:1;padding:10px 4px 8px;text-align:center;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  transition:background .12s}
+.nav-item:hover{background:rgba(245,200,66,.06)}
+.nav-item.active .nav-icon{color:var(--gold)}
+.nav-item.active .nav-label{color:var(--gold)}
+.nav-icon{font-size:1.2rem;line-height:1;color:var(--muted)}
+.nav-label{font-size:.58rem;color:var(--muted);letter-spacing:.03em}
+
+/* TOAST */
+#toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);
+  background:var(--dark2);border:1px solid var(--gold);color:var(--gold);
+  padding:10px 20px;border-radius:30px;font-size:.78rem;z-index:999;
+  opacity:0;transition:.25s;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-icon">♟</div>
+  <div>
+    <div class="header-title">RB将棋アカデミー</div>
+    <div class="header-sub">RAINYBRAIN SHOGI ACADEMY</div>
+  </div>
+  <div class="header-badge" id="ratingBadge">Lv.--</div>
+</header>
+
+<main>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-label">▶ 将棋の道を極める</div>
+  <h1 class="hero-title">将棋アカデミー</h1>
+  <p class="hero-desc">対局・詰将棋・定跡・棋士図鑑・棋譜データベース。<br>総合的な将棋学習環境。</p>
+</div>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-num" id="statRating">---</div>
+    <span class="stat-lbl">レーティング</span>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num" id="statStreak">0</div>
+    <span class="stat-lbl">連続学習日</span>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num" id="statGames">0</div>
+    <span class="stat-lbl">対局数</span>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num" id="statTsume">0</div>
+    <span class="stat-lbl">詰将棋</span>
+  </div>
+</div>
+
+<!-- MAIN MENU -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">メインメニュー</div>
+    <div class="section-badge">MENU</div>
+  </div>
+  <div class="main-cards">
+    <a href="multi.html" class="main-card">
+      <div class="card-icon">⚔️</div>
+      <div class="card-title">対局モード</div>
+      <div class="card-desc">複数面指し対局。最大10面同時対戦。AIレベル10級〜六段。</div>
+      <div class="card-count">最大10面指し</div>
+    </a>
+    <a href="tsume.html" class="main-card sky">
+      <div class="card-icon">🧩</div>
+      <div class="card-title">詰将棋</div>
+      <div class="card-desc">1手詰〜7手詰。段階的に実力向上。</div>
+      <div class="card-count sky">50問収録</div>
+    </a>
+    <a href="joseki.html" class="main-card green">
+      <div class="card-icon">📐</div>
+      <div class="card-title">定跡・囲い</div>
+      <div class="card-desc">主要な囲いと定跡を図付きで解説。</div>
+      <div class="card-count green">30種収録</div>
+    </a>
+    <a href="kishi.html" class="main-card red">
+      <div class="card-icon">🏆</div>
+      <div class="card-title">棋士図鑑</div>
+      <div class="card-desc">名棋士のプロフィール・戦績・棋風を網羅。</div>
+      <div class="card-count red">20名収録</div>
+    </a>
+  </div>
+</div>
+
+<!-- TODAY PUZZLE -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">今日の詰将棋</div>
+    <div class="section-badge">DAILY</div>
+  </div>
+  <div class="puzzle-card" onclick="location.href='tsume.html'">
+    <div class="puzzle-header">
+      <div class="puzzle-badge">3手詰</div>
+      <div class="puzzle-title">デイリーチャレンジ</div>
+    </div>
+    <!-- Mini board visualization -->
+    <div class="puzzle-board-mini" id="dailyBoard"></div>
+    <div class="puzzle-hint">▲先手番 — 3手で詰み！</div>
+    <div class="puzzle-btn">詰将棋を解く →</div>
+  </div>
+</div>
+
+<!-- QUICK START -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">クイックスタート</div>
+    <div class="section-badge">QUICK</div>
+  </div>
+  <div class="quick-grid">
+    <a href="play.html" class="quick-btn">
+      <div class="quick-btn-icon">♟</div>
+      <div class="quick-btn-label">1面<br>対局</div>
+    </a>
+    <a href="multi.html?boards=3" class="quick-btn">
+      <div class="quick-btn-icon">♜♜♜</div>
+      <div class="quick-btn-label">3面<br>同時</div>
+    </a>
+    <a href="multi.html?boards=5" class="quick-btn">
+      <div class="quick-btn-icon">🎯</div>
+      <div class="quick-btn-label">5面<br>多面</div>
+    </a>
+    <a href="joseki.html#castles" class="quick-btn">
+      <div class="quick-btn-icon">🏯</div>
+      <div class="quick-btn-label">囲い<br>一覧</div>
+    </a>
+    <a href="kifu.html" class="quick-btn">
+      <div class="quick-btn-icon">📜</div>
+      <div class="quick-btn-label">棋譜<br>DB</div>
+    </a>
+    <a href="kishi.html#fujii" class="quick-btn">
+      <div class="quick-btn-icon">⭐</div>
+      <div class="quick-btn-label">藤井<br>聡太</div>
+    </a>
+  </div>
+</div>
+
+<!-- FAMOUS PLAYERS PREVIEW -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">棋士図鑑</div>
+    <div class="section-badge">KISHI</div>
+  </div>
+  <div class="player-scroll">
+    <a href="kishi.html#fujii" class="player-card">
+      <div class="player-avatar">🌟</div>
+      <div class="player-name">藤井聡太</div>
+      <div class="player-title">十段・王位他</div>
+      <div class="player-era">2000年〜</div>
+    </a>
+    <a href="kishi.html#羽生" class="player-card">
+      <div class="player-avatar">👑</div>
+      <div class="player-name">羽生善治</div>
+      <div class="player-title">十九世名人</div>
+      <div class="player-era">1970年〜</div>
+    </a>
+    <a href="kishi.html#大山" class="player-card">
+      <div class="player-avatar">🏆</div>
+      <div class="player-name">大山康晴</div>
+      <div class="player-title">十五世名人</div>
+      <div class="player-era">1923〜1992</div>
+    </a>
+    <a href="kishi.html#中原" class="player-card">
+      <div class="player-avatar">♟</div>
+      <div class="player-name">中原誠</div>
+      <div class="player-title">十六世名人</div>
+      <div class="player-era">1947年〜</div>
+    </a>
+    <a href="kishi.html#渡辺" class="player-card">
+      <div class="player-avatar">🔥</div>
+      <div class="player-name">渡辺明</div>
+      <div class="player-title">前名人</div>
+      <div class="player-era">1984年〜</div>
+    </a>
+    <a href="kishi.html" class="player-card">
+      <div class="player-avatar">➕</div>
+      <div class="player-name">全員見る</div>
+      <div class="player-title">20名収録</div>
+      <div class="player-era">図鑑へ →</div>
+    </a>
+  </div>
+</div>
+
+<!-- FAMOUS KIFU PREVIEW -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">有名棋譜</div>
+    <div class="section-badge">KIFU</div>
+  </div>
+  <div class="kifu-list">
+    <a href="kifu.html#1" class="kifu-item">
+      <div class="kifu-num">01</div>
+      <div class="kifu-body">
+        <div class="kifu-title">▲羽生善治 vs △佐藤康光（1998年）</div>
+        <div class="kifu-meta">第56期名人戦 第6局 — 世紀の名勝負</div>
+      </div>
+      <div class="kifu-arrow">›</div>
+    </a>
+    <a href="kifu.html#2" class="kifu-item">
+      <div class="kifu-num">02</div>
+      <div class="kifu-body">
+        <div class="kifu-title">▲藤井聡太 vs △渡辺明（2022年）</div>
+        <div class="kifu-meta">第80期名人戦 — 最年少名人への道</div>
+      </div>
+      <div class="kifu-arrow">›</div>
+    </a>
+    <a href="kifu.html#3" class="kifu-item">
+      <div class="kifu-num">03</div>
+      <div class="kifu-body">
+        <div class="kifu-title">▲大山康晴 vs △升田幸三（1956年）</div>
+        <div class="kifu-meta">第15期名人戦 — 伝説の死闘</div>
+      </div>
+      <div class="kifu-arrow">›</div>
+    </a>
+    <a href="kifu.html" class="kifu-item" style="border-color:rgba(245,200,66,.3)">
+      <div class="kifu-num" style="color:var(--sky)">→</div>
+      <div class="kifu-body">
+        <div class="kifu-title" style="color:var(--sky)">棋譜データベースを全て見る</div>
+        <div class="kifu-meta">50局以上収録、再生機能付き</div>
+      </div>
+      <div class="kifu-arrow">›</div>
+    </a>
+  </div>
+</div>
+
+<!-- FEATURED: JOSEKI -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">おすすめ定跡</div>
+    <div class="section-badge">PICK</div>
+  </div>
+  <a href="joseki.html" class="featured-card" style="display:block">
+    <div class="featured-inner">
+      <div class="featured-icon">🏯</div>
+      <div class="featured-body">
+        <div class="featured-title">囲い・定跡図鑑</div>
+        <div class="featured-desc">居飛車・振り飛車の主要定跡と囲いを図解で網羅。棒銀・矢倉・美濃囲い・穴熊まで。</div>
+      </div>
+    </div>
+    <div class="featured-tags">
+      <span class="featured-tag">矢倉</span>
+      <span class="featured-tag">美濃囲い</span>
+      <span class="featured-tag">穴熊</span>
+      <span class="featured-tag">棒銀</span>
+      <span class="featured-tag">四間飛車</span>
+      <span class="featured-tag">中飛車</span>
+    </div>
+  </a>
+</div>
+
+</main>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <div class="nav-item active" onclick="location.href='academy.html'">
+    <div class="nav-icon">🏠</div>
+    <div class="nav-label">ホーム</div>
+  </div>
+  <div class="nav-item" onclick="location.href='tsume.html'">
+    <div class="nav-icon">🧩</div>
+    <div class="nav-label">詰将棋</div>
+  </div>
+  <div class="nav-item" onclick="location.href='multi.html'">
+    <div class="nav-icon">⚔️</div>
+    <div class="nav-label">対局</div>
+  </div>
+  <div class="nav-item" onclick="location.href='kishi.html'">
+    <div class="nav-icon">🏆</div>
+    <div class="nav-label">棋士</div>
+  </div>
+  <div class="nav-item" onclick="location.href='kifu.html'">
+    <div class="nav-icon">📜</div>
+    <div class="nav-label">棋譜</div>
+  </div>
+</nav>
+
+<div id="toast"></div>
+
+<script>
+// Load stats
+function loadStats(){
+  const rating=localStorage.getItem('rb_rating');
+  document.getElementById('statRating').textContent=rating?Math.round(parseFloat(rating)):'---';
+  document.getElementById('ratingBadge').textContent=rating?'R'+Math.round(parseFloat(rating)):'Lv.--';
+  const games=JSON.parse(localStorage.getItem('rb_multi_stats')||'{}');
+  const total=(games.win||0)+(games.loss||0)+(games.draw||0);
+  document.getElementById('statGames').textContent=total;
+  const tsume=parseInt(localStorage.getItem('rb_tsume_solved')||'0');
+  document.getElementById('statTsume').textContent=tsume;
+  updateStreak();
+}
+
+function updateStreak(){
+  const today=new Date().toDateString();
+  const last=localStorage.getItem('rb_last_active');
+  let streak=parseInt(localStorage.getItem('rb_streak')||'0');
+  if(last===today){
+    // already counted
+  } else if(last===new Date(Date.now()-86400000).toDateString()){
+    streak++;
+    localStorage.setItem('rb_streak',streak);
+    localStorage.setItem('rb_last_active',today);
+  } else {
+    streak=1;
+    localStorage.setItem('rb_streak',streak);
+    localStorage.setItem('rb_last_active',today);
+  }
+  document.getElementById('statStreak').textContent=streak;
+}
+
+// Daily board mini display
+function renderDailyBoard(){
+  const board=document.getElementById('dailyBoard');
+  if(!board)return;
+  // Simple 5x5 excerpt showing a tsume position
+  const pieces=[
+    '','','♔','','' ,
+    '','♖','','','',
+    '','','','','',
+    '','','','','',
+    '','','♚','','',
+  ];
+  const classes=['','','k','','','','a','','','','','','','','','','','','','','','','k','',''];
+  board.innerHTML=pieces.map((p,i)=>`<div class="mini-sq ${classes[i]||''}">${p}</div>`).join('');
+}
+
+loadStats();
+renderDailyBoard();
+</script>
+</body>
+</html>
