@@ -83,6 +83,31 @@ a{text-decoration:none;color:inherit}
 .con-title{font-size:.65rem;font-weight:700;color:var(--red);margin-bottom:4px}
 .pro-item,.con-item{font-size:.68rem;color:#ccc;line-height:1.6}
 
+/* DIFFICULTY FILTER */
+.diff-filter{display:flex;gap:8px;padding:14px 16px 0;flex-wrap:wrap}
+.diff-btn{font-size:.68rem;font-family:'Dela Gothic One',sans-serif;padding:5px 12px;border-radius:20px;
+  border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:.15s}
+.diff-btn.active{background:var(--gold);border-color:var(--gold);color:var(--dark)}
+.diff-btn[data-d="1"].active{background:var(--green);border-color:var(--green)}
+.diff-btn[data-d="2"].active{background:var(--sky);border-color:var(--sky)}
+.diff-btn[data-d="3"].active{background:var(--gold);border-color:var(--gold)}
+.diff-btn[data-d="4"].active{background:var(--red);border-color:var(--red);color:#fff}
+.joseki-card.hidden{display:none}
+
+/* STUDIED BADGE */
+.studied-btn{position:absolute;top:10px;right:10px;font-size:.65rem;
+  padding:3px 8px;border-radius:20px;border:1.5px solid var(--border);
+  background:transparent;color:var(--muted);cursor:pointer;transition:.15s;font-family:'Dela Gothic One',sans-serif;z-index:5}
+.studied-btn.done{background:var(--green);border-color:var(--green);color:#fff}
+.castle-card,.joseki-card{position:relative}
+.castle-card .studied-btn{position:absolute;top:8px;right:8px}
+
+/* JOSEKI BOARD in modal */
+.modal-joseki-board{display:grid;grid-template-columns:repeat(5,38px);grid-template-rows:repeat(5,38px);
+  border:2.5px solid #5a3810;background:#c8923a;margin:12px auto;width:fit-content;
+  box-shadow:0 2px 12px rgba(0,0,0,.5)}
+.modal-joseki-board .msq{border-radius:0;background:transparent;border:1px solid #8b5e28}
+
 /* BOTTOM NAV */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--dark2);border-top:2px solid var(--gold);display:flex;z-index:50}
 .nav-item{flex:1;padding:10px 4px 8px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
@@ -111,6 +136,7 @@ a{text-decoration:none;color:inherit}
   </div>
   <div class="castle-grid">
     <div class="castle-card" onclick="openCastle('yagura')">
+      <button class="studied-btn" id="sc-yagura" onclick="event.stopPropagation();toggleStudied('c','yagura')">✓ 習得</button>
       <div class="castle-board" id="board-yagura"></div>
       <div class="castle-info">
         <div class="castle-name">矢倉</div>
@@ -119,6 +145,7 @@ a{text-decoration:none;color:inherit}
       </div>
     </div>
     <div class="castle-card" onclick="openCastle('anaguma')">
+      <button class="studied-btn" id="sc-anaguma" onclick="event.stopPropagation();toggleStudied('c','anaguma')">✓ 習得</button>
       <div class="castle-board" id="board-anaguma"></div>
       <div class="castle-info">
         <div class="castle-name">穴熊</div>
@@ -127,6 +154,7 @@ a{text-decoration:none;color:inherit}
       </div>
     </div>
     <div class="castle-card" onclick="openCastle('katachi')">
+      <button class="studied-btn" id="sc-katachi" onclick="event.stopPropagation();toggleStudied('c','katachi')">✓ 習得</button>
       <div class="castle-board" id="board-katachi"></div>
       <div class="castle-info">
         <div class="castle-name">舟囲い</div>
@@ -135,6 +163,7 @@ a{text-decoration:none;color:inherit}
       </div>
     </div>
     <div class="castle-card" onclick="openCastle('kinkei')">
+      <button class="studied-btn" id="sc-kinkei" onclick="event.stopPropagation();toggleStudied('c','kinkei')">✓ 習得</button>
       <div class="castle-board" id="board-kinkei"></div>
       <div class="castle-info">
         <div class="castle-name">金矢倉</div>
@@ -152,6 +181,7 @@ a{text-decoration:none;color:inherit}
   </div>
   <div class="castle-grid">
     <div class="castle-card" onclick="openCastle('mino')">
+      <button class="studied-btn" id="sc-mino" onclick="event.stopPropagation();toggleStudied('c','mino')">✓ 習得</button>
       <div class="castle-board" id="board-mino"></div>
       <div class="castle-info">
         <div class="castle-name">美濃囲い</div>
@@ -160,6 +190,7 @@ a{text-decoration:none;color:inherit}
       </div>
     </div>
     <div class="castle-card" onclick="openCastle('ginmino')">
+      <button class="studied-btn" id="sc-ginmino" onclick="event.stopPropagation();toggleStudied('c','ginmino')">✓ 習得</button>
       <div class="castle-board" id="board-ginmino"></div>
       <div class="castle-info">
         <div class="castle-name">銀美濃</div>
@@ -168,6 +199,7 @@ a{text-decoration:none;color:inherit}
       </div>
     </div>
     <div class="castle-card" onclick="openCastle('daruma')">
+      <button class="studied-btn" id="sc-daruma" onclick="event.stopPropagation();toggleStudied('c','daruma')">✓ 習得</button>
       <div class="castle-board" id="board-daruma"></div>
       <div class="castle-info">
         <div class="castle-name">ダイヤモンド美濃</div>
@@ -176,6 +208,7 @@ a{text-decoration:none;color:inherit}
       </div>
     </div>
     <div class="castle-card" onclick="openCastle('nagoya')">
+      <button class="studied-btn" id="sc-nagoya" onclick="event.stopPropagation();toggleStudied('c','nagoya')">✓ 習得</button>
       <div class="castle-board" id="board-nagoya"></div>
       <div class="castle-info">
         <div class="castle-name">中住まい</div>
@@ -189,9 +222,17 @@ a{text-decoration:none;color:inherit}
 
 <!-- JOSEKI TAB -->
 <div id="pane-joseki" style="display:none">
+<div class="diff-filter">
+  <button class="diff-btn active" data-d="0" onclick="filterDiff(0,this)">全て</button>
+  <button class="diff-btn" data-d="1" onclick="filterDiff(1,this)">初級</button>
+  <button class="diff-btn" data-d="2" onclick="filterDiff(2,this)">中級</button>
+  <button class="diff-btn" data-d="3" onclick="filterDiff(3,this)">上級</button>
+  <button class="diff-btn" data-d="4" onclick="filterDiff(4,this)">超上級</button>
+</div>
 <div class="section">
   <div class="joseki-list">
-    <div class="joseki-card" onclick="openJoseki('棒銀')">
+    <div class="joseki-card" data-diff="1" data-key="棒銀" onclick="openJoseki('棒銀')">
+      <button class="studied-btn" id="sj-棒銀" onclick="event.stopPropagation();toggleStudied('j','棒銀')">✓ 学習済み</button>
       <div class="joseki-header">
         <div class="joseki-icon">⚔️</div>
         <div class="joseki-body">
@@ -204,7 +245,8 @@ a{text-decoration:none;color:inherit}
         <span class="step-num">1.</span> ▲7六歩 △8四歩　<span class="step-num">2.</span> ▲7八金　<span class="step-num">3.</span> 銀を3七〜3六〜3五と進出　<span class="step-num">4.</span> ▲3四銀で飛車先を突破する
       </div>
     </div>
-    <div class="joseki-card" onclick="openJoseki('四間飛車')">
+    <div class="joseki-card" data-diff="2" data-key="四間飛車" onclick="openJoseki('四間飛車')">
+      <button class="studied-btn" id="sj-四間飛車" onclick="event.stopPropagation();toggleStudied('j','四間飛車')">✓ 学習済み</button>
       <div class="joseki-header">
         <div class="joseki-icon">🏯</div>
         <div class="joseki-body">
@@ -217,7 +259,8 @@ a{text-decoration:none;color:inherit}
         <span class="step-num">1.</span> ▲7六歩 △8四歩　<span class="step-num">2.</span> ▲6八飛（四間に振る）　<span class="step-num">3.</span> 美濃囲いに組む　<span class="step-num">4.</span> 反撃の機会を待つ
       </div>
     </div>
-    <div class="joseki-card" onclick="openJoseki('中飛車')">
+    <div class="joseki-card" data-diff="2" data-key="中飛車" onclick="openJoseki('中飛車')">
+      <button class="studied-btn" id="sj-中飛車" onclick="event.stopPropagation();toggleStudied('j','中飛車')">✓ 学習済み</button>
       <div class="joseki-header">
         <div class="joseki-icon">🎯</div>
         <div class="joseki-body">
@@ -230,7 +273,8 @@ a{text-decoration:none;color:inherit}
         <span class="step-num">1.</span> ▲5六歩（中央制圧）　<span class="step-num">2.</span> ▲5八飛（中飛車）　<span class="step-num">3.</span> ▲5五歩で中央を支配　<span class="step-num">4.</span> 積極的に攻める
       </div>
     </div>
-    <div class="joseki-card" onclick="openJoseki('矢倉')">
+    <div class="joseki-card" data-diff="3" data-key="矢倉" onclick="openJoseki('矢倉')">
+      <button class="studied-btn" id="sj-矢倉" onclick="event.stopPropagation();toggleStudied('j','矢倉')">✓ 学習済み</button>
       <div class="joseki-header">
         <div class="joseki-icon">🏛️</div>
         <div class="joseki-body">
@@ -243,7 +287,8 @@ a{text-decoration:none;color:inherit}
         <span class="step-num">1.</span> ▲7六歩 △3四歩　<span class="step-num">2.</span> ▲6六歩（角道を閉じる）　<span class="step-num">3.</span> 金銀を矢倉に整備　<span class="step-num">4.</span> ▲3七銀〜▲4六銀と攻める
       </div>
     </div>
-    <div class="joseki-card" onclick="openJoseki('横歩取り')">
+    <div class="joseki-card" data-diff="4" data-key="横歩取り" onclick="openJoseki('横歩取り')">
+      <button class="studied-btn" id="sj-横歩取り" onclick="event.stopPropagation();toggleStudied('j','横歩取り')">✓ 学習済み</button>
       <div class="joseki-header">
         <div class="joseki-icon">⚡</div>
         <div class="joseki-body">
@@ -256,7 +301,8 @@ a{text-decoration:none;color:inherit}
         <span class="step-num">1.</span> ▲2六歩 △8四歩　<span class="step-num">2.</span> 飛車が横歩を取る（▲7四飛）　<span class="step-num">3.</span> 激しい戦いへ　<span class="step-num">4.</span> 研究が最重要
       </div>
     </div>
-    <div class="joseki-card" onclick="openJoseki('雁木')">
+    <div class="joseki-card" data-diff="3" data-key="雁木" onclick="openJoseki('雁木')">
+      <button class="studied-btn" id="sj-雁木" onclick="event.stopPropagation();toggleStudied('j','雁木')">✓ 学習済み</button>
       <div class="joseki-header">
         <div class="joseki-icon">🔱</div>
         <div class="joseki-body">
@@ -469,7 +515,38 @@ function openJoseki(key){
 
 function closeDetail(){document.getElementById('detailModal').classList.remove('show');}
 
+function filterDiff(d,btn){
+  document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.joseki-card').forEach(card=>{
+    const cd=parseInt(card.dataset.diff||'0');
+    card.classList.toggle('hidden',d!==0&&cd!==d);
+  });
+}
+
+function toggleStudied(type,key){
+  const stored=JSON.parse(localStorage.getItem('rb_joseki_studied')||'{}');
+  const k=type+'_'+key;
+  stored[k]=!stored[k];
+  localStorage.setItem('rb_joseki_studied',JSON.stringify(stored));
+  applyStudied();
+}
+
+function applyStudied(){
+  const stored=JSON.parse(localStorage.getItem('rb_joseki_studied')||'{}');
+  Object.keys(stored).forEach(k=>{
+    const [type,key]=k.split(/_(.+)/);
+    const id=(type==='c'?'sc-':'sj-')+key;
+    const btn=document.getElementById(id);
+    if(btn){
+      btn.classList.toggle('done',stored[k]);
+      btn.textContent=stored[k]?'★ 習得済み':'✓ '+(type==='c'?'習得':'学習済み');
+    }
+  });
+}
+
 Object.keys(CASTLES).forEach(key=>renderCastleBoard(key,key));
+applyStudied();
 
 const hash=location.hash.replace('#','');
 if(hash==='castles')showTab('castles',document.getElementById('tab-castles'));
