@@ -140,6 +140,27 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
 /* アクティブ盤ハイライト点滅 */
 @keyframes pulse-border{0%,100%{box-shadow:0 0 16px rgba(200,165,74,.2)}50%{box-shadow:0 0 28px rgba(200,165,74,.45)}}
 .bc.active.my-turn{animation:pulse-border 1.5s infinite}
+
+/* 棋譜ログ */
+.mlog{padding:2px 6px 3px;border-top:1px solid var(--border);display:flex;gap:3px;flex-wrap:wrap;flex-shrink:0;min-height:18px}
+.mlog-entry{font-size:.56rem;color:var(--muted);padding:0 3px;border-radius:2px;white-space:nowrap}
+.mlog-entry.user{color:var(--gold-lt)}
+.mlog-entry.ai{color:var(--blue)}
+.mlog-entry.check{color:var(--red);font-weight:700}
+
+/* 音響ボタン */
+#snd-btn{font-size:.85rem;padding:4px 8px;min-width:30px;text-align:center}
+
+/* 盤反転（後手視点） */
+.mb.flipped{transform:rotate(180deg)}
+.mb.flipped .mp.b{transform:rotate(180deg)}
+.mb.flipped .mp.w{transform:rotate(0deg)}
+
+/* 駒得表示 */
+.adv-chip{font-size:.6rem;padding:1px 5px;border-radius:8px;font-weight:700;flex-shrink:0}
+.adv-chip.pos{background:rgba(85,200,138,.15);color:var(--green);border:1px solid rgba(85,200,138,.3)}
+.adv-chip.neg{background:rgba(224,85,85,.12);color:var(--red);border:1px solid rgba(224,85,85,.25)}
+.adv-chip.neu{background:var(--card);color:var(--muted);border:1px solid var(--border)}
 </style>
 </head>
 <body>
@@ -147,6 +168,7 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
 <header>
   <div class="logo"><a href="index.html">♟ RB将棋道場</a><span>多面指しトレーニング</span></div>
   <div class="ml">
+    <button class="hbtn" id="snd-btn" onclick="toggleSound()" title="音のON/OFF">🔔</button>
     <a href="play.html" class="hbtn">1局モード</a>
     <button class="hbtn" id="back-btn" style="display:none" onclick="showSetup()">← 設定</button>
   </div>
@@ -222,6 +244,64 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
 <div id="toast"></div>
 
 <script>
+// ══════════════════════════════════════════════════════
+//  音響システム（Web Audio API）
+// ══════════════════════════════════════════════════════
+let SND_ON = true;
+let _actx = null;
+function actx(){if(!_actx)_actx=new(window.AudioContext||window.webkitAudioContext)();return _actx;}
+function beep(freq=440,dur=0.06,vol=0.18,type='square',delay=0){
+  if(!SND_ON)return;
+  try{
+    const ctx=actx(),o=ctx.createOscillator(),g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    o.type=type;o.frequency.value=freq;
+    const t=ctx.currentTime+delay;
+    g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+    o.start(t);o.stop(t+dur+0.01);
+  }catch(e){}
+}
+function sndMove(){beep(880,0.04,0.12,'square');}
+function sndCapture(){beep(660,0.07,0.2,'sawtooth');beep(440,0.05,0.15,'sawtooth',0.06);}
+function sndCheck(){beep(1200,0.08,0.25,'square');beep(1000,0.08,0.2,'square',0.1);}
+function sndWin(){[0,.1,.2,.35].forEach((d,i)=>beep([523,659,784,1047][i],0.12,0.2,'sine',d));}
+function sndLose(){[0,.15,.3].forEach((d,i)=>beep([440,370,330][i],0.15,0.15,'sine',d));}
+function toggleSound(){
+  SND_ON=!SND_ON;
+  document.getElementById('snd-btn').textContent=SND_ON?'🔔':'🔕';
+  localStorage.setItem('rb_snd',SND_ON?'1':'0');
+}
+
+// ══════════════════════════════════════════════════════
+//  設定の永続化（localStorage）
+// ══════════════════════════════════════════════════════
+const LS_KEY='rb_multi_cfg';
+function saveSettings(){
+  localStorage.setItem(LS_KEY,JSON.stringify({
+    boards:CFG.boards,levelId:CFG.level.id,side:CFG.userSide
+  }));
+}
+function loadSettings(){
+  try{
+    const s=JSON.parse(localStorage.getItem(LS_KEY)||'{}');
+    if(s.boards){document.getElementById('bc-slider').value=s.boards;updateBoardCount(s.boards);}
+    if(s.levelId){SEL_LEVEL=LEVELS.find(l=>l.id===s.levelId)||SEL_LEVEL;}
+    if(s.side){const btn=document.querySelector(`.sbtn[data-v="${s.side}"]`);if(btn)setSide(btn);}
+    SND_ON=localStorage.getItem('rb_snd')!=='0';
+    document.getElementById('snd-btn').textContent=SND_ON?'🔔':'🔕';
+  }catch(e){}
+}
+
+// ══════════════════════════════════════════════════════
+//  棋譜テキスト生成
+// ══════════════════════════════════════════════════════
+const RJ=['一','二','三','四','五','六','七','八','九'];
+function mvText(mv,pj){
+  const p=pj[mv.drop||mv.pieceType]||'?';
+  if(mv.drop){return `${9-mv.to[1]}${RJ[mv.to[0]]}${p}打`;}
+  return `${9-mv.to[1]}${RJ[mv.to[0]]}${p}${mv.promote?'成':''}`;
+}
+
 // ══════════════════════════════════════════════════════
 //  AI レベル定義（10級〜六段）
 // ══════════════════════════════════════════════════════
@@ -442,12 +522,13 @@ function startSession(){
   CFG.level=SEL_LEVEL;
   CFG.userSide=document.querySelector('.sbtn.sel')?.dataset.v||'b';
   SCORE={w:0,l:0,d:0};SESSION_START=Date.now();
+  saveSettings();
 
   GAMES=Array.from({length:CFG.boards},(_,i)=>({
     id:i,grid:startPos(),handB:{},handW:{},
     turn:'b',over:false,result:null,
     sel:null,selDrop:null,legalSq:[],lastTo:null,aiThinking:false,
-    moveNo:1,inCheck:false,
+    moveNo:1,inCheck:false,log:[],
   }));
   FOCUS=0;
 
@@ -485,6 +566,7 @@ function buildBoardsUI(){
         <span class="blabel">盤${g.id+1}</span>
         <span class="bmv">${g.moveNo}手</span>
         <span class="blv">${CFG.level.name}</span>
+        <span class="adv-chip neu" id="adv-${g.id}">±0</span>
         <span class="bst" id="bst-${g.id}">待機中</span>
         <button class="resign-btn" onclick="resignGame(${g.id})">投了</button>
       </div>
@@ -493,7 +575,8 @@ function buildBoardsUI(){
         <div class="hr" id="wh-${g.id}"></div>
         <div class="mb" id="mb-${g.id}"></div>
         <div class="hr" id="bh-${g.id}"></div>
-      </div>`;
+      </div>
+      <div class="mlog" id="mlog-${g.id}"></div>`;
     grid.appendChild(card);
     renderGame(g.id);
   });
@@ -507,10 +590,30 @@ function refreshCard(idx){
   if(!g.over&&g.inCheck&&g.turn===CFG.userSide)card.classList.add('check-alert');
   // 手数更新
   const bmv=card.querySelector('.bmv');if(bmv)bmv.textContent=g.moveNo+'手';
-  // 形勢バー
+  // 形勢バー + 駒得表示
   if(!g.over){
     const pct=evalPct(g.grid,g.handB,g.handW);
     const fill=document.getElementById('ef-'+idx);if(fill)fill.style.width=pct+'%';
+    // 駒得（先手基準でユーザー視点に変換）
+    const rawAdv=Math.round((pct-50)*8);
+    const userAdv=CFG.userSide==='b'?rawAdv:-rawAdv;
+    const ac=document.getElementById('adv-'+idx);
+    if(ac){
+      ac.textContent=(userAdv>0?'+':'')+userAdv;
+      ac.className='adv-chip '+(userAdv>10?'pos':userAdv<-10?'neg':'neu');
+    }
+  }
+  // 棋譜ログ
+  const ml=document.getElementById('mlog-'+idx);
+  if(ml){
+    ml.innerHTML='';
+    const last=g.log.slice(-6);
+    last.forEach(e=>{
+      const d=document.createElement('span');
+      d.className='mlog-entry'+(e.isUser?' user':' ai')+(e.isCheck?' check':'');
+      d.textContent=`${e.no}.${e.txt}${e.isCheck?'+':`${e.isCapture?'×':''}`}`;
+      ml.appendChild(d);
+    });
   }
   // ステータス
   const st=document.getElementById('bst-'+idx);if(!st)return;
@@ -532,9 +635,14 @@ function renderBoard(idx){
   const active=idx===FOCUS&&!g.over&&g.turn===CFG.userSide;
   const n=CFG.boards;
   const fs=n<=3?'clamp(.62rem,1.2vw,.88rem)':n<=6?'clamp(.52rem,.95vw,.75rem)':'clamp(.44rem,.7vw,.63rem)';
+  const flip=CFG.userSide==='w';
+  if(flip)el.classList.add('flipped'); else el.classList.remove('flipped');
   // 王手時: 王のマスをハイライト
   const ckPos=g.inCheck&&g.turn===CFG.userSide?kpos(g.grid,CFG.userSide):null;
-  for(let r=0;r<9;r++)for(let c=0;c<9;c++){
+  // 描画順: 後手視点なら逆順
+  const rs=flip?[...Array(9)].map((_,i)=>8-i):[...Array(9)].map((_,i)=>i);
+  const cs=flip?[...Array(9)].map((_,i)=>8-i):[...Array(9)].map((_,i)=>i);
+  for(const r of rs)for(const c of cs){
     const cell=document.createElement('div');
     cell.className='mc';
     if(g.lastTo&&g.lastTo[0]===r&&g.lastTo[1]===c)cell.classList.add('lt');
@@ -647,6 +755,8 @@ function resolvePromotion(prom){
 
 function execMove(idx,mv){
   const g=GAMES[idx];
+  const wasCapture=!mv.drop&&!!g.grid[mv.to[0]][mv.to[1]];
+  if(!mv.drop)mv.pieceType=mv.pieceType||g.grid[mv.from[0]][mv.from[1]].type;
   const{grid:ng,handB:nb,handW:nw}=applyMv(g.grid,g.handB,g.handW,mv);
   g.grid=ng;g.handB=nb;g.handW=nw;
   g.lastTo=mv.to;g.turn=g.turn==='b'?'w':'b';g.moveNo++;
@@ -654,7 +764,19 @@ function execMove(idx,mv){
   // 王手チェック
   g.inCheck=inCheck(g.grid,g.turn);
   const nx=allLegal(g.grid,g.handB,g.handW,g.turn);
-  if(!nx.length){endGame(idx,mv.side===CFG.userSide?'w':'l');return;}
+  // 棋譜ログ
+  g.log.push({
+    no:g.moveNo-1,txt:mvText(mv,PJ),
+    isUser:mv.side===CFG.userSide,isCheck:g.inCheck,isCapture:wasCapture
+  });
+  // 音響
+  if(g.inCheck)sndCheck();
+  else if(wasCapture)sndCapture();
+  else sndMove();
+  if(!nx.length){
+    if(g.inCheck)sndLose(); else sndWin();
+    endGame(idx,mv.side===CFG.userSide?'w':'l');return;
+  }
   if(g.inCheck&&g.turn===CFG.userSide)showToast(`盤${idx+1}：王手！`,'#e05555');
   renderGame(idx);
   if(g.turn!==CFG.userSide){setTimeout(()=>doAi(idx),80);}
@@ -667,13 +789,21 @@ function doAi(idx){
   g.aiThinking=true;refreshCard(idx);
   setTimeout(()=>{
     const mv=getAiMove(g.grid,g.handB,g.handW,CFG.level,aiSide);
-    if(!mv){endGame(idx,'w');return;}
+    if(!mv){sndWin();endGame(idx,'w');return;}
+    const wasCapture=!mv.drop&&!!g.grid[mv.to[0]][mv.to[1]];
+    if(!mv.drop)mv.pieceType=g.grid[mv.from[0]][mv.from[1]].type;
     const{grid:ng,handB:nb,handW:nw}=applyMv(g.grid,g.handB,g.handW,mv);
     g.grid=ng;g.handB=nb;g.handW=nw;g.lastTo=mv.to;
     g.turn=CFG.userSide;g.aiThinking=false;g.moveNo++;
     g.inCheck=inCheck(g.grid,g.turn);
     const nx=allLegal(g.grid,g.handB,g.handW,g.turn);
-    if(!nx.length){endGame(idx,'l');return;}
+    // 棋譜ログ
+    g.log.push({no:g.moveNo-1,txt:mvText(mv,PJ),isUser:false,isCheck:g.inCheck,isCapture:wasCapture});
+    // 音響
+    if(g.inCheck)sndCheck();
+    else if(wasCapture)sndCapture();
+    else sndMove();
+    if(!nx.length){sndLose();endGame(idx,'l');return;}
     if(g.inCheck)showToast(`盤${idx+1}：王手！`,'#e05555');
     renderGame(idx);checkFocus();
   },10);
@@ -771,6 +901,8 @@ document.addEventListener('keydown',e=>{
 // ── 初期化 ──
 buildLevelGrid();
 updateLayoutPreview(3);
+loadSettings();
+buildLevelGrid(); // 保存済みレベルを反映して再描画
 showSetup();
 </script>
 </body>
