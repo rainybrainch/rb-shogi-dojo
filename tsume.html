@@ -211,7 +211,14 @@ a{text-decoration:none;color:inherit}
       </div>
     </div>
 
-    <div class="solve-status info" id="status">▲先手番 — 詰みを見つけよう！</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <div class="solve-status info" id="status" style="flex:1;margin:0">▲先手番 — 詰みを見つけよう！</div>
+      <div id="timerDisplay" style="font-family:'Dela Gothic One',sans-serif;font-size:.75rem;color:var(--muted);margin-left:10px;min-width:44px;text-align:right">0:00</div>
+    </div>
+
+    <div id="nextBtnWrap" style="display:none;margin-bottom:8px">
+      <button class="ctrl primary" style="width:100%;font-size:.85rem" onclick="goNextPuzzle()">次の問題へ →</button>
+    </div>
 
     <div class="solve-controls">
       <button class="ctrl" onclick="resetPuzzle()">やり直し</button>
@@ -594,6 +601,27 @@ let lastMove=null;
 let history=[]; // for undo
 let filterVal='all';
 let answerShown=false;
+let timerSec=0;
+let timerInterval=null;
+
+function startTimer(){
+  clearInterval(timerInterval);timerSec=0;updateTimerDisplay();
+  timerInterval=setInterval(()=>{timerSec++;updateTimerDisplay();},1000);
+}
+function stopTimer(){clearInterval(timerInterval);timerInterval=null;}
+function updateTimerDisplay(){
+  const m=Math.floor(timerSec/60),s=timerSec%60;
+  const el=document.getElementById('timerDisplay');
+  if(el)el.textContent=m+':'+(s<10?'0':'')+s;
+}
+
+function goNextPuzzle(){
+  const filtered=filterVal==='all'?PUZZLES:PUZZLES.filter(p=>p.moves===filterVal);
+  const idx=filtered.findIndex(p=>p.id===curPuzzle.id);
+  const next=filtered[(idx+1)%filtered.length];
+  document.getElementById('nextBtnWrap').style.display='none';
+  openPuzzle(next);
+}
 
 function saveStats(){
   localStorage.setItem('rb_tsume_solved_ids',JSON.stringify([...solved]));
@@ -638,11 +666,12 @@ function renderList(){
 }
 
 // ── パズルを開く ─────────────────────────────────
-function openPuzzle(id){
-  curPuzzle=PUZZLES.find(p=>p.id===id);
+function openPuzzle(p){
+  curPuzzle=typeof p==='object'?p:PUZZLES.find(x=>x.id===p);
   if(!curPuzzle)return;
   answerShown=false;
   document.getElementById('answerWrap').style.display='none';
+  document.getElementById('nextBtnWrap').style.display='none';
   document.getElementById('ov-title').textContent=curPuzzle.title;
   resetPuzzle();
   document.getElementById('overlay').classList.add('show');
@@ -652,6 +681,8 @@ function resetPuzzle(){
   step=0; selPiece=null; lastMove=null; history=[];
   answerShown=false;
   document.getElementById('answerWrap').style.display='none';
+  document.getElementById('nextBtnWrap').style.display='none';
+  startTimer();
   // Init grid
   curGrid=Array.from({length:9},()=>Array(9).fill(null));
   curPuzzle.pieces.forEach(({r,c,p,side})=>curGrid[r][c]={p,side});
@@ -831,10 +862,12 @@ function playCorrectMove(sol,r,c){
       saveStats();
       updateStatDisplay();
     }
-    setStatus(`🎉 詰み！正解です！ (${curPuzzle.moves}手詰め達成)`, 'complete');
+    stopTimer();
+    setStatus(`🎉 詰み！正解です！ (${curPuzzle.moves}手詰め / ${timerSec}秒)`, 'complete');
     renderBoard();
     const card=document.getElementById(`pc-${curPuzzle.id}`);
     if(card)card.classList.add('done');
+    document.getElementById('nextBtnWrap').style.display='block';
     return;
   }
 
