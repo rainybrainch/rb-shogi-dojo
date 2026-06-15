@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RB将棋道場 — 将棋用語・戦術教室</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Serif+JP:wght@600;900&family=JetBrains+Mono:wght@500&display=swap');
+
+:root {
+  --bg:       #08080f;
+  --panel:    #10101e;
+  --card:     #14142a;
+  --border:   #2a2a4a;
+  --gold:     #c8a54a;
+  --gold-lt:  #e8c76a;
+  --text:     #dde0f0;
+  --muted:    #6678aa;
+  --accent:   #4a7fd4;
+  --red:      #e05555;
+  --green:    #55c88a;
+  --sidebar-w: 260px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans JP', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ─────────────────────────────────── */
+header {
+  position: fixed; top:0; left:0; right:0; z-index:100;
+  height: 56px;
+  background: rgba(8,8,15,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 20px;
+  gap: 16px;
+}
+.logo {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.1rem; font-weight: 900;
+  color: var(--gold);
+  white-space: nowrap;
+}
+.logo span { color: var(--text); font-weight: 400; font-size:.85rem; margin-left:8px; }
+.progress-bar {
+  flex:1; height:4px; background: var(--border); border-radius:2px; max-width:300px;
+}
+.progress-fill { height:100%; background: var(--gold); border-radius:2px; transition:.4s; }
+.progress-text { font-size:.78rem; color:var(--muted); white-space:nowrap; }
+.btn-menu {
+  display:none; background:none; border:none; color:var(--text);
+  font-size:1.4rem; cursor:pointer; padding:4px 8px;
+}
+
+/* ── Layout ──────────────────────────────────── */
+.layout {
+  display: flex;
+  padding-top: 56px;
+  min-height: 100vh;
+}
+
+/* ── Sidebar ─────────────────────────────────── */
+aside {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  position: fixed; top:56px; left:0; bottom:0;
+  overflow-y: auto;
+  padding: 16px 0 40px;
+  transition: transform .3s;
+}
+aside::-webkit-scrollbar { width:4px; }
+aside::-webkit-scrollbar-track { background:transparent; }
+aside::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+.search-box {
+  margin: 0 12px 16px;
+  position: relative;
+}
+.search-box input {
+  width:100%; padding:8px 12px 8px 32px;
+  background: var(--card); border:1px solid var(--border);
+  border-radius:8px; color:var(--text); font-size:.85rem;
+  outline:none; font-family:inherit;
+}
+.search-box input::placeholder { color:var(--muted); }
+.search-box::before {
+  content:'🔍'; position:absolute; left:10px; top:50%;
+  transform:translateY(-50%); font-size:.8rem;
+}
+
+.chapter-group { margin-bottom:4px; }
+.chapter-title {
+  padding: 8px 16px 4px;
+  font-size:.7rem; font-weight:700;
+  color:var(--muted); letter-spacing:.1em; text-transform:uppercase;
+}
+.lesson-link {
+  display:block; padding:9px 16px 9px 24px;
+  font-size:.82rem; color:var(--muted); text-decoration:none;
+  border-left:3px solid transparent;
+  transition:.15s; cursor:pointer; line-height:1.4;
+}
+.lesson-link:hover { color:var(--text); background:rgba(255,255,255,.04); }
+.lesson-link.active {
+  color:var(--gold); border-left-color:var(--gold);
+  background:rgba(200,165,74,.08);
+}
+.lesson-link.done::after { content:' ✓'; color:var(--green); }
+
+/* ── Main ─────────────────────────────────────── */
+main {
+  margin-left: var(--sidebar-w);
+  flex:1; padding:40px 48px 80px;
+  max-width: calc(860px + var(--sidebar-w));
+}
+
+/* ── Breadcrumb ──────────────────────────────── */
+.breadcrumb {
+  font-size:.78rem; color:var(--muted); margin-bottom:24px;
+  display:flex; align-items:center; gap:6px;
+}
+.breadcrumb span { color:var(--gold); }
+
+/* ── Lesson meta ─────────────────────────────── */
+.lesson-meta {
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:12px;
+}
+.lesson-num {
+  font-size:.75rem; background:var(--gold); color:#000;
+  font-weight:700; padding:2px 8px; border-radius:4px;
+}
+.lesson-time { font-size:.78rem; color:var(--muted); }
+
+/* ── Headings ─────────────────────────────────── */
+h1.lesson-title {
+  font-family:'Noto Serif JP',serif;
+  font-size:1.9rem; font-weight:900; line-height:1.35;
+  color:#fff; margin-bottom:32px;
+  border-bottom:2px solid var(--border); padding-bottom:20px;
+}
+h2 {
+  font-size:1.15rem; font-weight:700; color:var(--gold-lt);
+  margin:36px 0 14px; padding-left:12px;
+  border-left:3px solid var(--gold);
+}
+h3 { font-size:1rem; font-weight:700; color:var(--text); margin:24px 0 10px; }
+p { line-height:1.85; margin-bottom:14px; font-size:.93rem; color:#ccd0e8; }
+
+/* ── Key term highlight ───────────────────────── */
+.term { color:var(--gold-lt); font-weight:700; }
+
+/* ── Info box ─────────────────────────────────── */
+.info-box {
+  background: linear-gradient(135deg,rgba(74,127,212,.12),rgba(74,127,212,.05));
+  border:1px solid rgba(74,127,212,.3);
+  border-radius:10px; padding:18px 20px; margin:20px 0;
+  font-size:.88rem; line-height:1.8;
+}
+.info-box.gold {
+  background:linear-gradient(135deg,rgba(200,165,74,.12),rgba(200,165,74,.04));
+  border-color:rgba(200,165,74,.3);
+}
+.info-box.red {
+  background:linear-gradient(135deg,rgba(224,85,85,.1),rgba(224,85,85,.04));
+  border-color:rgba(224,85,85,.3);
+}
+.info-box .box-title {
+  font-weight:700; margin-bottom:8px; display:flex; gap:8px; align-items:center;
+}
+
+/* ── Term cards grid ──────────────────────────── */
+.term-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:14px; margin:24px 0;
+}
+.term-card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:12px; padding:18px; transition:.2s;
+  position:relative; overflow:hidden;
+}
+.term-card:hover { border-color:var(--gold); transform:translateY(-2px); }
+.term-card::before {
+  content:''; position:absolute; top:0; left:0; right:0;
+  height:3px; background:linear-gradient(90deg,var(--gold),transparent);
+}
+.term-card .tc-emoji { font-size:1.6rem; margin-bottom:8px; display:block; }
+.term-card .tc-name { font-weight:700; font-size:.95rem; color:var(--gold-lt); margin-bottom:6px; }
+.term-card .tc-desc { font-size:.8rem; color:var(--muted); line-height:1.7; }
+
+/* ── Formation card (castle) ─────────────────── */
+.formation-card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:16px; padding:24px; margin:20px 0;
+  display:grid; grid-template-columns:auto 1fr; gap:24px; align-items:start;
+}
+.formation-card .fc-image {
+  width:180px; height:180px; border-radius:12px;
+  background:var(--panel); border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  font-size:3rem; flex-shrink:0; overflow:hidden;
+}
+.formation-card .fc-image img {
+  width:100%; height:100%; object-fit:cover; border-radius:12px;
+}
+.formation-card .fc-content {}
+.formation-card .fc-name {
+  font-family:'Noto Serif JP',serif;
+  font-size:1.3rem; font-weight:900; color:#fff; margin-bottom:6px;
+}
+.formation-card .fc-tag {
+  font-size:.72rem; background:rgba(200,165,74,.2);
+  color:var(--gold); padding:2px 8px; border-radius:4px;
+  display:inline-block; margin-bottom:12px;
+}
+.formation-card .fc-desc { font-size:.88rem; line-height:1.8; color:#ccd0e8; }
+.formation-card .fc-ascii {
+  font-family:'JetBrains Mono',monospace;
+  font-size:.78rem; color:var(--accent);
+  background:rgba(74,127,212,.08); border:1px solid rgba(74,127,212,.2);
+  border-radius:8px; padding:12px 16px;
+  margin-top:12px; white-space:pre; display:inline-block; line-height:1.6;
+}
+
+/* ── Checklist ────────────────────────────────── */
+.checklist { margin:20px 0; }
+.checklist-item {
+  display:flex; align-items:flex-start; gap:10px;
+  padding:10px 0; border-bottom:1px solid var(--border);
+  font-size:.88rem; cursor:pointer;
+}
+.checklist-item:last-child { border-bottom:none; }
+.checklist-item input[type=checkbox] {
+  width:18px; height:18px; accent-color:var(--gold);
+  flex-shrink:0; margin-top:1px; cursor:pointer;
+}
+.checklist-item label { cursor:pointer; line-height:1.6; }
+.checklist-item.checked label { color:var(--green); text-decoration:line-through; }
+
+/* ── Summary box ─────────────────────────────── */
+.summary-box {
+  background: linear-gradient(135deg,rgba(200,165,74,.1),var(--card));
+  border:1px solid var(--gold);
+  border-radius:12px; padding:22px 24px; margin:32px 0;
+}
+.summary-box h3 { color:var(--gold); margin:0 0 12px; }
+.summary-box ul { padding-left:20px; }
+.summary-box li { margin-bottom:8px; font-size:.88rem; line-height:1.7; }
+
+/* ── Proverb box ─────────────────────────────── */
+.proverb {
+  border-left:4px solid var(--gold);
+  padding:12px 20px; margin:20px 0;
+  background:rgba(200,165,74,.06);
+  font-style:italic; font-size:.95rem;
+  color:var(--gold-lt);
+}
+
+/* ── Navigation (prev/next) ──────────────────── */
+.lesson-nav {
+  display:flex; justify-content:space-between; gap:16px;
+  margin-top:48px; padding-top:24px; border-top:1px solid var(--border);
+}
+.nav-btn {
+  display:flex; flex-direction:column; gap:4px;
+  padding:14px 20px; background:var(--card);
+  border:1px solid var(--border); border-radius:12px;
+  text-decoration:none; color:var(--text); transition:.2s;
+  min-width:180px; max-width:280px; cursor:pointer;
+}
+.nav-btn:hover { border-color:var(--gold); background:rgba(200,165,74,.06); }
+.nav-btn.next { align-items:flex-end; margin-left:auto; }
+.nav-btn .nb-label { font-size:.72rem; color:var(--muted); }
+.nav-btn .nb-title { font-size:.88rem; font-weight:700; }
+
+/* ── Search results ──────────────────────────── */
+#search-results {
+  position:absolute; top:100%; left:0; right:0; z-index:200;
+  background:var(--panel); border:1px solid var(--border);
+  border-radius:0 0 10px 10px; max-height:280px; overflow-y:auto;
+  display:none;
+}
+.sr-item {
+  padding:10px 14px; cursor:pointer; border-bottom:1px solid var(--border);
+  font-size:.82rem; transition:.1s;
+}
+.sr-item:hover { background:rgba(255,255,255,.05); }
+.sr-item .sr-term { color:var(--gold-lt); font-weight:700; }
+.sr-item .sr-desc { color:var(--muted); font-size:.78rem; margin-top:2px; }
+
+/* ── Mobile ──────────────────────────────────── */
+@media(max-width:768px){
+  aside { transform:translateX(-100%); z-index:99; }
+  aside.open { transform:none; }
+  main { margin-left:0; padding:24px 20px 60px; }
+  .layout { padding-top:56px; }
+  .btn-menu { display:block; }
+  .formation-card { grid-template-columns:1fr; }
+  .formation-card .fc-image { width:100%; height:200px; }
+  .term-grid { grid-template-columns:1fr 1fr; }
+  h1.lesson-title { font-size:1.5rem; }
+  main { max-width:100%; }
+  .progress-bar { display:none; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <button class="btn-menu" id="menuBtn">☰</button>
+  <div class="logo">♟ RB将棋道場<span>用語・戦術教室</span></div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="progress-text" id="progressText">0 / 0 完了</div>
+</header>
+
+<div class="layout">
+
+<aside id="sidebar">
+  <div class="search-box" style="position:relative">
+    <input type="text" id="searchInput" placeholder="用語を検索..." autocomplete="off">
+    <div id="search-results"></div>
+  </div>
+  <div id="sidebarNav"></div>
+</aside>
+
+<main id="main">
+  <div id="lessonContent"></div>
+</main>
+
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+//  コンテンツデータ
+// ════════════════════════════════════════════════
+
+const CHAPTERS = [
+  {
+    id:"ch1", title:"基本ルール",
+    lessons:[
+      {
+        id:"ch1-l1", title:"将棋とは — 目的と基本概念",
+        num:"1-1", time:"5分",
+        content: () => `
+<div class="info-box gold">
+  <div class="box-title">🎯 このレッスンで学ぶこと</div>
+  将棋の目的・基本状態（王手・詰み）・対局の終わり方を理解する。
+</div>
+
+<h2>将棋の目的</h2>
+<p>将棋は2人で行うボードゲームです。<span class="term">9×9マスの盤</span>の上で駒を動かし、相手の<span class="term">玉将（ぎょくしょう）</span>を追い詰めることが目的です。</p>
+<p>自分の玉が取られないよう守りながら、相手の玉を追い詰める——この攻守のバランスが将棋の醍醐味です。</p>
+
+<h2>王手・詰み・投了</h2>
+<div class="term-grid">
+  <div class="term-card">
+    <span class="tc-emoji">⚔️</span>
+    <div class="tc-name">王手（おうて）</div>
+    <div class="tc-desc">次の手で相手の玉を取れる状態。相手は必ず王手を解除しなければなりません。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🏁</span>
+    <div class="tc-name">詰み（つみ）</div>
+    <div class="tc-desc">相手の玉がどこへ逃げても取られる状態。ゲーム終了！</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🤝</span>
+    <div class="tc-name">投了（とうりょう）</div>
+    <div class="tc-desc">形勢が不利になったとき、自分から負けを認めてゲームを終わらせること。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">⏱️</span>
+    <div class="tc-name">切れ負け（きれまけ）</div>
+    <div class="tc-desc">持ち時間を使い切ったら即座に負けになるルール。将棋ウォーズの標準形式。</div>
+  </div>
+</div>
+
+<h2>詰みに似た重要な状態</h2>
+<div class="term-grid">
+  <div class="term-card">
+    <span class="tc-emoji">🎯</span>
+    <div class="tc-name">詰めろ（つめろ）</div>
+    <div class="tc-desc">放置すると次の手で詰む攻め。相手は受けるか攻め合いを迫られる。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">⚡</span>
+    <div class="tc-name">必至（ひっし）</div>
+    <div class="tc-desc">どう受けても次に詰む状態。詰みが確定した状況。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🔄</span>
+    <div class="tc-name">千日手（せんにちて）</div>
+    <div class="tc-desc">同一局面が4回繰り返された状態。基本的に引き分けになる。</div>
+  </div>
+</div>
+
+<div class="proverb">「玉は包め」——相手の玉を逃げられないよう包み込むように攻めるのが理想。</div>
+
+<div class="summary-box">
+  <h3>📝 まとめ</h3>
+  <ul>
+    <li>目的は相手の<strong>玉将を詰む</strong>こと</li>
+    <li><strong>王手</strong>→相手は必ず解除しなければならない</li>
+    <li><strong>詰み</strong>→逃げ道がなくなった状態でゲーム終了</li>
+    <li>形勢が悪くなったら<strong>投了</strong>して次の対局へ</li>
+  </ul>
+</div>`,
+        checks:["王手と詰みの違いを説明できる","詰めろと必至の違いがわかる","切れ負けのルールを理解した"]
+      },
+      {
+        id:"ch1-l2", title:"持ち駒システム — 将棋の最大の特徴",
+        num:"1-2", time:"4分",
+        content: () => `
+<div class="info-box gold">
+  <div class="box-title">⭐ このレッスンで学ぶこと</div>
+  将棋が世界の他のチェス系ゲームと決定的に違う「持ち駒」の仕組みを理解する。
+</div>
+
+<h2>持ち駒とは</h2>
+<p>相手の駒を取ると、その駒は<span class="term">持ち駒（もちごま）</span>になります。持ち駒は自分の好きなターンに、盤上の空きマスへ<span class="term">打つ（うつ）</span>ことができます。</p>
+
+<div class="info-box">
+  <div class="box-title">💡 ポイント</div>
+  取った駒は相手の駒ではなく<strong>自分の駒</strong>になります。これが将棋の最大の特徴です。チェスには持ち駒制度がなく、取った駒は使えません。
+</div>
+
+<h2>持ち駒に関する重要用語</h2>
+<div class="term-grid">
+  <div class="term-card">
+    <span class="tc-emoji">✋</span>
+    <div class="tc-name">持ち駒（もちごま）</div>
+    <div class="tc-desc">相手から取って手元にある駒。好きな空きマスに打てる。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">📥</span>
+    <div class="tc-name">打ち駒（うちごま）</div>
+    <div class="tc-desc">持ち駒を盤上に置く行為。移動と打ちが1手の選択肢。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🔁</span>
+    <div class="tc-name">駒得（こまどく）</div>
+    <div class="tc-desc">相手より価値の高い駒を多く保有している有利な状態。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">📉</span>
+    <div class="tc-name">駒損（こまそん）</div>
+    <div class="tc-desc">相手より価値の低い駒しか得られなかった不利な状態。</div>
+  </div>
+</div>
+
+<h2>駒の価値（目安）</h2>
+<div class="info-box">
+  歩1点 ＜ 香・桂2点 ＜ 銀3点 ＜ 金4点 ＜ 角6点 ＜ 飛車7点<br>
+  <small style="color:var(--muted)">この点数は絶対ではなく局面によって変わります。</small>
+</div>
+
+<h2>打ち駒の制限（反則）</h2>
+<div class="info-box red">
+  <div class="box-title">⚠️ 反則注意</div>
+  <strong>二歩（にふ）</strong>：同じ列に自分の歩を2枚打つと反則負け！最もよくある反則。<br>
+  <strong>打ち歩詰め</strong>：歩を打って相手の玉を詰む手は原則反則。<br>
+  <strong>行き所なし</strong>：それ以上動けない場所への駒打ちは禁止。
+</div>
+
+<div class="summary-box">
+  <h3>📝 まとめ</h3>
+  <ul>
+    <li>取った駒は<strong>自分の持ち駒</strong>になり、好きな空きマスに打てる</li>
+    <li>これが将棋独自の面白さで、逆転が起きやすい理由</li>
+    <li>ただし二歩・打ち歩詰めなど<strong>打ち駒に関する反則</strong>がある</li>
+  </ul>
+</div>`,
+        checks:["持ち駒を盤に打てることを理解した","二歩が反則であることを覚えた","駒の大まかな価値の順番がわかる"]
+      },
+    ]
+  },
+  {
+    id:"ch2", title:"駒の種類と動き",
+    lessons:[
+      {
+        id:"ch2-l1", title:"小駒の動き — 歩・香・桂・銀・金",
+        num:"2-1", time:"7分",
+        content: () => `
+<div class="info-box gold">
+  <div class="box-title">🎯 このレッスンで学ぶこと</div>
+  小駒（飛車・角以外の駒）の動き方と成った後の変化を覚える。
+</div>
+<h2>歩兵（ふひょう）</h2>
+<p>前に1マスだけ進む。最も基本的な駒。<span class="term">成ると「と金」</span>になり金将と同じ動きをする。</p>
+<div class="proverb">「歩のない将棋は負け将棋」——歩は攻守の要。</div>
+
+<div class="term-grid">
+  <div class="term-card">
+    <span class="tc-emoji">♟</span>
+    <div class="tc-name">歩兵（ふひょう）</div>
+    <div class="tc-desc">前1マス。成→と金（金と同じ動き）。最も数が多い駒。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🏹</span>
+    <div class="tc-name">香車（きょうしゃ）</div>
+    <div class="tc-desc">前方に何マスでも直進できる。後ろや横には動けない。成→成香（金と同じ）。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🐴</span>
+    <div class="tc-name">桂馬（けいま）</div>
+    <div class="tc-desc">前方に「2つ進んで1つ横」の動き。駒を飛び越えられる唯一の駒。成→成桂（金と同じ）。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🥈</span>
+    <div class="tc-name">銀将（ぎんしょう）</div>
+    <div class="tc-desc">前・斜め4方向の5方向に1マス動ける。成→成銀（金と同じ）。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🥇</span>
+    <div class="tc-name">金将（きんしょう）</div>
+    <div class="tc-desc">前・横・後ろ（後ろ斜めなし）の6方向に1マス動ける。守りの要。成れない。</div>
+  </div>
+</div>
+
+<h2>成駒について</h2>
+<p>駒が相手陣（3段目以内）に入るか、相手陣から出るとき<span class="term">成り（なり）</span>を選択できます。成ると大抵の駒が金将と同じ動きになります。</p>
+<div class="info-box">
+  <div class="box-title">💡 成駒の一覧</div>
+  歩→<strong>と金</strong> ／ 香→<strong>成香</strong> ／ 桂→<strong>成桂</strong> ／ 銀→<strong>全</strong>（全て金と同じ動き）
+</div>`,
+        checks:["5種類の小駒の動きを説明できる","全ての小駒が成ると金と同じ動きになることを覚えた","桂馬が唯一飛び越えられることを理解した"]
+      },
+      {
+        id:"ch2-l2", title:"大駒の動き — 飛車・角行と成駒",
+        num:"2-2", time:"5分",
+        content: () => `
+<div class="info-box gold">
+  <div class="box-title">🎯 このレッスンで学ぶこと</div>
+  最強の駒「飛車」「角行」と成った後の竜王・竜馬を理解する。
+</div>
+<h2>飛車（ひしゃ）と竜王（りゅうおう）</h2>
+<div class="formation-card">
+  <div class="fc-image">🚀</div>
+  <div class="fc-content">
+    <div class="fc-name">飛車（ひしゃ）</div>
+    <div class="fc-tag">最強攻め駒</div>
+    <div class="fc-desc">縦横に何マスでも動ける最強クラスの駒。成ると<strong>竜王（竜）</strong>になり、飛車の動き＋斜め1マスが追加される。将棋で最も強い駒の一つ。</div>
+    <div class="fc-ascii">飛: ↑↓←→（何マスでも）
+竜: ↑↓←→ ＋ ↗↘↙↖（1マス）</div>
+  </div>
+</div>
+
+<h2>角行（かくぎょう）と竜馬（りゅうめ）</h2>
+<div class="formation-card">
+  <div class="fc-image">🦅</div>
+  <div class="fc-content">
+    <div class="fc-name">角行（かくぎょう）</div>
+    <div class="fc-tag">最強遠距離駒</div>
+    <div class="fc-desc">斜め4方向に何マスでも動ける。成ると<strong>竜馬（馬）</strong>になり、角の動き＋縦横1マスが追加される。</div>
+    <div class="fc-ascii">角: ↗↘↙↖（何マスでも）
+馬: ↗↘↙↖ ＋ ↑↓←→（1マス）</div>
+  </div>
+</div>
+
+<div class="info-box">
+  <div class="box-title">💡 大駒の格言</div>
+  「攻めは飛角銀桂」——攻め駒の基本は飛車・角行・銀将・桂馬の組み合わせ。
+</div>
+<div class="proverb">「馬は自陣に帰れ」——竜馬は攻めを終えたら自陣に引き、守りも兼ねるのが理想。</div>`,
+        checks:["飛車と角行の動き範囲を理解した","竜王と竜馬の追加能力を説明できる","大駒2枚の使い分けのイメージができた"]
+      }
+    ]
+  },
+  {
+    id:"ch3", title:"囲い図鑑",
+    lessons:[
+      {
+        id:"ch3-l1", title:"美濃囲い — 振り飛車の定番",
+        num:"3-1", time:"6分",
+        content: () => formationLesson({
+          name:"美濃囲い", emoji:"🛡", tag:"振り飛車の定番",
+          image:"https://rainybrainch.github.io/rb-shogi-dojo/images/castle_mino.png",
+          ascii:"┌─┬─┬─┐\n│  │  │玉│\n├─┼─┼─┤\n│  │銀│金│\n├─┼─┼─┤\n│  │  │金│\n└─┴─┴─┘",
+          intro:`振り飛車の代表的な囲いで、<span class="term">玉・金・銀の三角形</span>が特徴です。コンパクトで素早く完成するため、振り飛車党の必修囲いとも言えます。`,
+          strengths:["横からの攻めに非常に強い","素早く（10手前後で）完成できる","コンパクトで陣形が崩れにくい"],
+          weaknesses:["上部（縦）からの攻めが弱点","端攻めに注意が必要","elmo囲い・天守閣などへの発展が必要な場面も"],
+          howto:`7八玉→6八玉→7八銀→6七金（または5八金→6九金）の順序で完成します。玉が9筋側（☗なら8八〜9九）に囲われるのが基本形。`,
+          tips:["美濃完成後は高美濃→銀冠と上部を補強すると更に堅くなる","振り飛車（四間・三間・中飛車）と組み合わせるのが基本","相手が端攻めを仕掛けてきたら端歩を伸ばして対応"]
+        }),
+        checks:["美濃囲いの駒の配置（玉・金・銀の位置）を説明できる","美濃の弱点（上部）がわかる","振り飛車と組み合わせる意味を理解した"]
+      },
+      {
+        id:"ch3-l2", title:"穴熊 — 最強の守り",
+        num:"3-2", time:"6分",
+        content: () => formationLesson({
+          name:"穴熊", emoji:"🐻", tag:"最固の囲い",
+          image:"https://rainybrainch.github.io/rb-shogi-dojo/images/castle_anaguma.png",
+          ascii:"┌─┬─┬─┐\n│  │金│玉│\n├─┼─┼─┤\n│  │銀│金│\n├─┼─┼─┤\n│  │  │  │\n└─┴─┴─┘",
+          intro:`将棋で最も<span class="term">固い囲い</span>とされる穴熊。玉を端（9筋/1筋）の奥に隠し、金銀3枚以上で守る鉄壁の陣形です。`,
+          strengths:["固さは将棋界最強クラス","玉が隅に隠れているため寄せにくい","長期戦になるほど穴熊が有利になりやすい"],
+          weaknesses:["完成まで20手前後かかる（攻めが遅れる）","端攻め・と金攻めで崩される","入玉（相手が自陣に入る）に弱い場面も"],
+          howto:`9八玉→8八玉→9九玉の順で玉を端に移動させてから金銀で囲います。完成に手数がかかるため、相手の急戦に注意。`,
+          tips:["持久戦を好むなら穴熊が最善の選択","相手も穴熊の場合は「相穴熊」で長期消耗戦になりやすい","速攻を仕掛けてくる相手には不向き"]
+        }),
+        checks:["穴熊の特徴（固さと遅さのトレードオフ）を説明できる","完成に手数がかかることを理解した","穴熊が苦手な攻め方（端攻め等）を覚えた"]
+      },
+      {
+        id:"ch3-l3", title:"矢倉 — 居飛車の伝統的な囲い",
+        num:"3-3", time:"5分",
+        content: () => formationLesson({
+          name:"矢倉", emoji:"🏯", tag:"居飛車の基本",
+          image:"https://rainybrainch.github.io/rb-shogi-dojo/images/castle_yagura.png",
+          ascii:"┌─┬─┬─┐\n│  │  │玉│\n├─┼─┼─┤\n│  │銀│金│\n├─┼─┼─┤\n│  │金│  │\n└─┴─┴─┘",
+          intro:`金将2枚と銀将1枚で<span class="term">縦に積んだ</span>伝統的な囲い。居飛車の基本形として100年以上プロ棋戦で愛用されてきた名囲いです。`,
+          strengths:["横からの攻めに非常に強い","上部の守りも比較的厚い","形を覚えやすく初心者向き"],
+          weaknesses:["完成まで10〜15手かかる","斜め方向（角筋）からの攻めが弱点","現代将棋ではelmo囲いに押されている"],
+          howto:`6八銀→7八銀→7九角→7七銀→6七金→7八金の順（一例）。金銀3枚が縦に並ぶ形が完成形。`,
+          tips:["矢倉戦では互いに矢倉を組んでから中盤戦に入る","雁木（6七銀）が現代的な対抗策として流行中","AIが普及してから矢倉の評価が下がり、elmoが主流に"]
+        }),
+        checks:["矢倉の駒の縦並びを理解した","矢倉の弱点（斜め攻め）がわかる","現代将棋での矢倉の位置づけを知った"]
+      },
+      {
+        id:"ch3-l4", title:"銀冠・高美濃 — 美濃の発展形",
+        num:"3-4", time:"5分",
+        content: () => `
+<div class="info-box gold">
+  <div class="box-title">🎯 このレッスンで学ぶこと</div>
+  美濃囲いを発展させた高美濃と銀冠を理解する。
+</div>
+
+<h2>美濃→高美濃→銀冠 の進化系統</h2>
+<p>美濃囲いは完成後も盤面が安定していれば、さらに<span class="term">銀を上げて強化</span>できます。</p>
+
+<div class="formation-card">
+  <div class="fc-image">🛡</div>
+  <div class="fc-content">
+    <div class="fc-name">高美濃（たかみの）</div>
+    <div class="fc-tag">美濃の第1発展形</div>
+    <div class="fc-desc">美濃の銀を6七に上げた形。上部に強くなり、相手の天守閣美濃への対策になる。</div>
+    <div class="fc-ascii">┌─┬─┬─┐
+│  │銀│玉│
+├─┼─┼─┤
+│  │  │金│
+├─┼─┼─┤
+│  │  │金│
+└─┴─┴─┘</div>
+  </div>
+</div>
+
+<div class="formation-card">
+  <div class="fc-image">👑</div>
+  <div class="fc-content">
+    <div class="fc-name">銀冠（ぎんかんむり）</div>
+    <div class="fc-tag">最も現代的な振り飛車の囲い</div>
+    <div class="fc-desc">高美濃からさらに銀を7七に上げた形。上部が非常に強くなる現代振り飛車の主流囲い。プロ棋士も多用。</div>
+    <div class="fc-ascii">┌─┬─┬─┐
+│銀│  │玉│
+├─┼─┼─┤
+│  │  │金│
+├─┼─┼─┤
+│  │  │金│
+└─┴─┴─┘</div>
+  </div>
+</div>
+
+<div class="info-box">
+  上部の守りが強い順：美濃 ＜ 高美濃 ＜ 銀冠<br>
+  固さは穴熊が最強ですが、攻守のバランスは銀冠が現代的。
+</div>`,
+        checks:["美濃→高美濃→銀冠の進化順を説明できる","上部の強さの違いを理解した","銀冠が現代振り飛車の主流であることを知った"]
+      },
+    ]
+  },
+  {
+    id:"ch4", title:"戦型・戦法",
+    lessons:[
+      {
+        id:"ch4-l1", title:"振り飛車入門 — 四間・三間・中飛車",
+        num:"4-1", time:"7分",
+        content: () => `
+<div class="info-box gold">
+  <div class="box-title">🎯 このレッスンで学ぶこと</div>
+  飛車を振る「振り飛車」の代表的な3つの戦法を学ぶ。
+</div>
+
+<h2>振り飛車とは</h2>
+<p>飛車を初期位置（2筋）から中央寄りに移動させる戦法の総称。<span class="term">守りを固めてから反撃</span>するスタイルが多く、初心者から上級者まで幅広く使われます。</p>
+
+<div class="term-grid">
+  <div class="term-card">
+    <span class="tc-emoji">🚂</span>
+    <div class="tc-name">四間飛車（しけんびしゃ）</div>
+    <div class="tc-desc">飛車を6筋（先手）または4筋（後手）に振る。守りが安定した定番戦法。美濃囲いと好相性。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🚀</span>
+    <div class="tc-name">三間飛車（さんけんびしゃ）</div>
+    <div class="tc-desc">飛車を7筋（先手）または3筋（後手）に振る。速攻型が多く攻撃的なイメージ。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">⚔️</span>
+    <div class="tc-name">中飛車（なかびしゃ）</div>
+    <div class="tc-desc">飛車を5筋（中央）に配置。中央突破の圧力が強く、ゴキゲン中飛車が有名。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🪞</span>
+    <div class="tc-name">向かい飛車（むかいびしゃ）</div>
+    <div class="tc-desc">相手の飛車と同じ筋に振る。飛車交換を積極的に狙う戦法。</div>
+  </div>
+</div>
+
+<div class="proverb">「攻めは飛角銀桂」——振り飛車でも大駒と銀桂の連携が攻めの基本。</div>`,
+        checks:["四間・三間・中飛車の飛車の位置を説明できる","振り飛車と美濃囲いの相性を理解した","居飛車との違いがわかる"]
+      },
+      {
+        id:"ch4-l2", title:"居飛車 — 角換わり・矢倉・相掛かり",
+        num:"4-2", time:"6分",
+        content: () => `
+<div class="info-box gold">
+  <div class="box-title">🎯 このレッスンで学ぶこと</div>
+  飛車を振らずに戦う「居飛車」の代表的な戦型を理解する。
+</div>
+
+<h2>居飛車とは</h2>
+<p>飛車を初期位置（先手2筋・後手8筋）付近に残したまま戦う戦法。プロ棋戦では居飛車が主流で、多様な戦型に発展します。</p>
+
+<div class="term-grid">
+  <div class="term-card">
+    <span class="tc-emoji">🔄</span>
+    <div class="tc-name">角換わり（かくがわり）</div>
+    <div class="tc-desc">序盤に互いの角行を交換する戦型。現代将棋の主流で、腰掛け銀などが有名。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🏯</span>
+    <div class="tc-name">矢倉戦（やぐらせん）</div>
+    <div class="tc-desc">互いに矢倉囲いを組み、中盤から激しく攻め合う伝統的な戦型。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">↔️</span>
+    <div class="tc-name">相掛かり（あいがかり）</div>
+    <div class="tc-desc">互いに飛車先の歩を突き合う戦型。飛車の活用を巡る駆け引きが面白い。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🦀</span>
+    <div class="tc-name">横歩取り（よこふどり）</div>
+    <div class="tc-desc">先手が後手の3三の歩を横に取る激しい戦型。攻め合いになりやすい。</div>
+  </div>
+</div>
+
+<div class="info-box">
+  <div class="box-title">📊 居飛車 vs 振り飛車</div>
+  相手が振り飛車のとき、居飛車側は<strong>急戦</strong>（素早く攻める）か<strong>持久戦</strong>（穴熊などで固める）を選択できる。この選択が序盤の醍醐味。
+</div>`,
+        checks:["居飛車の代表的な3つの戦型を言える","角換わりが現代将棋の主流であることを知った","居飛車vs振り飛車の急戦・持久戦の概念を理解した"]
+      }
+    ]
+  },
+  {
+    id:"ch5", title:"手筋集",
+    lessons:[
+      {
+        id:"ch5-l1", title:"歩の手筋 — 継ぎ歩・垂れ歩・底歩",
+        num:"5-1", time:"6分",
+        content: () => `
+<div class="info-box gold">
+  <div class="box-title">🎯 このレッスンで学ぶこと</div>
+  将棋で最も重要な「歩の手筋」を3つ覚える。
+</div>
+
+<div class="proverb">「歩のない将棋は負け将棋」——歩の使い方が上達の鍵。</div>
+
+<div class="term-grid">
+  <div class="term-card">
+    <span class="tc-emoji">📌</span>
+    <div class="tc-name">継ぎ歩（つぎふ）</div>
+    <div class="tc-desc">相手の歩の前に歩を打ち、取らせてから再度歩を打つ手筋。飛車先突破の基本パターン。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">⬇️</span>
+    <div class="tc-name">垂れ歩（たれふ）</div>
+    <div class="tc-desc">相手の2段目（成り直前）に歩を打ち込む手筋。と金になる脅威で相手を圧迫する。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🛡</span>
+    <div class="tc-name">底歩（そこふ）</div>
+    <div class="tc-desc">飛車の前（底）に歩を打ち、飛車を守る受けの手筋。防御に使う歩の名手。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">💥</span>
+    <div class="tc-name">叩き（たたき）</div>
+    <div class="tc-desc">相手の駒の前に歩を打ち、取らせることで陣形を乱す手筋。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🎯</span>
+    <div class="tc-name">焦点の歩（しょうてんのふ）</div>
+    <div class="tc-desc">相手が取りにくい場所に打つ歩。どちらの駒で取っても損をする状況を作る。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">↗️</span>
+    <div class="tc-name">突き捨て（つきすて）</div>
+    <div class="tc-desc">歩を1マス前に進め、相手に取らせることで有利な形を作る。</div>
+  </div>
+</div>
+
+<div class="summary-box">
+  <h3>📝 歩の手筋まとめ</h3>
+  <ul>
+    <li>攻めに使う歩：<strong>継ぎ歩・垂れ歩・叩き・焦点の歩</strong></li>
+    <li>守りに使う歩：<strong>底歩・合い歩</strong></li>
+    <li>歩は最も数が多い駒——使い方次第で対局の流れが決まる</li>
+  </ul>
+</div>`,
+        checks:["継ぎ歩・垂れ歩・底歩の3つを説明できる","攻めの歩と守りの歩の使い分けを理解した","歩の手筋が上達に直結することを覚えた"]
+      },
+      {
+        id:"ch5-l2", title:"割り打ち・腹銀 — 中・上級の手筋",
+        num:"5-2", time:"5分",
+        content: () => `
+<div class="info-box gold">
+  <div class="box-title">🎯 このレッスンで学ぶこと</div>
+  駒の効率を最大化する手筋を理解する。
+</div>
+
+<div class="term-grid">
+  <div class="term-card">
+    <span class="tc-emoji">✂️</span>
+    <div class="tc-name">割り打ち（わりうち）</div>
+    <div class="tc-desc">桂馬などで相手の2枚の駒を同時に攻撃。どちらを逃げても1枚は取れる。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🔱</span>
+    <div class="tc-name">両取り（りょうどり）</div>
+    <div class="tc-desc">1手で相手の2枚の駒を同時に取れる位置に攻め駒を置く手。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🐟</span>
+    <div class="tc-name">田楽刺し（でんがくざし）</div>
+    <div class="tc-desc">飛車・香・角などが直線上の2枚の相手駒を同時に狙う形（串刺し状）。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🥈</span>
+    <div class="tc-name">腹銀（はらぎん）</div>
+    <div class="tc-desc">銀を縦型の相手陣に打ち込み、金を狙う強力な手筋。守りの金を直接攻める。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🐴</span>
+    <div class="tc-name">送り桂（おくりけい）</div>
+    <div class="tc-desc">桂馬を犠打にして相手陣に楔を打つ攻め筋。端攻めでよく使われる。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🔥</span>
+    <div class="tc-name">成り捨て（なりすて）</div>
+    <div class="tc-desc">駒を成って相手に取らせ、後で持ち駒として有効活用する手筋。</div>
+  </div>
+</div>`,
+        checks:["割り打ちと両取りの違いを説明できる","田楽刺しの形をイメージできる","腹銀が守りの金を攻める手筋であることを覚えた"]
+      }
+    ]
+  },
+  {
+    id:"ch6", title:"終盤術",
+    lessons:[
+      {
+        id:"ch6-l1", title:"詰めろと必至 — 終盤の必須知識",
+        num:"6-1", time:"6分",
+        content: () => `
+<div class="info-box gold">
+  <div class="box-title">🎯 このレッスンで学ぶこと</div>
+  終盤で必ず出てくる「詰めろ」「必至」「速度計算」を理解する。
+</div>
+
+<h2>終盤の三段階</h2>
+<div class="term-grid">
+  <div class="term-card">
+    <span class="tc-emoji">⚡</span>
+    <div class="tc-name">詰めろ（つめろ）</div>
+    <div class="tc-desc">放置すると次の手で詰む攻め。相手は受けるか攻め合いが必要。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🎯</span>
+    <div class="tc-name">必至（ひっし）</div>
+    <div class="tc-desc">どう受けても次に詰む状態。詰みが確定した最終段階。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🏁</span>
+    <div class="tc-name">詰み（つみ）</div>
+    <div class="tc-desc">玉がどこへ逃げても取られる状態。ゲーム終了。</div>
+  </div>
+</div>
+
+<h2>速度計算</h2>
+<p>終盤では「自分が相手を詰ませるのに何手かかるか」と「相手が自分を詰ませるのに何手かかるか」を比較する<span class="term">速度計算</span>が重要です。</p>
+
+<div class="info-box">
+  <div class="box-title">💡 攻め合いのルール</div>
+  自分が先に詰ませられるなら受けずに攻め合う。相手の方が速ければ受けに回る。この判断が終盤の醍醐味。
+</div>
+
+<div class="proverb">「玉は包め」——終盤では相手の玉の逃げ道を塞いでから詰ます。</div>
+
+<div class="summary-box">
+  <h3>📝 終盤の流れ</h3>
+  <ul>
+    <li>中盤終わり：<strong>詰めろ</strong>をかけ続けて相手を追い詰める</li>
+    <li>終盤：<strong>必至</strong>をかけてゲームを確定させる</li>
+    <li>最終：<strong>詰み</strong>の手順で決着</li>
+    <li>詰将棋を解くことで終盤力が劇的に上がる</li>
+  </ul>
+</div>`,
+        checks:["詰めろ・必至・詰みの順序を説明できる","速度計算の概念を理解した","攻め合いか受けるかの判断基準がわかる"]
+      }
+    ]
+  },
+  {
+    id:"ch7", title:"格言・上達法",
+    lessons:[
+      {
+        id:"ch7-l1", title:"将棋の格言 — 先人の知恵を学ぶ",
+        num:"7-1", time:"5分",
+        content: () => `
+<div class="info-box gold">
+  <div class="box-title">🎯 このレッスンで学ぶこと</div>
+  将棋の上達に役立つ格言を覚え、局面判断に活かす。
+</div>
+
+<div class="term-grid">
+  <div class="term-card">
+    <span class="tc-emoji">♟</span>
+    <div class="tc-name">歩のない将棋は負け将棋</div>
+    <div class="tc-desc">歩は攻守の要。使いすぎて歩切れになると急所を突けず苦しくなる。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">👑</span>
+    <div class="tc-name">玉は包め</div>
+    <div class="tc-desc">玉を逃げられないよう包み込むように攻めるのが理想。一方からだけ攻めると逃げられる。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">⚔️</span>
+    <div class="tc-name">攻めは飛角銀桂</div>
+    <div class="tc-desc">攻め駒の基本は飛・角・銀・桂の4枚。この4枚を連携させるのが攻めのコツ。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🛡</span>
+    <div class="tc-name">守りは金銀三枚</div>
+    <div class="tc-desc">守りには金銀3枚が理想とされる。囲いの基本はこの格言から。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🦅</span>
+    <div class="tc-name">馬は自陣に帰れ</div>
+    <div class="tc-desc">竜馬は攻めが終わったら自陣に引いて守りも兼ねるのが効率的。</div>
+  </div>
+  <div class="term-card">
+    <span class="tc-emoji">🎯</span>
+    <div class="tc-name">玉の広さが命</div>
+    <div class="tc-desc">玉の逃げ道（広さ）を確保するのも重要な考え方。広い玉は詰ませにくい。</div>
+  </div>
+</div>
+
+<div class="summary-box">
+  <h3>📝 上達のポイント</h3>
+  <ul>
+    <li><strong>詰将棋を毎日解く</strong>——終盤力と読む力が一気に伸びる</li>
+    <li><strong>感想戦をする</strong>——対局後に振り返ることで次に活きる</li>
+    <li><strong>一つの囲いを完璧にする</strong>——様々な囲いをつまみ食いより一つを極める方が上達が早い</li>
+    <li><strong>定跡を覚える</strong>——同じ形から始まる変化を一つずつ吸収する</li>
+  </ul>
+</div>`,
+        checks:["5つ以上の格言を説明できる","格言を局面判断に使う意識ができた","上達のための練習法を3つ言える"]
+      }
+    ]
+  }
+];
+
+// 全用語辞書（検索用）
+const GLOSSARY = {
+  "王手":"相手の玉将を直接攻撃している状態。相手は必ず受けなければならない。",
+  "詰み":"相手の玉がどこへ逃げても取られる状態。ゲーム終了。",
+  "必至":"どう受けても次に詰む状態。",
+  "詰めろ":"放置すると次の手で詰む攻め。",
+  "投了":"負けを認めてゲームを終わらせること。",
+  "持ち駒":"相手から取って手元にある駒。好きな空きマスに打てる。",
+  "二歩":"同じ列に自分の歩を2枚打つ反則。",
+  "美濃囲い":"振り飛車の代表的な囲い。玉・金・銀の三角形が特徴。",
+  "穴熊":"最も固い囲い。玉を端に隠し金銀で守る。",
+  "矢倉":"金将2枚と銀将1枚で縦に積んだ伝統的な囲い。",
+  "四間飛車":"飛車を4筋に振る振り飛車の定番戦法。",
+  "中飛車":"飛車を5筋（中央）に配置する戦法。",
+  "三間飛車":"飛車を3筋に振る振り飛車。速攻型が多い。",
+  "継ぎ歩":"相手の歩の前に歩を打つ手筋。",
+  "垂れ歩":"相手の2段目に歩を打ち込む手筋。",
+  "底歩":"飛車の前に歩を打ち守る手筋。",
+  "高美濃":"美濃の銀を6七に上げた発展形。",
+  "銀冠":"高美濃からさらに発展した現代的な囲い。",
+  "elmo囲い":"現代居飛車の主力囲い。",
+  "雁木":"銀を6七に上げ中央を制圧する居飛車の陣形。",
+  "角換わり":"序盤に互いの角行を交換する戦型。",
+  "大駒":"飛車と角行の総称。",
+  "小駒":"金・銀・桂・香・歩の総称。",
+  "成駒":"成り変わった駒。竜王・竜馬・と金など。",
+  "駒得":"相手より価値の高い駒を多く持っている状態。",
+  "速度計算":"終盤で詰ませるまでの手数を比較する判断。",
+  "割り打ち":"桂などで相手の2枚の駒を同時に攻撃。",
+  "腹銀":"銀を打ち込み金を狙う手筋。",
+  "田楽刺し":"直線上の2枚を同時に狙う形。",
+  "居飛車":"飛車を初期位置付近に残す戦法。",
+  "振り飛車":"飛車を中央寄りに振る戦法の総称。",
+  "序盤":"駒組みの段階。囲いを完成させる。",
+  "中盤":"攻め合いが始まる段階。",
+  "終盤":"詰み・必至が視野に入る段階。",
+};
+
+// ════════════════════════════════════════════════
+//  陣形レッスン共通テンプレート
+// ════════════════════════════════════════════════
+
+function formationLesson({name,emoji,tag,image,ascii,intro,strengths,weaknesses,howto,tips}){
+  const imgEl = image
+    ? `<img src="${image}" alt="${name}" onerror="this.parentElement.innerHTML='${emoji}';">`
+    : emoji;
+  const strList = strengths.map(s=>`<li>${s}</li>`).join('');
+  const weakList = weaknesses.map(w=>`<li>${w}</li>`).join('');
+  const tipsList = tips.map(t=>`<li>${t}</li>`).join('');
+  return `
+<div class="formation-card">
+  <div class="fc-image">${imgEl}</div>
+  <div class="fc-content">
+    <div class="fc-name">${emoji} ${name}</div>
+    <div class="fc-tag">${tag}</div>
+    <div class="fc-desc">${intro}</div>
+    <div class="fc-ascii">${ascii}</div>
+  </div>
+</div>
+
+<h2>✅ 強み</h2>
+<ul style="padding-left:20px;line-height:2;font-size:.9rem">${strList}</ul>
+
+<h2>⚠️ 弱点</h2>
+<ul style="padding-left:20px;line-height:2;font-size:.9rem">${weakList}</ul>
+
+<h2>🔧 組み方</h2>
+<p>${howto}</p>
+
+<div class="info-box gold">
+  <div class="box-title">💡 実戦で役立つコツ</div>
+  <ul style="padding-left:20px;line-height:2;font-size:.88rem">${tipsList}</ul>
+</div>`;
+}
+
+// ════════════════════════════════════════════════
+//  アプリケーション
+// ════════════════════════════════════════════════
+
+let currentLessonId = null;
+const DONE_KEY = 'rb_shogi_done';
+
+function getDone(){ try{return JSON.parse(localStorage.getItem(DONE_KEY)||'[]')}catch{return []} }
+function toggleDone(id){
+  let d = getDone();
+  if(d.includes(id)) d = d.filter(x=>x!==id); else d.push(id);
+  localStorage.setItem(DONE_KEY, JSON.stringify(d));
+}
+
+function allLessons(){
+  return CHAPTERS.flatMap(ch => ch.lessons.map(l => ({...l, chId:ch.id})));
+}
+
+function buildSidebar(){
+  const done = getDone();
+  const nav = document.getElementById('sidebarNav');
+  nav.innerHTML = CHAPTERS.map(ch => `
+    <div class="chapter-group">
+      <div class="chapter-title">${ch.title}</div>
+      ${ch.lessons.map(l => `
+        <div class="lesson-link ${l.id===currentLessonId?'active':''} ${done.includes(l.id)?'done':''}"
+             onclick="showLesson('${l.id}')" data-id="${l.id}">
+          ${l.num} ${l.title}
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+function updateProgress(){
+  const done = getDone();
+  const all = allLessons();
+  const pct = all.length ? done.length / all.length * 100 : 0;
+  document.getElementById('progressFill').style.width = pct+'%';
+  document.getElementById('progressText').textContent = `${done.length} / ${all.length} 完了`;
+}
+
+function showLesson(id){
+  const all = allLessons();
+  const idx = all.findIndex(l => l.id === id);
+  if(idx < 0) return;
+  const lesson = all[idx];
+  const done = getDone();
+  currentLessonId = id;
+
+  const ch = CHAPTERS.find(c => c.lessons.some(l => l.id === id));
+  const prev = all[idx-1];
+  const next = all[idx+1];
+
+  // チェック項目
+  const checks = (lesson.checks||[]).map((c,i) => `
+    <div class="checklist-item ${done.includes(id+'_c'+i)?'checked':''}">
+      <input type="checkbox" id="ck_${id}_${i}" ${done.includes(id+'_c'+i)?'checked':''}
+             onchange="toggleCheck('${id}',${i},this)">
+      <label for="ck_${id}_${i}">${c}</label>
+    </div>`).join('');
+
+  document.getElementById('lessonContent').innerHTML = `
+    <div class="breadcrumb">
+      RB将棋道場 › <span>${ch?.title||''}</span> › ${lesson.title}
+    </div>
+    <div class="lesson-meta">
+      <span class="lesson-num">レッスン ${lesson.num}</span>
+      <span class="lesson-time">⏱ ${lesson.time}</span>
+      ${done.includes(id) ? '<span style="color:var(--green);font-size:.8rem">✓ 完了</span>' : ''}
+    </div>
+    <h1 class="lesson-title">${lesson.title}</h1>
+
+    ${lesson.content()}
+
+    <h2>🧠 理解度チェック</h2>
+    <div class="checklist">${checks}</div>
+    <button onclick="markDone('${id}')"
+      style="margin-top:16px;padding:10px 24px;background:var(--gold);color:#000;
+             border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:.9rem">
+      ✓ このレッスンを完了
+    </button>
+
+    <div class="lesson-nav">
+      ${prev ? `<div class="nav-btn" onclick="showLesson('${prev.id}')">
+        <span class="nb-label">← 前のレッスン</span>
+        <span class="nb-title">${prev.num} ${prev.title}</span>
+      </div>` : '<div></div>'}
+      ${next ? `<div class="nav-btn next" onclick="showLesson('${next.id}')">
+        <span class="nb-label">次のレッスン →</span>
+        <span class="nb-title">${next.num} ${next.title}</span>
+      </div>` : ''}
+    </div>`;
+
+  buildSidebar();
+  updateProgress();
+  window.scrollTo({top:0, behavior:'smooth'});
+
+  // モバイル: サイドバーを閉じる
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+function toggleCheck(lessonId, idx, el){
+  const key = lessonId+'_c'+idx;
+  let d = getDone();
+  if(el.checked){ if(!d.includes(key)) d.push(key); }
+  else d = d.filter(x=>x!==key);
+  localStorage.setItem(DONE_KEY, JSON.stringify(d));
+  el.closest('.checklist-item').classList.toggle('checked', el.checked);
+  updateProgress();
+}
+
+function markDone(id){
+  let d = getDone();
+  if(!d.includes(id)) d.push(id);
+  localStorage.setItem(DONE_KEY, JSON.stringify(d));
+  buildSidebar();
+  updateProgress();
+  showLesson(id);
+}
+
+// 検索
+const searchInput = document.getElementById('searchInput');
+const searchResults = document.getElementById('search-results');
+
+searchInput.addEventListener('input', ()=>{
+  const q = searchInput.value.trim();
+  if(!q){ searchResults.style.display='none'; return; }
+  const hits = Object.entries(GLOSSARY)
+    .filter(([k,v]) => k.includes(q) || v.includes(q))
+    .slice(0,8);
+  if(!hits.length){ searchResults.style.display='none'; return; }
+  searchResults.style.display='block';
+  searchResults.innerHTML = hits.map(([k,v]) =>
+    `<div class="sr-item" onclick="showGlossaryResult('${k}')">
+      <div class="sr-term">${k}</div>
+      <div class="sr-desc">${v.substring(0,60)}...</div>
+    </div>`
+  ).join('');
+});
+
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.search-box')) searchResults.style.display='none';
+});
+
+function showGlossaryResult(term){
+  searchResults.style.display='none';
+  searchInput.value = '';
+  document.getElementById('lessonContent').innerHTML = `
+    <div class="breadcrumb">RB将棋道場 › 用語検索 › <span>${term}</span></div>
+    <h1 class="lesson-title">📖 ${term}</h1>
+    <div class="info-box">${GLOSSARY[term]}</div>
+    <button onclick="showLesson('${currentLessonId||'ch1-l1'}')"
+      style="margin-top:20px;padding:10px 20px;background:var(--card);color:var(--text);
+             border:1px solid var(--border);border-radius:8px;cursor:pointer">
+      ← 元のレッスンに戻る
+    </button>`;
+}
+
+// メニューボタン
+document.getElementById('menuBtn').addEventListener('click', ()=>{
+  document.getElementById('sidebar').classList.toggle('open');
+});
+
+// 起動
+showLesson('ch1-l1');
+</script>
+</body>
+</html>
