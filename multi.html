@@ -248,6 +248,13 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
 @keyframes ai-flash{0%{background:rgba(85,140,200,.18)}100%{background:transparent}}
 .bc.ai-moved{animation:ai-flash .5s ease}
 
+/* 盤ズームオーバーレイ */
+#zoom-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:60;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+#zoom-overlay.show{display:flex}
+#zoom-board{width:min(88vw,88vh);max-width:520px}
+#zoom-board .mb{aspect-ratio:1}
+.zoom-close{position:absolute;top:14px;right:18px;background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:4px 12px;cursor:pointer;font-family:inherit;font-size:.82rem}
+
 /* アクティブ盤 拡大（グリッド上でspan） */
 @media(min-width:700px){
   .bc.active.focus-zoom{grid-row:span 1}
@@ -275,6 +282,7 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
     <div class="help-row"><span class="help-key">Esc</span><span class="help-desc">駒選択を解除</span></div>
     <div class="help-row"><span class="help-key">?</span><span class="help-desc">このヘルプを閉じる</span></div>
     <div class="help-row"><span class="help-key">P</span><span class="help-desc">一時停止 / 再開</span></div>
+    <div class="help-row"><span class="help-key">Z</span><span class="help-desc">盤をズーム表示 / 閉じる</span></div>
     <div class="help-row"><span class="help-key">盤クリック</span><span class="help-desc">その盤にフォーカス切替</span></div>
     <div class="help-row"><span class="help-key">駒ホバー</span><span class="help-desc">移動可能マスをプレビュー</span></div>
     <button class="help-close" onclick="toggleHelp()">閉じる</button>
@@ -384,6 +392,12 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
     <button style="background:var(--gold);color:#000" onclick="showSetup()">もう一度</button>
     <button style="background:var(--card);color:var(--text);border:1px solid var(--border)" onclick="rematch()">同じ設定でリマッチ</button>
   </div>
+</div>
+
+<!-- 盤ズームオーバーレイ -->
+<div id="zoom-overlay" onclick="if(event.target===this)closeZoom()">
+  <button class="zoom-close" onclick="closeZoom()">✕ 閉じる (Z)</button>
+  <div id="zoom-board"></div>
 </div>
 
 <!-- トースト -->
@@ -698,9 +712,24 @@ function evalPct(g,hB,hW){
 }
 
 function shuf(a){return a.slice().sort(()=>Math.random()-.5);}
+function quiesce(g,hB,hW,alpha,beta,maxing,ep,qdepth=0){
+  const stand=evalBoard(g,hB,hW,ep);
+  if(qdepth>=2)return stand;
+  if(maxing){if(stand>=beta)return beta;alpha=Math.max(alpha,stand);}
+  else{if(stand<=alpha)return alpha;beta=Math.min(beta,stand);}
+  const s=maxing?'w':'b';
+  const caps=allLegal(g,hB,hW,s).filter(mv=>!mv.drop&&g[mv.to[0]][mv.to[1]]);
+  for(const mv of caps){
+    const{grid:ng,handB:nb,handW:nw}=applyMv(g,hB,hW,mv);
+    const sc=quiesce(ng,nb,nw,alpha,beta,!maxing,ep,qdepth+1);
+    if(maxing){if(sc>=beta)return beta;alpha=Math.max(alpha,sc);}
+    else{if(sc<=alpha)return alpha;beta=Math.min(beta,sc);}
+  }
+  return maxing?alpha:beta;
+}
 function minimax(g,hB,hW,depth,alpha,beta,maxing,ep){
   const s=maxing?'w':'b';const moves=allLegal(g,hB,hW,s);
-  if(depth===0||!moves.length)return{score:evalBoard(g,hB,hW,ep),move:null};
+  if(depth===0||!moves.length){return{score:quiesce(g,hB,hW,alpha,beta,maxing,ep),move:null};}
   const sorted=moves.slice().sort((a,b)=>{
     const va=a.drop?0:(g[a.to[0]][a.to[1]]?PV[g[a.to[0]][a.to[1]].type]||0:0);
     const vb=b.drop?0:(g[b.to[0]][b.to[1]]?PV[g[b.to[0]][b.to[1]].type]||0:0);
@@ -904,8 +933,9 @@ function buildBoardsUI(){
     card.className='bc'+(isActive?' active'+(g.turn===CFG.userSide?' my-turn':''):g.over?' fin':'');
     if(!g.over&&g.inCheck&&g.turn===CFG.userSide)card.classList.add('check-alert');
     card.id='card-'+g.id;
-    // クリックでフォーカス切替
-    if(!g.over&&g.id!==FOCUS)card.addEventListener('click',e=>{if(e.target.classList.contains('resign-btn'))return;switchFocus(g.id);});
+    // クリックでフォーカス切替 / ダブルクリックでズーム
+    if(!g.over&&g.id!==FOCUS)card.addEventListener('click',e=>{if(e.target.classList.contains('resign-btn')||e.target.classList.contains('hint-btn'))return;switchFocus(g.id);});
+    card.addEventListener('dblclick',e=>{if(['BUTTON','A'].includes(e.target.tagName))return;openZoom(g.id);});
     card.innerHTML=`
       <div class="bc-hd">
         <div class="bno">${g.id+1}</div>
@@ -1355,6 +1385,10 @@ document.addEventListener('keydown',e=>{
     if(ho.classList.contains('show')){ho.classList.remove('show');return;}
     const g=GAMES[FOCUS];if(!g||g.over)return;
     g.sel=null;g.selDrop=null;g.legalSq=[];renderGame(FOCUS);
+  }else if(e.key==='z'||e.key==='Z'){
+    e.preventDefault();
+    if(document.getElementById('zoom-overlay').classList.contains('show')){closeZoom();}
+    else{openZoom(FOCUS);}
   }else if(e.key==='p'||e.key==='P'){
     e.preventDefault();togglePause();
   }else if(e.key==='ArrowRight'||e.key==='ArrowDown'){
@@ -1365,6 +1399,47 @@ document.addEventListener('keydown',e=>{
     for(let i=1;i<=GAMES.length;i++){const idx=(FOCUS-i+GAMES.length)%GAMES.length;if(!GAMES[idx].over){switchFocus(idx);break;}}
   }
 });
+
+// ── 盤ズーム ──
+let ZOOM_IDX=null;
+function openZoom(idx){
+  ZOOM_IDX=idx;
+  const ov=document.getElementById('zoom-overlay');
+  const zb=document.getElementById('zoom-board');
+  ov.classList.add('show');
+  // ダミー盤要素をクローン
+  const src=document.getElementById('mb-'+idx);
+  if(!src){return;}
+  zb.innerHTML='';
+  const clone=src.cloneNode(true);
+  clone.style.fontSize='1.2rem';
+  clone.querySelectorAll('.mp').forEach(mp=>{mp.style.fontSize='1.4rem';});
+  // クリックをオリジナルに委譲
+  clone.querySelectorAll('.mc').forEach(cell=>{
+    const r=parseInt(cell.dataset.r),c=parseInt(cell.dataset.c);
+    cell.addEventListener('click',()=>{onCell(idx,r,c);refreshZoom(idx);});
+  });
+  zb.appendChild(clone);
+}
+function refreshZoom(idx){
+  if(ZOOM_IDX!==idx)return;
+  // 簡易再描画: 全セルのクラス更新
+  const g=GAMES[idx];const zb=document.getElementById('zoom-board');
+  const cells=zb.querySelectorAll('.mc');
+  cells.forEach(cell=>{
+    const r=parseInt(cell.dataset.r),c=parseInt(cell.dataset.c);
+    cell.className='mc';
+    if(r<=2)cell.classList.add('pz-b');if(r>=6)cell.classList.add('pz-w');
+    if(g.lastTo&&g.lastTo[0]===r&&g.lastTo[1]===c)cell.classList.add('lt');
+    if(g.sel&&g.sel[0]===r&&g.sel[1]===c)cell.classList.add('sl');
+    if(g.legalSq.some(([lr,lc])=>lr===r&&lc===c))cell.classList.add('lg');
+    cell.dataset.r=r;cell.dataset.c=c;
+    const p=g.grid[r][c];
+    const existing=cell.querySelector('.mp');if(existing)existing.remove();
+    if(p){const mp=document.createElement('div');mp.className='mp '+(p.side==='b'?'b':'w')+(p.type.startsWith('+')?' pr':'');mp.style.fontSize='1.4rem';mp.textContent=PJ[p.type]||p.type;cell.appendChild(mp);}
+  });
+}
+function closeZoom(){document.getElementById('zoom-overlay').classList.remove('show');ZOOM_IDX=null;}
 
 // ── モバイルスワイプで盤切替 ──
 let _touchX=null;
