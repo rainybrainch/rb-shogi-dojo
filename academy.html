@@ -147,6 +147,84 @@ a{text-decoration:none;color:inherit}
 .quick-btn-icon{font-size:1.6rem;margin-bottom:6px}
 .quick-btn-label{font-size:.65rem;color:#ddd;font-weight:700;line-height:1.3}
 
+/* WELCOME CARD */
+.welcome-card{margin:0 20px 20px;border-radius:14px;padding:16px 18px;
+  display:flex;align-items:center;gap:14px;
+  border:2px solid var(--border);background:var(--card);position:relative;overflow:hidden}
+.welcome-card::before{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;
+  border-radius:50%;background:var(--gold);opacity:.08}
+.welcome-icon{font-size:2.2rem;flex-shrink:0}
+.welcome-msg{font-size:.82rem;font-weight:700;color:#fff;line-height:1.4}
+.welcome-sub{font-size:.65rem;color:var(--muted);margin-top:2px}
+.streak-fire{font-family:'Dela Gothic One',sans-serif;font-size:.75rem;color:var(--gold);
+  background:rgba(245,200,66,.12);border:1px solid rgba(245,200,66,.25);
+  padding:2px 8px;border-radius:20px;margin-top:6px;display:inline-block}
+
+/* STREAK WARN */
+.streak-warn{margin:0 20px 18px;border-radius:12px;padding:12px 16px;
+  display:flex;align-items:center;gap:10px;
+  background:rgba(232,53,74,.1);border:2px solid rgba(232,53,74,.3)}
+.streak-warn-text{font-size:.78rem;color:var(--red);font-weight:700}
+.streak-warn-sub{font-size:.62rem;color:rgba(232,53,74,.7);margin-top:2px}
+
+/* GOAL CARD */
+.goal-card{margin:0 20px 20px;background:var(--card);border:2px solid var(--border);
+  border-radius:14px;overflow:hidden;box-shadow:4px 4px 0 var(--green)}
+.goal-header{padding:12px 16px 10px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between}
+.goal-title{font-family:'Dela Gothic One',sans-serif;font-size:.88rem;color:var(--green)}
+.goal-badge{font-size:.6rem;color:var(--muted)}
+.goal-list{padding:10px 16px 14px;display:flex;flex-direction:column;gap:8px}
+.goal-item{display:flex;align-items:center;gap:10px;cursor:pointer}
+.goal-check{width:20px;height:20px;border-radius:6px;border:2px solid var(--border);
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;transition:.15s;background:transparent}
+.goal-item.done .goal-check{background:var(--green);border-color:var(--green);color:#fff}
+.goal-item.done .goal-label{text-decoration:line-through;color:var(--muted)}
+.goal-label{font-size:.78rem;color:#ddd;line-height:1.4}
+.goal-progress{margin:0 16px;height:4px;background:var(--border);border-radius:2px;margin-bottom:12px}
+.goal-fill{height:100%;background:var(--green);border-radius:2px;transition:.4s}
+
+/* PROVERB CARD */
+.proverb-card{margin:0 20px 20px;border-radius:14px;padding:16px 18px;
+  background:linear-gradient(135deg,rgba(245,200,66,.06) 0%,rgba(91,200,232,.04) 100%);
+  border:2px solid rgba(245,200,66,.2);position:relative}
+.proverb-label{font-size:.6rem;color:var(--gold);letter-spacing:.12em;
+  font-family:'Dela Gothic One',sans-serif;margin-bottom:8px}
+.proverb-text{font-size:1rem;color:#fff;font-weight:700;font-family:'Dela Gothic One',sans-serif;
+  line-height:1.5;margin-bottom:6px}
+.proverb-meaning{font-size:.72rem;color:var(--muted);line-height:1.6}
+
+/* DOJO SECTION */
+.dojo-card{background:linear-gradient(135deg,var(--dark3) 0%,#0a1a2e 100%);
+  border:2px solid rgba(91,200,232,.3);border-radius:16px;overflow:hidden;
+  box-shadow:5px 5px 0 var(--sky)}
+.dojo-header{padding:18px 18px 0;display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.dojo-icon{font-size:2.6rem;flex-shrink:0}
+.dojo-title{font-family:'Dela Gothic One',sans-serif;font-size:1.2rem;color:var(--sky)}
+.dojo-desc{font-size:.7rem;color:var(--muted);margin-top:3px;line-height:1.5}
+.dojo-modes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 18px 18px}
+.dojo-mode{background:rgba(255,255,255,.05);border:1.5px solid rgba(91,200,232,.2);
+  border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;transition:.15s;
+  text-decoration:none;display:block}
+.dojo-mode:hover{background:rgba(91,200,232,.1);border-color:rgba(91,200,232,.5)}
+.dojo-mode:active{transform:scale(.97)}
+.dojo-mode-icon{font-size:1.6rem;margin-bottom:4px}
+.dojo-mode-name{font-family:'Dela Gothic One',sans-serif;font-size:.72rem;color:#fff}
+.dojo-mode-sub{font-size:.58rem;color:var(--muted);margin-top:2px}
+.dojo-divider{border:none;border-top:1px solid rgba(91,200,232,.15);margin:0 18px}
+.dojo-lesson-link{display:flex;align-items:center;gap:10px;padding:12px 18px;
+  cursor:pointer;text-decoration:none}
+.dojo-lesson-icon{font-size:1.2rem;flex-shrink:0}
+.dojo-lesson-body{flex:1}
+.dojo-lesson-name{font-size:.8rem;color:var(--sky);font-weight:700}
+.dojo-lesson-sub{font-size:.62rem;color:var(--muted)}
+.dojo-lesson-arr{color:var(--muted);font-size:.85rem}
+
+/* PROGRESS MINI BAR on main cards */
+.card-progress{height:3px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:8px}
+.card-progress-fill{height:100%;border-radius:2px;transition:.4s}
+
 /* BOTTOM NAV */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;
   background:var(--dark2);border-top:2px solid var(--gold);
@@ -183,9 +261,70 @@ a{text-decoration:none;color:inherit}
 
 <!-- HERO -->
 <div class="hero">
-  <div class="hero-label">▶ 将棋の道を極める</div>
-  <h1 class="hero-title">将棋アカデミー</h1>
-  <p class="hero-desc">対局・詰将棋・定跡・棋士図鑑・棋譜データベース。<br>総合的な将棋学習環境。</p>
+  <div class="hero-label" id="heroLabel">▶ 将棋の道を極める</div>
+  <h1 class="hero-title">RB将棋アカデミー</h1>
+  <p class="hero-desc">対局道場・詰将棋・定跡・棋士図鑑・棋譜DB。<br>総合将棋学習プラットフォーム。</p>
+</div>
+
+<!-- FIRST VISIT GUIDE -->
+<div id="firstVisitGuide" style="display:none;margin:0 20px 18px">
+  <div style="background:linear-gradient(135deg,rgba(91,200,232,.1),rgba(245,200,66,.06));border:2px solid rgba(91,200,232,.3);border-radius:14px;padding:16px 18px">
+    <div style="font-family:'Dela Gothic One',sans-serif;font-size:.88rem;color:var(--sky);margin-bottom:8px">🎌 はじめての方へ</div>
+    <p style="font-size:.75rem;color:#ddd;line-height:1.7">RB将棋アカデミーへようこそ！まずは「対局道場」で実際に対局してみるか、「詰将棋」で詰みの感覚を養うのがおすすめです。</p>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <a href="multi.html" style="flex:1;text-align:center;padding:8px;background:var(--sky);color:var(--dark);border-radius:8px;font-family:'Dela Gothic One',sans-serif;font-size:.75rem;text-decoration:none">対局を始める</a>
+      <a href="tsume.html" style="flex:1;text-align:center;padding:8px;background:rgba(91,200,232,.15);color:var(--sky);border-radius:8px;font-family:'Dela Gothic One',sans-serif;font-size:.75rem;text-decoration:none;border:1px solid rgba(91,200,232,.3)">詰将棋を解く</a>
+    </div>
+  </div>
+</div>
+
+<!-- STREAK WARNING -->
+<div id="streakWarn" class="streak-warn" style="display:none">
+  <div style="font-size:1.4rem">⚠️</div>
+  <div>
+    <div class="streak-warn-text">今日の学習がまだです！</div>
+    <div class="streak-warn-sub">連続記録が途切れる前に1問だけでも解きましょう。</div>
+  </div>
+</div>
+
+<!-- WELCOME BACK -->
+<div id="welcomeCard" class="welcome-card" style="display:none">
+  <div class="welcome-icon" id="welcomeIcon">♟</div>
+  <div>
+    <div class="welcome-msg" id="welcomeMsg">おかえりなさい！</div>
+    <div class="welcome-sub" id="welcomeSub">今日も将棋を楽しみましょう。</div>
+    <div class="streak-fire" id="streakFire">🔥 1日連続</div>
+  </div>
+</div>
+
+<!-- TODAY'S GOAL -->
+<div class="goal-card" id="goalCard">
+  <div class="goal-header">
+    <div class="goal-title">今日の目標</div>
+    <div class="goal-badge" id="goalProgress">0/3 完了</div>
+  </div>
+  <div class="goal-list">
+    <div class="goal-item" id="goal0" onclick="toggleGoal(0)">
+      <div class="goal-check" id="gc0"></div>
+      <div class="goal-label">詰将棋を1問解く</div>
+    </div>
+    <div class="goal-item" id="goal1" onclick="toggleGoal(1)">
+      <div class="goal-check" id="gc1"></div>
+      <div class="goal-label">対局を1局指す</div>
+    </div>
+    <div class="goal-item" id="goal2" onclick="toggleGoal(2)">
+      <div class="goal-check" id="gc2"></div>
+      <div class="goal-label">棋士図鑑か棋譜を1つ確認する</div>
+    </div>
+  </div>
+  <div class="goal-progress"><div class="goal-fill" id="goalFill" style="width:0%"></div></div>
+</div>
+
+<!-- TODAY'S PROVERB -->
+<div class="proverb-card" id="proverbCard">
+  <div class="proverb-label">📜 今日の格言</div>
+  <div class="proverb-text" id="proverbText">歩の突き捨て、ただより安いものはない</div>
+  <div class="proverb-meaning" id="proverbMeaning">小さな犠牲が大きな局面改善につながる。歩を使って相手の形を乱す手筋の基本。</div>
 </div>
 
 <!-- STATS -->
@@ -219,13 +358,15 @@ a{text-decoration:none;color:inherit}
       <div class="card-icon">⚔️</div>
       <div class="card-title">対局モード</div>
       <div class="card-desc">複数面指し対局。最大10面同時対戦。AIレベル10級〜六段。</div>
-      <div class="card-count">最大10面指し</div>
+      <div class="card-count" id="gamesCount">最大10面指し</div>
+      <div class="card-progress"><div class="card-progress-fill" id="gamesBar" style="background:var(--gold);width:0%"></div></div>
     </a>
     <a href="tsume.html" class="main-card sky">
       <div class="card-icon">🧩</div>
       <div class="card-title">詰将棋</div>
       <div class="card-desc">1手詰〜7手詰。段階的に実力向上。</div>
-      <div class="card-count sky">50問収録</div>
+      <div class="card-count sky" id="tumeCount">50問収録</div>
+      <div class="card-progress"><div class="card-progress-fill" id="tumeBar" style="background:var(--sky);width:0%"></div></div>
     </a>
     <a href="joseki.html" class="main-card green">
       <div class="card-icon">📐</div>
@@ -238,6 +379,49 @@ a{text-decoration:none;color:inherit}
       <div class="card-title">棋士図鑑</div>
       <div class="card-desc">名棋士のプロフィール・戦績・棋風を網羅。</div>
       <div class="card-count red">20名収録</div>
+    </a>
+  </div>
+</div>
+
+<!-- RB将棋対局道場 -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">RB将棋対局道場</div>
+    <div class="section-badge" style="background:var(--sky);color:var(--dark)">DOJO</div>
+  </div>
+  <div class="dojo-card">
+    <div class="dojo-header">
+      <div class="dojo-icon">⚔️</div>
+      <div>
+        <div class="dojo-title">対局道場</div>
+        <div class="dojo-desc">1面・3面・多面指しで腕を磨け。AIレベル10級〜六段。</div>
+      </div>
+    </div>
+    <div class="dojo-modes">
+      <a href="play.html" class="dojo-mode">
+        <div class="dojo-mode-icon">♟</div>
+        <div class="dojo-mode-name">1面対局</div>
+        <div class="dojo-mode-sub">集中1対1</div>
+      </a>
+      <a href="multi.html?boards=3" class="dojo-mode">
+        <div class="dojo-mode-icon">♜♜♜</div>
+        <div class="dojo-mode-name">3面同時</div>
+        <div class="dojo-mode-sub">同時進行</div>
+      </a>
+      <a href="multi.html" class="dojo-mode">
+        <div class="dojo-mode-icon">🎯</div>
+        <div class="dojo-mode-name">多面指し</div>
+        <div class="dojo-mode-sub">最大10面</div>
+      </a>
+    </div>
+    <hr class="dojo-divider">
+    <a href="index.html" class="dojo-lesson-link">
+      <div class="dojo-lesson-icon">📚</div>
+      <div class="dojo-lesson-body">
+        <div class="dojo-lesson-name">将棋用語・戦術教室</div>
+        <div class="dojo-lesson-sub">基本ルールから高度な戦術まで学べる</div>
+      </div>
+      <div class="dojo-lesson-arr">›</div>
     </a>
   </div>
 </div>
@@ -436,6 +620,17 @@ a{text-decoration:none;color:inherit}
 <div id="toast"></div>
 
 <script>
+const SHOGI_PROVERBS=[
+  {text:'歩の突き捨て、ただより安いものはない',meaning:'小さな犠牲が大きな局面改善につながる。歩を使って相手の形を乱す手筋の基本。'},
+  {text:'玉は囲いの中に入れよ',meaning:'玉を安全な場所に移動させることが最優先。囲いが完成してから戦いを始めるのが基本。'},
+  {text:'飛車は角行の先に動かせ',meaning:'大駒を効果的に使う順序がある。角が利く方向に飛車を配置すると威力が増す。'},
+  {text:'桂馬の高跳び歩の餌食',meaning:'桂馬を前線に跳ねすぎると攻撃を受けやすい。バランスを見て動かすこと。'},
+  {text:'金銀三枚の囲いは固い',meaning:'玉の周りに金銀を3枚配置した囲いは堅固。守りの駒数が大切。'},
+  {text:'攻めは角銀桂香、守りは金銀三枚',meaning:'攻め駒と守り駒の役割分担が勝負の基本。形を崩さずに戦うことが大切。'},
+  {text:'手損は悪',meaning:'無駄な手を指すと相手に先手を取られる。一手一手を有効に使うべき。'},
+  {text:'陣形の整備が勝利への近道',meaning:'駒の連係が取れた陣形を整えてから戦いを起こすと有利に戦える。'},
+];
+
 // Load stats
 function loadStats(){
   const rating=localStorage.getItem('rb_rating');
@@ -447,6 +642,7 @@ function loadStats(){
   const tsume=parseInt(localStorage.getItem('rb_tsume_solved')||'0');
   document.getElementById('statTsume').textContent=tsume;
   updateStreak();
+  renderProgress(total,tsume);
 }
 
 function updateStreak(){
@@ -465,6 +661,20 @@ function updateStreak(){
     localStorage.setItem('rb_last_active',today);
   }
   document.getElementById('statStreak').textContent=streak;
+}
+
+function renderProgress(games,tsume){
+  const tumeTotal=50;
+  const gamesPct=Math.min(100,Math.round(games/10*100));
+  const tumePct=Math.min(100,Math.round(tsume/tumeTotal*100));
+  const gBar=document.getElementById('gamesBar');
+  const tBar=document.getElementById('tumeBar');
+  if(gBar)gBar.style.width=gamesPct+'%';
+  if(tBar)tBar.style.width=tumePct+'%';
+  const gC=document.getElementById('gamesCount');
+  const tC=document.getElementById('tumeCount');
+  if(gC&&games>0)gC.textContent=games+'局達成';
+  if(tC&&tsume>0)tC.textContent=tsume+'/'+tumeTotal+'問クリア';
 }
 
 function miniPiece(kanji,side,promoted){
@@ -511,8 +721,79 @@ function renderDailyBoard(){
   ).join('');
 }
 
+function renderWelcome(){
+  const streak=parseInt(localStorage.getItem('rb_streak')||'0');
+  const last=localStorage.getItem('rb_last_active');
+  const today=new Date().toDateString();
+  const isFirstVisit=!last;
+  const wCard=document.getElementById('welcomeCard');
+  const sWarn=document.getElementById('streakWarn');
+  const fGuide=document.getElementById('firstVisitGuide');
+  if(isFirstVisit){
+    if(fGuide)fGuide.style.display='block';
+    return;
+  }
+  const visitedToday=last===today;
+  const yesterday=new Date(Date.now()-86400000).toDateString();
+  const streakRisk=!visitedToday&&streak>1&&last===yesterday;
+  if(streakRisk&&sWarn){sWarn.style.display='flex';}
+  if(visitedToday&&wCard){
+    wCard.style.display='flex';
+    const hour=new Date().getHours();
+    const greet=hour<12?'おはようございます！':hour<18?'こんにちは！':'お疲れさまです！';
+    document.getElementById('welcomeMsg').textContent=greet;
+    document.getElementById('welcomeIcon').textContent=hour<12?'🌅':hour<18?'☀️':'🌙';
+    document.getElementById('welcomeSub').textContent='今日も将棋の道を歩みましょう。';
+    document.getElementById('streakFire').textContent='🔥 '+streak+'日連続';
+  }
+}
+
+function renderGoal(){
+  const today=new Date().toISOString().slice(0,10);
+  const saved=JSON.parse(localStorage.getItem('rb_goals_'+today)||'[false,false,false]');
+  let done=0;
+  saved.forEach((v,i)=>{
+    if(v){
+      done++;
+      document.getElementById('goal'+i).classList.add('done');
+      const gc=document.getElementById('gc'+i);
+      if(gc)gc.textContent='✓';
+    }
+  });
+  document.getElementById('goalProgress').textContent=done+'/3 完了';
+  document.getElementById('goalFill').style.width=Math.round(done/3*100)+'%';
+}
+
+function toggleGoal(i){
+  const today=new Date().toISOString().slice(0,10);
+  const saved=JSON.parse(localStorage.getItem('rb_goals_'+today)||'[false,false,false]');
+  saved[i]=!saved[i];
+  localStorage.setItem('rb_goals_'+today,JSON.stringify(saved));
+  renderGoal();
+  if(saved[i]){showToast('目標達成！+1');}
+}
+
+function renderProverb(){
+  const dayOfYear=Math.floor((Date.now()-new Date(new Date().getFullYear(),0,1))/86400000);
+  const p=SHOGI_PROVERBS[dayOfYear%SHOGI_PROVERBS.length];
+  const pt=document.getElementById('proverbText');
+  const pm=document.getElementById('proverbMeaning');
+  if(pt)pt.textContent=p.text;
+  if(pm)pm.textContent=p.meaning;
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  if(!t)return;
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+
 loadStats();
 renderDailyBoard();
+renderWelcome();
+renderGoal();
+renderProverb();
 </script>
 </body>
 </html>
