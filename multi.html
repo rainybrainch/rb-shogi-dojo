@@ -54,6 +54,30 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
 .start-btn:hover{background:var(--gold-lt)}
 .hint{font-size:.72rem;color:var(--muted);margin-top:8px;text-align:center}
 
+/* 通算成績カード */
+.stats-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-top:14px}
+.stats-card-title{font-size:.72rem;color:var(--muted);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.stats-row{display:flex;gap:16px;flex-wrap:wrap}
+.stat-item{display:flex;flex-direction:column;align-items:center;gap:2px}
+.stat-val{font-size:1.1rem;font-weight:900;color:var(--gold)}
+.stat-val.win{color:var(--green)}
+.stat-val.lose{color:var(--red)}
+.stat-label{font-size:.65rem;color:var(--muted)}
+.stats-bar-wrap{margin-top:8px}
+.stats-bar{height:6px;background:var(--border);border-radius:4px;overflow:hidden;display:flex}
+.stats-bar .sb-w{background:var(--green);transition:.5s}
+.stats-bar .sb-d{background:var(--gold);transition:.5s}
+.stats-bar .sb-l{background:var(--red);transition:.5s}
+
+/* SFEN コピーボタン */
+.sfen-btn{font-size:.56rem;padding:1px 5px;border:1px solid var(--border);background:var(--card);color:var(--muted);border-radius:3px;cursor:pointer;font-family:inherit;transition:.1s;white-space:nowrap}
+.sfen-btn:hover{border-color:var(--gold);color:var(--gold)}
+.sfen-btn.copied{border-color:var(--green);color:var(--green)}
+
+/* AI スピナー */
+@keyframes spin{to{transform:rotate(360deg)}}
+.ai-spinner{display:inline-block;width:10px;height:10px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:3px}
+
 /* ── ゲーム画面 ── */
 #game{display:none;flex:1;flex-direction:column;overflow:hidden}
 #scorebar{padding:5px 16px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-shrink:0;font-size:.78rem;flex-wrap:wrap}
@@ -246,7 +270,23 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
     </div>
 
     <button class="start-btn" onclick="startSession()">対局開始 ▶</button>
-    <p class="hint">Tab: 盤切替 ／ Esc: 選択解除 ／ 盤クリックでもフォーカス切替</p>
+    <p class="hint">Tab: 盤切替 ／ ?: ヘルプ ／ ホバーで駒の利き確認</p>
+
+    <!-- 通算成績 -->
+    <div class="stats-card" id="setup-stats" style="display:none">
+      <div class="stats-card-title">通算成績</div>
+      <div class="stats-row" id="setup-stats-row"></div>
+      <div class="stats-bar-wrap">
+        <div class="stats-bar">
+          <div class="sb-w" id="sb-w" style="width:0%"></div>
+          <div class="sb-d" id="sb-d" style="width:0%"></div>
+          <div class="sb-l" id="sb-l" style="width:0%"></div>
+        </div>
+      </div>
+      <div style="text-align:right;margin-top:4px">
+        <button style="font-size:.62rem;color:var(--muted);background:none;border:none;cursor:pointer;font-family:inherit" onclick="clearStats()">リセット</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -323,6 +363,65 @@ function saveSettings(){
     boards:CFG.boards,levelId:CFG.level.id,side:CFG.userSide
   }));
 }
+
+// ── 通算成績 ──
+const STATS_KEY='rb_multi_stats';
+function loadTotalStats(){return JSON.parse(localStorage.getItem(STATS_KEY)||'{"w":0,"l":0,"d":0,"games":0}');}
+function saveTotalStats(s){localStorage.setItem(STATS_KEY,JSON.stringify(s));}
+function addSessionToStats(score){
+  const s=loadTotalStats();
+  s.w+=score.w;s.l+=score.l;s.d+=(score.d||0);s.games+=(score.w+score.l+(score.d||0));
+  saveTotalStats(s);
+  renderSetupStats();
+}
+function clearStats(){if(!confirm('通算成績をリセットしますか？'))return;localStorage.removeItem(STATS_KEY);renderSetupStats();}
+function renderSetupStats(){
+  const s=loadTotalStats();
+  const total=s.w+s.l+s.d;
+  const card=document.getElementById('setup-stats');
+  if(!total){card.style.display='none';return;}
+  card.style.display='block';
+  const wr=total?Math.round(s.w/total*100):0;
+  document.getElementById('setup-stats-row').innerHTML=`
+    <div class="stat-item"><div class="stat-val win">${s.w}</div><div class="stat-label">勝</div></div>
+    <div class="stat-item"><div class="stat-val lose">${s.l}</div><div class="stat-label">負</div></div>
+    <div class="stat-item"><div class="stat-val">${s.d}</div><div class="stat-label">引</div></div>
+    <div class="stat-item"><div class="stat-val">${s.games}</div><div class="stat-label">総局数</div></div>
+    <div class="stat-item"><div class="stat-val">${wr}%</div><div class="stat-label">勝率</div></div>`;
+  const wPct=total?s.w/total*100:0;
+  const dPct=total?s.d/total*100:0;
+  const lPct=total?s.l/total*100:0;
+  document.getElementById('sb-w').style.width=wPct+'%';
+  document.getElementById('sb-d').style.width=dPct+'%';
+  document.getElementById('sb-l').style.width=lPct+'%';
+}
+
+// ── SFEN コピー ──
+function toSfen(g){
+  const rows=[];
+  for(let r=0;r<9;r++){
+    let row='',empty=0;
+    for(let c=0;c<9;c++){
+      const p=g.grid[r][c];
+      if(!p){empty++;}
+      else{if(empty){row+=empty;empty=0;}row+=p.side==='b'?p.type:p.type.toLowerCase();}
+    }
+    if(empty)row+=empty;rows.push(row);
+  }
+  const hands=[];
+  for(const[t,cnt]of Object.entries(g.handB))if(cnt)hands.push((cnt>1?cnt:'')+t);
+  for(const[t,cnt]of Object.entries(g.handW))if(cnt)hands.push((cnt>1?cnt:'')+t.toLowerCase());
+  return `${rows.join('/')} ${g.turn} ${hands.join('')||'-'} ${g.moveNo}`;
+}
+function copySfen(idx){
+  const sfen=toSfen(GAMES[idx]);
+  navigator.clipboard?.writeText(sfen).then(()=>{
+    const btn=document.getElementById('sfenbtn-'+idx);
+    if(!btn)return;
+    btn.textContent='コピー済';btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='SFEN';btn.classList.remove('copied');},2000);
+  });
+}
 function loadSettings(){
   try{
     const s=JSON.parse(localStorage.getItem(LS_KEY)||'{}');
@@ -332,6 +431,7 @@ function loadSettings(){
     SND_ON=localStorage.getItem('rb_snd')!=='0';
     document.getElementById('snd-btn').textContent=SND_ON?'🔔':'🔕';
   }catch(e){}
+  renderSetupStats();
 }
 
 // ══════════════════════════════════════════════════════
@@ -617,6 +717,7 @@ function buildBoardsUI(){
         <span class="blv">${CFG.level.name}</span>
         <span class="adv-chip neu" id="adv-${g.id}">±0</span>
         <span class="btimer" id="btimer-${g.id}">0:00</span>
+        <button class="sfen-btn" id="sfenbtn-${g.id}" onclick="copySfen(${g.id})">SFEN</button>
         <span class="bst" id="bst-${g.id}">待機中</span>
         <button class="resign-btn" onclick="resignGame(${g.id})">投了</button>
       </div>
@@ -669,7 +770,7 @@ function refreshCard(idx){
   const st=document.getElementById('bst-'+idx);if(!st)return;
   if(g.over){const r=g.result;st.textContent=r==='w'?'あなたの勝ち 🏆':r==='l'?'AIの勝ち':'投了';}
   else if(g.inCheck&&g.turn===CFG.userSide){st.textContent='王手！';}
-  else if(g.aiThinking){st.textContent='AI思考中...';}
+  else if(g.aiThinking){st.innerHTML='<span class="ai-spinner"></span>思考中';}
   else if(isActive&&g.turn===CFG.userSide){st.textContent='あなたの番';}
   else{st.textContent='待機中';}
   // 投了ボタン
@@ -928,6 +1029,7 @@ function showResult(){
   const elapsed=Math.floor((Date.now()-SESSION_START)/1000);
   s.textContent=`${SCORE.w}勝 ${SCORE.l}敗${SCORE.d?` ${SCORE.d}引`:''} / ${n}局  (${Math.floor(elapsed/60)}分${elapsed%60}秒)  対 ${CFG.level.name}`;
   document.getElementById('rb').style.display='block';
+  addSessionToStats(SCORE);
 }
 
 // ── ヘルプオーバーレイ ──
