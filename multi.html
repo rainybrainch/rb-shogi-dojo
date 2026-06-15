@@ -126,8 +126,15 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
 .hp.wh{transform:rotate(180deg)}
 .hand-none{font-size:.58rem;color:rgba(255,255,255,.15);padding:2px}
 
+/* 盤ラッパー（ファイル/ランクラベル付き） */
+.board-outer{width:100%;position:relative}
+.file-bar{display:flex;justify-content:space-around;padding:0 1px;margin-bottom:1px}
+.file-bar span,.rank-bar span{font-size:.48rem;color:#8a7040;font-weight:700;line-height:1}
+.rank-bar{position:absolute;right:-14px;top:0;height:100%;display:flex;flex-direction:column;justify-content:space-around}
 .mb{display:grid;grid-template-columns:repeat(9,1fr);border:1.5px solid #8a7040;background:#e8d5a0;width:100%;aspect-ratio:1}
 .mc{border:.5px solid #c4a860;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:.1s}
+.mc.pz-b{background:rgba(220,80,80,.06)}
+.mc.pz-w{background:rgba(80,120,220,.06)}
 .mc.lg{background:rgba(74,127,212,.3)}
 .mc.lg::after{content:'';position:absolute;inset:18%;border-radius:50%;background:rgba(74,127,212,.5)}
 .mc.sl{background:rgba(200,165,74,.45)}
@@ -216,7 +223,11 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
   .bc-hd{gap:3px;padding:3px 6px}
 }
 
-/* 着手アニメーション */
+/* 形勢スパークライン */
+.sparkline{width:100%;height:20px;flex-shrink:0;overflow:hidden}
+.sparkline svg{display:block;width:100%;height:100%}
+
+
 @keyframes drop-in{0%{opacity:0;transform:scale(.6)}60%{transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
 .mp.new-piece{animation:drop-in .22s ease}
 
@@ -660,7 +671,24 @@ function minimax(g,hB,hW,depth,alpha,beta,maxing,ep){
   if(maxing){let val=-Infinity;for(const mv of sorted){const{grid:ng,handB:nb,handW:nw}=applyMv(g,hB,hW,mv);const{score}=minimax(ng,nb,nw,depth-1,alpha,beta,false,ep);if(score>val){val=score;best=mv;}alpha=Math.max(alpha,val);if(beta<=alpha)break;}return{score:val,move:best};}
   else{let val=Infinity;for(const mv of sorted){const{grid:ng,handB:nb,handW:nw}=applyMv(g,hB,hW,mv);const{score}=minimax(ng,nb,nw,depth-1,alpha,beta,true,ep);if(score<val){val=score;best=mv;}beta=Math.min(beta,val);if(beta<=alpha)break;}return{score:val,move:best};}
 }
-function getAiMove(g,hB,hW,lv,aiSide){
+// 定跡ブック: [from[r,c], to[r,c], promote]  ── 後手視点で対称
+const BOOK_B=[[6,6,7,6,false],[6,2,7,2,false],[7,7,6,7,false],[7,1,6,1,false],[6,4,7,4,false]];
+const BOOK_W=[[2,2,1,2,false],[2,6,1,6,false],[1,1,2,1,false],[1,7,2,7,false],[2,4,1,4,false]];
+function getBookMove(g,hB,hW,aiSide,moveNo){
+  if(moveNo>8)return null;
+  const book=aiSide==='b'?BOOK_B:BOOK_W;
+  const legal=allLegal(g,hB,hW,aiSide);
+  const cands=shuf(book);
+  for(const[fr,fc,tr,tc,pr]of cands){
+    if(g[fr][fc]&&g[fr][fc].side===aiSide&&!g[tr][tc]){
+      const mv=legal.find(m=>!m.drop&&m.from[0]===fr&&m.from[1]===fc&&m.to[0]===tr&&m.to[1]===tc&&m.promote===pr);
+      if(mv)return mv;
+    }
+  }
+  return null;
+}
+function getAiMove(g,hB,hW,lv,aiSide,moveNo){
+  if((lv.evalPlus||0)>=1&&moveNo&&moveNo<=8){const bm=getBookMove(g,hB,hW,aiSide,moveNo);if(bm)return bm;}
   if(Math.random()<(lv.random||0))return shuf(allLegal(g,hB,hW,aiSide))[0]||null;
   if(lv.depth===0)return shuf(allLegal(g,hB,hW,aiSide))[0]||null;
   return minimax(g,hB,hW,lv.depth,-Infinity,Infinity,aiSide==='w',lv.evalPlus||0).move;
@@ -742,7 +770,7 @@ function startSession(){
     id:i,grid:startPos(),handB:{},handW:{},
     turn:'b',over:false,result:null,
     sel:null,selDrop:null,legalSq:[],lastTo:null,aiThinking:false,
-    moveNo:1,inCheck:false,log:[],startedAt:Date.now(),
+    moveNo:1,inCheck:false,log:[],startedAt:Date.now(),evalHistory:[50],
   }));
   FOCUS=0;
 
@@ -797,9 +825,14 @@ function buildBoardsUI(){
       <div class="byo-bar" id="byob-${g.id}" style="display:none"><div class="byo-fill" id="byof-${g.id}" style="width:100%"></div></div>
       <div class="bi">
         <div class="hr" id="wh-${g.id}"></div>
-        <div class="mb" id="mb-${g.id}"></div>
+        <div class="board-outer" style="position:relative;padding-right:16px">
+          <div class="file-bar" id="fb-${g.id}"></div>
+          <div class="mb" id="mb-${g.id}"></div>
+          <div class="rank-bar" id="rb2-${g.id}"></div>
+        </div>
         <div class="hr" id="bh-${g.id}"></div>
       </div>
+      <div class="sparkline" id="spark-${g.id}"></div>
       <div class="mlog" id="mlog-${g.id}"></div>`;
     grid.appendChild(card);
     renderGame(g.id);
@@ -826,6 +859,14 @@ function refreshCard(idx){
       ac.textContent=(userAdv>0?'+':'')+userAdv;
       ac.className='adv-chip '+(userAdv>10?'pos':userAdv<-10?'neg':'neu');
     }
+  }
+  // 形勢スパークライン
+  const spark=document.getElementById('spark-'+idx);
+  if(spark&&g.evalHistory&&g.evalHistory.length>1){
+    const pts=g.evalHistory;const W=100,H=20;
+    const min=Math.min(...pts),max=Math.max(...pts),range=max-min||1;
+    const path=pts.map((v,i)=>`${i*(W/(pts.length-1))},${H-(v-min)/range*(H-2)-1}`).join(' ');
+    spark.innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><polyline points="${path}" fill="none" stroke="rgba(200,165,74,.5)" stroke-width="1.5"/><line x1="0" y1="${H/2}" x2="${W}" y2="${H/2}" stroke="rgba(255,255,255,.08)" stroke-width=".5"/></svg>`;
   }
   // 棋譜ログ
   const ml=document.getElementById('mlog-'+idx);
@@ -861,6 +902,11 @@ function renderBoard(idx){
   const fs=n<=3?'clamp(.62rem,1.2vw,.88rem)':n<=6?'clamp(.52rem,.95vw,.75rem)':'clamp(.44rem,.7vw,.63rem)';
   const flip=CFG.userSide==='w';
   if(flip)el.classList.add('flipped'); else el.classList.remove('flipped');
+  // ファイル/ランクラベル
+  const fb=document.getElementById('fb-'+idx);
+  const rb2=document.getElementById('rb2-'+idx);
+  if(fb){fb.innerHTML='';const files=flip?'１２３４５６７８９'.split(''):['９','８','７','６','５','４','３','２','１'];files.forEach(f=>{const s=document.createElement('span');s.textContent=f;fb.appendChild(s);});}
+  if(rb2){rb2.innerHTML='';const ranks=flip?['九','八','七','六','五','四','三','二','一']:['一','二','三','四','五','六','七','八','九'];ranks.forEach(r=>{const s=document.createElement('span');s.textContent=r;rb2.appendChild(s);});}
   // 王手時: 王のマスをハイライト
   const ckPos=g.inCheck&&g.turn===CFG.userSide?kpos(g.grid,CFG.userSide):null;
   // 描画順: 後手視点なら逆順
@@ -869,6 +915,9 @@ function renderBoard(idx){
   for(const r of rs)for(const c of cs){
     const cell=document.createElement('div');
     cell.className='mc';
+    // 成れるゾーン着色
+    if(r<=2)cell.classList.add('pz-b');
+    if(r>=6)cell.classList.add('pz-w');
     if(g.lastTo&&g.lastTo[0]===r&&g.lastTo[1]===c)cell.classList.add('lt');
     if(g.sel&&g.sel[0]===r&&g.sel[1]===c)cell.classList.add('sl');
     if(g.legalSq.some(([lr,lc])=>lr===r&&lc===c))cell.classList.add('lg');
@@ -1001,6 +1050,8 @@ function execMove(idx,mv){
   g.grid=ng;g.handB=nb;g.handW=nw;
   g.lastTo=mv.to;g.turn=g.turn==='b'?'w':'b';g.moveNo++;
   g.sel=null;g.selDrop=null;g.legalSq=[];
+  g.evalHistory.push(evalPct(g.grid,g.handB,g.handW));
+  if(g.evalHistory.length>60)g.evalHistory.shift();
   // 王手チェック
   g.inCheck=inCheck(g.grid,g.turn);
   const nx=allLegal(g.grid,g.handB,g.handW,g.turn);
@@ -1028,13 +1079,15 @@ function doAi(idx){
   const aiSide=CFG.userSide==='b'?'w':'b';
   g.aiThinking=true;refreshCard(idx);
   setTimeout(()=>{
-    const mv=getAiMove(g.grid,g.handB,g.handW,CFG.level,aiSide);
+    const mv=getAiMove(g.grid,g.handB,g.handW,CFG.level,aiSide,g.moveNo);
     if(!mv){sndWin();endGame(idx,'w');return;}
     const wasCapture=!mv.drop&&!!g.grid[mv.to[0]][mv.to[1]];
     if(!mv.drop)mv.pieceType=g.grid[mv.from[0]][mv.from[1]].type;
     const{grid:ng,handB:nb,handW:nw}=applyMv(g.grid,g.handB,g.handW,mv);
     g.grid=ng;g.handB=nb;g.handW=nw;g.lastTo=mv.to;
     g.turn=CFG.userSide;g.aiThinking=false;g.moveNo++;
+    g.evalHistory.push(evalPct(g.grid,g.handB,g.handW));
+    if(g.evalHistory.length>60)g.evalHistory.shift();
     g.inCheck=inCheck(g.grid,g.turn);
     const nx=allLegal(g.grid,g.handB,g.handW,g.turn);
     // 棋譜ログ
