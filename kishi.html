@@ -19,6 +19,18 @@ a{text-decoration:none;color:inherit}
 .section-title{font-family:'Dela Gothic One',sans-serif;font-size:1rem;color:#fff}
 .section-badge{font-size:.62rem;background:var(--gold);color:var(--dark);padding:2px 8px;border-radius:20px;font-weight:700}
 
+/* SEARCH */
+.search-wrap{padding:14px 16px 4px;position:relative}
+.search-input{width:100%;background:var(--card);border:2px solid var(--border);border-radius:12px;
+  padding:10px 14px 10px 38px;color:#fff;font-size:.82rem;font-family:'Zen Maru Gothic',sans-serif;outline:none;transition:.15s}
+.search-input:focus{border-color:var(--gold)}
+.search-icon{position:absolute;left:28px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1rem;pointer-events:none}
+
+/* FAVORITE */
+.fav-btn{position:absolute;top:10px;right:10px;font-size:1.2rem;cursor:pointer;z-index:5;
+  line-height:1;background:none;border:none;padding:4px}
+.player-card{position:relative}
+
 /* FILTER */
 .filter-row{display:flex;gap:8px;overflow-x:auto;padding:0 16px 12px;scrollbar-width:none}
 .filter-row::-webkit-scrollbar{display:none}
@@ -77,11 +89,16 @@ a{text-decoration:none;color:inherit}
   <div class="header-title">棋士図鑑</div>
 </header>
 
+<div class="search-wrap">
+  <span class="search-icon">🔍</span>
+  <input class="search-input" type="text" placeholder="棋士名で検索…" id="searchInput" oninput="onSearch(this.value)">
+</div>
 <div class="filter-row">
-  <button class="filter-btn active" onclick="filterPlayers('all',this)">全員</button>
-  <button class="filter-btn" onclick="filterPlayers('legend',this)">伝説</button>
-  <button class="filter-btn" onclick="filterPlayers('modern',this)">現代</button>
-  <button class="filter-btn" onclick="filterPlayers('female',this)">女流</button>
+  <button class="filter-btn active" data-cat="all" onclick="filterPlayers('all',this)">全員</button>
+  <button class="filter-btn" data-cat="legend" onclick="filterPlayers('legend',this)">伝説</button>
+  <button class="filter-btn" data-cat="modern" onclick="filterPlayers('modern',this)">現代</button>
+  <button class="filter-btn" data-cat="female" onclick="filterPlayers('female',this)">女流</button>
+  <button class="filter-btn" data-cat="fav" onclick="filterPlayers('fav',this)">⭐ お気に入り</button>
 </div>
 
 <div class="section">
@@ -186,18 +203,42 @@ const PLAYERS=[
 ];
 
 let currentFilter='all';
+let currentSearch='';
+
+function getFavs(){return JSON.parse(localStorage.getItem('rb_kishi_favs')||'[]');}
+function saveFavs(f){localStorage.setItem('rb_kishi_favs',JSON.stringify(f));}
+
+function toggleFav(id,event){
+  event.stopPropagation();
+  const favs=getFavs();
+  const idx=favs.indexOf(id);
+  if(idx>=0)favs.splice(idx,1);else favs.push(id);
+  saveFavs(favs);
+  renderPlayers(currentFilter);
+}
 
 function renderPlayers(filter){
   const grid=document.getElementById('playerGrid');
-  const list=filter==='all'?PLAYERS:PLAYERS.filter(p=>p.category===filter);
-  grid.innerHTML=list.map(p=>`
-    <div class="player-card" onclick="openModal('${p.id}')">
+  const favs=getFavs();
+  let list=PLAYERS;
+  if(filter==='fav')list=PLAYERS.filter(p=>favs.includes(p.id));
+  else if(filter!=='all')list=PLAYERS.filter(p=>p.category===filter);
+  if(currentSearch)list=list.filter(p=>p.name.includes(currentSearch)||p.style.includes(currentSearch)||p.title.includes(currentSearch));
+  if(list.length===0){
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--muted);font-size:.82rem">該当する棋士がいません</div>';
+    return;
+  }
+  grid.innerHTML=list.map(p=>{
+    const isFav=favs.includes(p.id);
+    return`<div class="player-card" onclick="openModal('${p.id}')">
+      <button class="fav-btn" onclick="toggleFav('${p.id}',event)" title="お気に入り">${isFav?'⭐':'☆'}</button>
       <div class="player-avatar">${p.avatar}</div>
       <div class="player-name">${p.name}</div>
       <div class="player-title-badge">${p.title.split('・')[0]}</div>
       <div class="player-era">${p.era}</div>
       <div class="player-style">${p.style.split('・')[0]}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function filterPlayers(cat,btn){
@@ -205,6 +246,11 @@ function filterPlayers(cat,btn){
   document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   renderPlayers(cat);
+}
+
+function onSearch(val){
+  currentSearch=val.trim();
+  renderPlayers(currentFilter);
 }
 
 function openModal(id){
