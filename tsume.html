@@ -32,7 +32,7 @@ a{text-decoration:none;color:inherit}
 .pcard.done{border-color:rgba(76,175,125,.3);box-shadow:3px 3px 0 var(--green)}
 .pcard-top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
 .mbadge{font-size:.62rem;font-weight:700;padding:2px 9px;border-radius:20px}
-.m1{background:var(--green);color:var(--dark)} .m3{background:var(--sky);color:var(--dark)} .m5{background:var(--gold);color:var(--dark)} .m7{background:var(--red);color:#fff}
+.m1{background:var(--green);color:var(--dark)} .m3{background:var(--sky);color:var(--dark)} .m5{background:var(--gold);color:var(--dark)} .m7{background:var(--red);color:#fff} .m9{background:#9b59b6;color:#fff}
 .pcard-title{font-family:'Dela Gothic One',sans-serif;font-size:.9rem;flex:1}
 .pcard-check{color:var(--green);font-size:1rem}
 .pcard-hint{font-size:.68rem;color:var(--muted)}
@@ -176,6 +176,7 @@ a{text-decoration:none;color:inherit}
   <button class="fb" onclick="setFilter(3,this)">3手詰</button>
   <button class="fb" onclick="setFilter(5,this)">5手詰</button>
   <button class="fb" onclick="setFilter(7,this)">7手詰</button>
+  <button class="fb" onclick="setFilter(9,this)">9手詰</button>
 </div>
 
 <div class="plist" id="plist"></div>
@@ -259,42 +260,36 @@ function rowToRank(r){return r+1;}
 
 const PUZZLES=[
   // ── 1手詰め ──────────────────────────────────────
-  {id:1,moves:1,title:'1手詰め #1',hint:'持ち駒の金を角の利きで保護して打ち込もう',
+  {id:1,moves:1,title:'1手詰め #1',hint:'持ち駒の金を飛車の利きで保護して打ち込もう',
    pieces:[
-     {r:0,c:8,p:'k',side:'w'},   // 後手玉@1一
-     {r:2,c:7,p:'R',side:'b'},   // 先手飛@2三
+     {r:0,c:8,p:'k',side:'w'},
+     {r:2,c:7,p:'R',side:'b'},
    ],
    handB:{G:1},handW:{},
-   solution:[
-     {type:'drop',piece:'G',to:[1,7],notation:'▲2二金打'},
-   ]},
+   solution:[{type:'drop',piece:'G',to:[1,7],notation:'▲2二金打'}]},
 
   {id:2,moves:1,title:'1手詰め #2',hint:'角の斜め利きを使って詰めよ',
    pieces:[
-     {r:0,c:8,p:'k',side:'w'},   // 後手玉@1一
-     {r:2,c:6,p:'B',side:'b'},   // 先手角@3三
+     {r:0,c:8,p:'k',side:'w'},
+     {r:2,c:6,p:'B',side:'b'},
    ],
    handB:{G:1},handW:{},
-   solution:[
-     {type:'drop',piece:'G',to:[1,7],notation:'▲2二金打'},
-   ]},
+   solution:[{type:'drop',piece:'G',to:[1,7],notation:'▲2二金打'}]},
 
   {id:3,moves:1,title:'1手詰め #3',hint:'香車を打ち込んで詰め。銀が2つの逃げ道を封じている',
    pieces:[
-     {r:0,c:8,p:'k',side:'w'},   // 後手玉@1一
-     {r:1,c:6,p:'S',side:'b'},   // 先手銀@3二 (covers 2一,3一,4一,2三,4三)
-     {r:8,c:8,p:'L',side:'b'},   // 先手香@1九 (unused, flavor)
+     {r:0,c:8,p:'k',side:'w'},
+     {r:1,c:6,p:'S',side:'b'},
+     {r:8,c:8,p:'L',side:'b'},
    ],
    handB:{L:1},handW:{},
-   solution:[
-     {type:'drop',piece:'L',to:[1,8],notation:'▲1二香打'},
-   ]},
+   solution:[{type:'drop',piece:'L',to:[1,8],notation:'▲1二香打'}]},
 
   {id:4,moves:1,title:'1手詰め #4',hint:'桂馬の跳躍で端の玉を仕留めよ',
    pieces:[
-     {r:0,c:8,p:'k',side:'w'},   // 後手玉@1一
-     {r:1,c:6,p:'G',side:'b'},   // 先手金@3二 (covers 2一,2二,3一,4二,4三)
-     {r:8,c:8,p:'R',side:'b'},   // 先手飛@1九 (covers 1二)
+     {r:0,c:8,p:'k',side:'w'},
+     {r:1,c:6,p:'G',side:'b'},
+     {r:8,c:8,p:'R',side:'b'},
    ],
    handB:{N:1},handW:{},
    solution:[
@@ -431,7 +426,6 @@ const PUZZLES=[
      {type:'move',piece:'k',from:[0,7],to:[0,6],notation:'△3一玉'},
      {type:'drop',piece:'G',to:[1,7],notation:'▲2二金打'},
    ]},
-];
 
   // ── 追加1手詰め ───────────────────────────────────
   {id:13,moves:1,title:'1手詰め #6',hint:'角の遠距離利きが金打ちを支える',
@@ -665,6 +659,279 @@ const PUZZLES=[
      {type:'move',piece:'k',from:[0,7],to:[1,7],notation:'△2二玉'},
      {type:'drop',piece:'S',to:[0,7],notation:'▲2一銀打'},
    ]},
+
+  // ── 追加1手詰め ─────────────────────────────────
+  {id:30,moves:1,title:'1手詰め #14',hint:'竜の横利きで玉の逃げ場を封じて金を打て',
+   pieces:[
+     {r:0,c:7,p:'k',side:'w'},
+     {r:0,c:8,p:'g',side:'w'},
+     {r:0,c:6,p:'g',side:'w'},
+     {r:3,c:7,p:'+R',side:'b'},
+   ],
+   handB:{G:1},handW:{},
+   solution:[{type:'drop',piece:'G',to:[1,7],notation:'▲2二金打'}]},
+
+  {id:31,moves:1,title:'1手詰め #15',hint:'飛車成りで一手詰め！端の玉を仕留める',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},
+     {r:0,c:7,p:'g',side:'w'},
+     {r:1,c:7,p:'G',side:'b'},
+     {r:8,c:8,p:'R',side:'b'},
+   ],
+   handB:{},handW:{},
+   solution:[{type:'move',piece:'R',from:[8,8],to:[1,8],promote:true,notation:'▲1二飛成'}]},
+
+  {id:32,moves:1,title:'1手詰め #16',hint:'角成りで広い敵陣を一手で制圧',
+   pieces:[
+     {r:0,c:6,p:'k',side:'w'},
+     {r:0,c:8,p:'g',side:'w'},
+     {r:1,c:8,p:'G',side:'b'},
+     {r:2,c:4,p:'B',side:'b'},
+   ],
+   handB:{},handW:{},
+   solution:[{type:'move',piece:'B',from:[2,4],to:[0,6],promote:true,notation:'▲3一角成'}]},
+
+  {id:33,moves:1,title:'1手詰め #17',hint:'銀打ちで飛車の縦利きを活かす',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},
+     {r:0,c:6,p:'g',side:'w'},
+     {r:1,c:6,p:'B',side:'b'},
+     {r:2,c:8,p:'R',side:'b'},
+   ],
+   handB:{S:1},handW:{},
+   solution:[{type:'drop',piece:'S',to:[1,8],notation:'▲1二銀打'}]},
+
+  {id:34,moves:1,title:'1手詰め #18',hint:'金を打って玉の退路を全て封鎖する',
+   pieces:[
+     {r:1,c:8,p:'k',side:'w'},
+     {r:0,c:8,p:'s',side:'w'},
+     {r:0,c:7,p:'p',side:'w'},
+     {r:3,c:8,p:'R',side:'b'},
+     {r:1,c:6,p:'G',side:'b'},
+   ],
+   handB:{G:1},handW:{},
+   solution:[{type:'drop',piece:'G',to:[2,7],notation:'▲2三金打'}]},
+
+  // ── 追加3手詰め ─────────────────────────────────
+  {id:35,moves:3,title:'3手詰め #9',hint:'飛を打ち込んで玉を端に追い詰める',
+   pieces:[
+     {r:0,c:7,p:'k',side:'w'},
+     {r:0,c:6,p:'g',side:'w'},
+     {r:0,c:8,p:'g',side:'w'},
+     {r:1,c:5,p:'G',side:'b'},
+   ],
+   handB:{R:1,G:1},handW:{},
+   solution:[
+     {type:'drop',piece:'R',to:[1,7],notation:'▲2二飛打'},
+     {type:'move',piece:'k',from:[0,7],to:[0,8],notation:'△1一玉'},
+     {type:'drop',piece:'G',to:[0,7],notation:'▲2一金打'},
+   ]},
+
+  {id:36,moves:3,title:'3手詰め #10',hint:'角成りで玉を縛ってから金を打て',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},
+     {r:0,c:7,p:'s',side:'w'},
+     {r:2,c:6,p:'B',side:'b'},
+     {r:3,c:7,p:'R',side:'b'},
+   ],
+   handB:{G:1},handW:{},
+   solution:[
+     {type:'move',piece:'B',from:[2,6],to:[1,7],promote:true,notation:'▲2二角成'},
+     {type:'move',piece:'k',from:[0,8],to:[1,8],notation:'△1二玉'},
+     {type:'drop',piece:'G',to:[2,8],notation:'▲1三金打'},
+   ]},
+
+  {id:37,moves:3,title:'3手詰め #11',hint:'龍で王手して玉を引き出し、金で仕留める',
+   pieces:[
+     {r:1,c:7,p:'k',side:'w'},
+     {r:0,c:8,p:'g',side:'w'},
+     {r:0,c:7,p:'g',side:'w'},
+     {r:5,c:7,p:'+R',side:'b'},
+     {r:3,c:5,p:'G',side:'b'},
+   ],
+   handB:{G:1},handW:{},
+   solution:[
+     {type:'move',piece:'+R',from:[5,7],to:[1,7],notation:'▲2二龍'},
+     {type:'move',piece:'k',from:[1,7],to:[2,7],notation:'△2三玉'},
+     {type:'drop',piece:'G',to:[2,8],notation:'▲1三金打'},
+   ]},
+
+  {id:38,moves:3,title:'3手詰め #12',hint:'桂を跳ねて飛車の利きを通す',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},
+     {r:0,c:7,p:'g',side:'w'},
+     {r:1,c:5,p:'G',side:'b'},
+     {r:5,c:8,p:'R',side:'b'},
+   ],
+   handB:{N:1},handW:{},
+   solution:[
+     {type:'drop',piece:'N',to:[2,7],notation:'▲2三桂打'},
+     {type:'move',piece:'k',from:[0,8],to:[1,8],notation:'△1二玉'},
+     {type:'move',piece:'R',from:[5,8],to:[2,8],notation:'▲1三飛'},
+   ]},
+
+  // ── 追加5手詰め ─────────────────────────────────
+  {id:40,moves:5,title:'5手詰め #6',hint:'角の捨て駒から始まる華麗な5手詰め',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},
+     {r:0,c:7,p:'g',side:'w'},
+     {r:0,c:6,p:'g',side:'w'},
+     {r:4,c:4,p:'B',side:'b'},
+     {r:8,c:8,p:'R',side:'b'},
+   ],
+   handB:{G:1},handW:{},
+   solution:[
+     {type:'move',piece:'B',from:[4,4],to:[2,6],promote:true,notation:'▲3三角成'},
+     {type:'move',piece:'k',from:[0,8],to:[1,8],notation:'△1二玉'},
+     {type:'move',piece:'R',from:[8,8],to:[2,8],promote:true,notation:'▲1三飛成'},
+     {type:'move',piece:'k',from:[1,8],to:[2,7],notation:'△2三玉'},
+     {type:'drop',piece:'G',to:[1,7],notation:'▲2二金打'},
+   ]},
+
+  {id:41,moves:5,title:'5手詰め #7',hint:'飛車で王手して玉を引き出す5手詰め',
+   pieces:[
+     {r:0,c:7,p:'k',side:'w'},
+     {r:0,c:8,p:'g',side:'w'},
+     {r:0,c:6,p:'s',side:'w'},
+     {r:4,c:7,p:'R',side:'b'},
+     {r:2,c:5,p:'G',side:'b'},
+   ],
+   handB:{S:1,G:1},handW:{},
+   solution:[
+     {type:'move',piece:'R',from:[4,7],to:[1,7],notation:'▲2二飛'},
+     {type:'move',piece:'k',from:[0,7],to:[0,6],notation:'△3一玉'},
+     {type:'drop',piece:'S',to:[1,6],notation:'▲3二銀打'},
+     {type:'move',piece:'k',from:[0,6],to:[0,5],notation:'△4一玉'},
+     {type:'drop',piece:'G',to:[0,6],notation:'▲3一金打'},
+   ]},
+
+  {id:42,moves:5,title:'5手詰め #8',hint:'桂馬と銀の連携で玉を追い詰める',
+   pieces:[
+     {r:0,c:7,p:'k',side:'w'},
+     {r:0,c:8,p:'g',side:'w'},
+     {r:0,c:6,p:'g',side:'w'},
+     {r:1,c:7,p:'p',side:'w'},
+     {r:5,c:6,p:'G',side:'b'},
+     {r:5,c:8,p:'R',side:'b'},
+   ],
+   handB:{N:1,S:1},handW:{},
+   solution:[
+     {type:'drop',piece:'N',to:[2,6],notation:'▲3三桂打'},
+     {type:'move',piece:'k',from:[0,7],to:[0,8],notation:'△1一玉'},
+     {type:'drop',piece:'S',to:[1,7],notation:'▲2二銀打'},
+     {type:'move',piece:'k',from:[0,8],to:[1,8],notation:'△1二玉'},
+     {type:'move',piece:'R',from:[5,8],to:[2,8],notation:'▲1三飛'},
+   ]},
+
+  // ── 追加7手詰め ─────────────────────────────────
+  {id:50,moves:7,title:'7手詰め #4',hint:'飛車と角の連携で玉を追い詰める7手詰め',
+   pieces:[
+     {r:0,c:7,p:'k',side:'w'},
+     {r:0,c:8,p:'g',side:'w'},
+     {r:0,c:6,p:'g',side:'w'},
+     {r:1,c:7,p:'p',side:'w'},
+     {r:5,c:7,p:'R',side:'b'},
+     {r:5,c:5,p:'B',side:'b'},
+   ],
+   handB:{S:1,G:1},handW:{},
+   solution:[
+     {type:'move',piece:'R',from:[5,7],to:[1,7],notation:'▲2二飛'},
+     {type:'move',piece:'k',from:[0,7],to:[0,8],notation:'△1一玉'},
+     {type:'move',piece:'B',from:[5,5],to:[2,8],promote:true,notation:'▲1三角成'},
+     {type:'move',piece:'k',from:[0,8],to:[1,8],notation:'△1二玉'},
+     {type:'drop',piece:'S',to:[2,8],notation:'▲1三銀打'},
+     {type:'move',piece:'k',from:[1,8],to:[0,8],notation:'△1一玉'},
+     {type:'drop',piece:'G',to:[0,7],notation:'▲2一金打'},
+   ]},
+
+  {id:51,moves:7,title:'7手詰め #5',hint:'銀二枚と飛車の成りで玉を追い詰める',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},
+     {r:0,c:7,p:'g',side:'w'},
+     {r:1,c:6,p:'g',side:'w'},
+     {r:8,c:8,p:'R',side:'b'},
+     {r:3,c:6,p:'G',side:'b'},
+   ],
+   handB:{S:2,G:1},handW:{},
+   solution:[
+     {type:'drop',piece:'S',to:[1,7],notation:'▲2二銀打'},
+     {type:'move',piece:'k',from:[0,8],to:[0,7],notation:'△2一玉'},
+     {type:'drop',piece:'S',to:[0,8],notation:'▲1一銀打'},
+     {type:'move',piece:'k',from:[0,7],to:[0,6],notation:'△3一玉'},
+     {type:'move',piece:'R',from:[8,8],to:[2,8],promote:true,notation:'▲1三飛成'},
+     {type:'move',piece:'k',from:[0,6],to:[1,6],notation:'△3二玉'},
+     {type:'drop',piece:'G',to:[2,6],notation:'▲3三金打'},
+   ]},
+
+  // ── 9手詰め ──────────────────────────────────────
+  {id:60,moves:9,title:'9手詰め #1',hint:'飛車の打ち込みから！長手数9手詰めに挑戦',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},
+     {r:0,c:7,p:'g',side:'w'},
+     {r:0,c:6,p:'g',side:'w'},
+     {r:1,c:6,p:'p',side:'w'},
+     {r:1,c:7,p:'s',side:'w'},
+     {r:6,c:8,p:'R',side:'b'},
+     {r:4,c:6,p:'G',side:'b'},
+   ],
+   handB:{S:1,G:2},handW:{},
+   solution:[
+     {type:'move',piece:'R',from:[6,8],to:[1,8],notation:'▲1二飛'},
+     {type:'move',piece:'s',from:[1,7],to:[1,8],notation:'△1二同銀'},
+     {type:'drop',piece:'G',to:[1,7],notation:'▲2二金打'},
+     {type:'move',piece:'k',from:[0,8],to:[0,7],notation:'△2一玉'},
+     {type:'drop',piece:'S',to:[0,8],notation:'▲1一銀打'},
+     {type:'move',piece:'k',from:[0,7],to:[0,6],notation:'△3一玉'},
+     {type:'drop',piece:'G',to:[0,7],notation:'▲2一金打'},
+     {type:'move',piece:'k',from:[0,6],to:[1,6],notation:'△3二玉'},
+     {type:'move',piece:'G',from:[4,6],to:[2,6],notation:'▲3三金'},
+   ]},
+
+  {id:61,moves:9,title:'9手詰め #2',hint:'桂馬の妙手から始まる9手詰め。全手順を読み切れ！',
+   pieces:[
+     {r:1,c:7,p:'k',side:'w'},
+     {r:0,c:8,p:'g',side:'w'},
+     {r:0,c:7,p:'g',side:'w'},
+     {r:0,c:6,p:'s',side:'w'},
+     {r:1,c:6,p:'p',side:'w'},
+     {r:5,c:7,p:'R',side:'b'},
+     {r:3,c:5,p:'G',side:'b'},
+   ],
+   handB:{N:1,G:1,S:1},handW:{},
+   solution:[
+     {type:'drop',piece:'N',to:[3,6],notation:'▲3四桂打'},
+     {type:'move',piece:'k',from:[1,7],to:[1,8],notation:'△1二玉'},
+     {type:'move',piece:'R',from:[5,7],to:[1,7],notation:'▲2二飛'},
+     {type:'move',piece:'k',from:[1,8],to:[0,8],notation:'△1一玉'},
+     {type:'drop',piece:'G',to:[1,8],notation:'▲1二金打'},
+     {type:'move',piece:'k',from:[0,8],to:[0,7],notation:'△2一玉'},
+     {type:'drop',piece:'S',to:[1,7],notation:'▲2二銀打'},
+     {type:'move',piece:'k',from:[0,7],to:[0,6],notation:'△3一玉'},
+     {type:'move',piece:'G',from:[3,5],to:[1,5],notation:'▲4二金'},
+   ]},
+
+  {id:62,moves:9,title:'9手詰め #3',hint:'飛と金銀で端から端へと追い詰める9手詰め',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},
+     {r:0,c:7,p:'s',side:'w'},
+     {r:1,c:7,p:'p',side:'w'},
+     {r:0,c:6,p:'g',side:'w'},
+     {r:1,c:5,p:'p',side:'w'},
+     {r:5,c:8,p:'R',side:'b'},
+     {r:5,c:6,p:'B',side:'b'},
+   ],
+   handB:{G:2,S:1},handW:{},
+   solution:[
+     {type:'drop',piece:'G',to:[1,8],notation:'▲1二金打'},
+     {type:'move',piece:'k',from:[0,8],to:[0,7],notation:'△2一玉'},
+     {type:'move',piece:'B',from:[5,6],to:[2,3],promote:true,notation:'▲6四角成'},
+     {type:'move',piece:'k',from:[0,7],to:[0,6],notation:'△3一玉'},
+     {type:'drop',piece:'G',to:[0,7],notation:'▲2一金打'},
+     {type:'move',piece:'k',from:[0,6],to:[1,6],notation:'△3二玉'},
+     {type:'move',piece:'R',from:[5,8],to:[1,8],notation:'▲1二飛'},
+     {type:'move',piece:'k',from:[1,6],to:[2,6],notation:'△3三玉'},
+     {type:'drop',piece:'S',to:[2,7],notation:'▲2三銀打'},
+   ]},
 ];
 
 // ── 状態 ────────────────────────────────────────
@@ -715,7 +982,7 @@ function updateStatDisplay(){
   document.getElementById('s-streak').textContent=streak;
   const pct=attempts>0?Math.round(solved.size/attempts*100):0;
   document.getElementById('s-rate').textContent=pct+'%';
-  const rank=solved.size>=25?'三段':solved.size>=20?'二段':solved.size>=15?'初段':solved.size>=10?'1級':solved.size>=6?'3級':solved.size>=3?'5級':'未達';
+  const rank=solved.size>=50?'五段':solved.size>=40?'四段':solved.size>=30?'三段':solved.size>=20?'二段':solved.size>=12?'初段':solved.size>=8?'1級':solved.size>=5?'3級':solved.size>=2?'5級':'未達';
   document.getElementById('s-rank').textContent=rank;
   document.getElementById('progressText').textContent=`${solved.size}/${PUZZLES.length}問`;
 }
@@ -730,7 +997,7 @@ function setFilter(f,btn){
 
 function renderList(){
   const list=filterVal==='all'?PUZZLES:PUZZLES.filter(p=>p.moves===filterVal);
-  const mc={'1':'m1','3':'m3','5':'m5','7':'m7'};
+  const mc={'1':'m1','3':'m3','5':'m5','7':'m7','9':'m9'};
   document.getElementById('plist').innerHTML=list.map(p=>{
     const done=solved.has(p.id);
     const best=done?localStorage.getItem('rb_tsume_best_'+p.id):null;
