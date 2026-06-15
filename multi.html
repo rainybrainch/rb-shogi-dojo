@@ -672,6 +672,19 @@ function evalBoard(g,hB,hW,ep=0){
   for(const[t,cnt]of Object.entries(hW))score-=(PV[t]||0)*cnt*.85;
   if(ep>=3){const mobB=allLegal(g,hB,hW,'b').length,mobW=allLegal(g,hB,hW,'w').length;score+=(mobB-mobW)*3;}
   if(ep>=4){const kpB=kpos(g,'b'),kpW=kpos(g,'w');if(kpB){score-=(Math.abs(kpB[0]-8)+Math.abs(kpB[1]-4))*8;}if(kpW){score+=(Math.abs(kpW[0]-0)+Math.abs(kpW[1]-4))*8;}}
+  if(ep>=5){
+    // 王の周囲8マス味方駒数で守り評価
+    const kpB=kpos(g,'b'),kpW=kpos(g,'w');
+    if(kpB){let nb2=0;for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const p=g[kpB[0]+dr]?.[kpB[1]+dc];if(p&&p.side==='b')nb2++;}score+=nb2*15;}
+    if(kpW){let nw2=0;for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const p=g[kpW[0]+dr]?.[kpW[1]+dc];if(p&&p.side==='w')nw2++;}score-=nw2*15;}
+    // 通過歩ボーナス（相手歩のない筋の歩）
+    for(let c=0;c<9;c++){
+      const bHasP=g.some((row,r)=>r<6&&row[c]?.type==='P'&&row[c].side==='b');
+      const wHasP=g.some((row,r)=>r>2&&row[c]?.type==='P'&&row[c].side==='w');
+      if(!wHasP)for(let r=0;r<9;r++){const p=g[r][c];if(p?.type==='P'&&p.side==='b')score+=20;}
+      if(!bHasP)for(let r=0;r<9;r++){const p=g[r][c];if(p?.type==='P'&&p.side==='w')score-=20;}
+    }
+  }
   return score;
 }
 
@@ -961,7 +974,8 @@ function refreshCard(idx){
     last.forEach(e=>{
       const d=document.createElement('span');
       d.className='mlog-entry'+(e.isUser?' user':' ai')+(e.isCheck?' check':'');
-      d.textContent=`${e.no}.${e.txt}${e.isCheck?'+':`${e.isCapture?'×':''}`}`;
+      const prefix=e.isUser?(CFG.userSide==='b'?'☗':'☖'):(CFG.userSide==='b'?'☖':'☗');
+      d.textContent=`${e.no}.${prefix}${e.txt}${e.isCheck?'+':''}${e.isCapture?'×':''}`;
       ml.appendChild(d);
     });
   }
@@ -1064,6 +1078,7 @@ function updateScorebar(){
   document.getElementById('sc-l').textContent=SCORE.l;
   document.getElementById('sc-d').textContent=SCORE.d;
   const rem=GAMES.filter(g=>!g.over).length;
+  document.title=rem>0?`[残${rem}局] 多面指し - RB将棋道場`:'多面指し - RB将棋道場';
   document.getElementById('sc-rem').textContent=rem>0?`残${rem}局`:'終了';
   const ti=document.getElementById('ti');
   if(rem===0){ti.textContent='全対局終了';return;}
