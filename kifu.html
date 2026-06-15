@@ -69,6 +69,18 @@ a{text-decoration:none;color:inherit}
 .rep-btn:hover{border-color:var(--gold);color:var(--gold)}
 .move-counter{font-family:'Dela Gothic One',sans-serif;font-size:.9rem;color:var(--gold);min-width:60px;text-align:center}
 
+/* BOOKMARK */
+.bm-btn{position:absolute;top:10px;right:10px;font-size:1.1rem;cursor:pointer;background:none;border:none;padding:4px;z-index:5;line-height:1}
+.kifu-card{position:relative}
+
+/* SPEED CONTROL */
+.speed-wrap{display:flex;align-items:center;gap:8px;padding:6px 16px;justify-content:center}
+.speed-label{font-size:.62rem;color:var(--muted)}
+.speed-btn{font-size:.65rem;padding:3px 10px;border:1.5px solid var(--border);border-radius:20px;background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;transition:.12s}
+.speed-btn.active{border-color:var(--sky);color:var(--sky);background:rgba(91,200,232,.1)}
+.auto-play-btn{padding:8px 18px;border-radius:10px;border:2px solid var(--sky);background:rgba(91,200,232,.1);color:var(--sky);font-family:inherit;font-size:.78rem;cursor:pointer;transition:.12s}
+.auto-play-btn.playing{background:rgba(232,53,74,.1);border-color:var(--red);color:var(--red)}
+
 /* KIFU TEXT */
 .kifu-text-wrap{padding:12px 16px 16px}
 .kifu-text-title{font-family:'Dela Gothic One',sans-serif;font-size:.8rem;color:var(--sky);margin-bottom:8px}
@@ -139,6 +151,13 @@ a{text-decoration:none;color:inherit}
       <button class="rep-btn" onclick="replayStep(1)">▶</button>
       <button class="rep-btn" onclick="replayEnd()">▶|</button>
     </div>
+    <div class="speed-wrap">
+      <span class="speed-label">速度:</span>
+      <button class="speed-btn active" data-ms="1500" onclick="setSpeed(1500,this)">遅</button>
+      <button class="speed-btn" data-ms="800" onclick="setSpeed(800,this)">普通</button>
+      <button class="speed-btn" data-ms="300" onclick="setSpeed(300,this)">速</button>
+      <button class="auto-play-btn" id="autoPlayBtn" onclick="toggleAutoPlay()">▶ 自動再生</button>
+    </div>
     <div class="kifu-text-wrap">
       <div class="kifu-text-title">棋譜</div>
       <div class="kifu-moves-grid" id="rm-moves"></div>
@@ -208,8 +227,10 @@ function renderList(){
   let list=currentFilter==='all'?KIFU_DB:KIFU_DB.filter(k=>k.cat===currentFilter);
   if(q)list=list.filter(k=>
     (k.sente+k.gote+k.title+k.tags.join('')+k.desc).toLowerCase().includes(q));
+  const favs=getKifuFavs();
   document.getElementById('kifuList').innerHTML=list.map(k=>`
     <div class="kifu-card" onclick="openReplay(${k.id})">
+      <button class="bm-btn" onclick="toggleKifuFav(${k.id},event)" title="ブックマーク">${favs.includes(k.id)?'🔖':'🏷'}</button>
       <div class="kifu-main">
         <div class="kifu-num">${String(k.id).padStart(2,'0')}</div>
         <div class="kifu-body">
@@ -379,13 +400,52 @@ function openReplay(id){
   document.getElementById('replayModal').scrollTop=0;
 }
 
+let autoPlayInterval=null;
+let autoPlaySpeed=1500;
+
 function replayStep(d){
   const max=replayStates.length-1;
   replayPos=Math.max(0,Math.min(max,replayPos+d));
   updateReplayDisplay();
 }
-function replayGo(pos){replayPos=0;updateReplayDisplay();}
-function replayEnd(){replayPos=replayStates.length-1;updateReplayDisplay();}
+function replayGo(pos){replayPos=0;stopAutoPlay();updateReplayDisplay();}
+function replayEnd(){replayPos=replayStates.length-1;stopAutoPlay();updateReplayDisplay();}
+
+function setSpeed(ms,btn){
+  autoPlaySpeed=ms;
+  document.querySelectorAll('.speed-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(autoPlayInterval){stopAutoPlay();toggleAutoPlay();}
+}
+
+function toggleAutoPlay(){
+  const btn=document.getElementById('autoPlayBtn');
+  if(autoPlayInterval){
+    stopAutoPlay();
+  } else {
+    btn.textContent='⏹ 停止';btn.classList.add('playing');
+    autoPlayInterval=setInterval(()=>{
+      if(replayPos>=replayStates.length-1){stopAutoPlay();return;}
+      replayPos++;updateReplayDisplay();
+    },autoPlaySpeed);
+  }
+}
+
+function stopAutoPlay(){
+  if(autoPlayInterval){clearInterval(autoPlayInterval);autoPlayInterval=null;}
+  const btn=document.getElementById('autoPlayBtn');
+  if(btn){btn.textContent='▶ 自動再生';btn.classList.remove('playing');}
+}
+
+function getKifuFavs(){return JSON.parse(localStorage.getItem('rb_kifu_favs')||'[]');}
+function toggleKifuFav(id,event){
+  event.stopPropagation();
+  const favs=getKifuFavs();
+  const idx=favs.indexOf(id);
+  if(idx>=0)favs.splice(idx,1);else favs.push(id);
+  localStorage.setItem('rb_kifu_favs',JSON.stringify(favs));
+  renderList();
+}
 
 function updateReplayDisplay(){
   const pos=replayPos;
@@ -398,7 +458,7 @@ function updateReplayDisplay(){
   renderReplayBoard(state,lt);
 }
 
-function closeReplay(){document.getElementById('replayModal').classList.remove('show');}
+function closeReplay(){stopAutoPlay();document.getElementById('replayModal').classList.remove('show');}
 
 renderList();
 </script>
