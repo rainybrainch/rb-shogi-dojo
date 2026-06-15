@@ -71,6 +71,9 @@ header{height:52px;background:rgba(8,8,15,.95);border-bottom:1px solid var(--bor
 #eval-label{font-size:.75rem;color:var(--muted);margin-bottom:4px}
 #eval-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden}
 #eval-fill{height:100%;background:linear-gradient(90deg,#e05555,#c8a54a,#55c88a);width:50%;transition:.5s}
+.btn.hint-btn{border-color:var(--blue);color:var(--blue)}
+.btn.hint-btn:hover{background:rgba(74,127,212,.15)}
+.move-capture{color:var(--gold-lt)!important;font-weight:700}
 .btn{
   width:100%;padding:9px;border:1px solid var(--border);background:var(--card);
   color:var(--text);border-radius:8px;cursor:pointer;font-size:.82rem;font-family:inherit;
@@ -170,6 +173,10 @@ header{height:52px;background:rgba(8,8,15,.95);border-bottom:1px solid var(--bor
       <div class="side-title">状態</div>
       <div id="status-msg">あなたの番</div>
       <div id="formation-msg"></div>
+      <div id="eval-bar-wrap" style="margin-top:8px">
+        <div id="eval-label">形勢: ほぼ互角</div>
+        <div id="eval-bar"><div id="eval-fill"></div></div>
+      </div>
       <div class="turn-clock" id="turnClock">
         <div class="clock-box" id="clockB">
           <div class="clock-time" id="clockBTime">0:00</div>
@@ -195,6 +202,7 @@ header{height:52px;background:rgba(8,8,15,.95);border-bottom:1px solid var(--bor
       </select>
       <button class="btn primary" id="new-game-btn" onclick="newGame()" style="margin-top:8px">新しい対局を始める</button>
       <button class="btn" onclick="resignGame()" style="margin-top:4px;border-color:var(--red);color:var(--red)">投了する</button>
+      <button class="btn hint-btn" onclick="showHint()" style="margin-top:4px">💡 ヒントを見る</button>
     </div>
     <div class="side-section" style="flex-shrink:0">
       <div class="side-title">棋譜</div>
@@ -632,10 +640,36 @@ function renderMoveList(){
   G.moveHistory.forEach((mv,i)=>{
     const d=document.createElement('div');
     d.className='move-entry';
-    d.innerHTML=`<span class="move-no">${i+1}</span><span class="move-kif">${moveToKif(mv)}</span>`;
+    const kifClass=mv.capture?'move-kif move-capture':'move-kif';
+    d.innerHTML=`<span class="move-no">${i+1}</span><span class="${kifClass}">${moveToKif(mv)}</span>`;
     el.appendChild(d);
   });
   el.scrollTop=el.scrollHeight;
+}
+
+function updateEvalBar(){
+  const score=evalBoard(G.grid,G.handB,G.handW);
+  const clamped=Math.max(-2500,Math.min(2500,score));
+  const pct=((clamped+2500)/5000)*100;
+  document.getElementById('eval-fill').style.width=pct+'%';
+  const adv=score>300?'先手有利':score<-300?'後手有利':score>100?'先手やや有利':score<-100?'後手やや有利':'ほぼ互角';
+  document.getElementById('eval-label').textContent=`形勢: ${adv}`;
+}
+
+function showHint(){
+  if(G.gameOver||G.turn!==G.userSide){return;}
+  const isMax=G.userSide==='b';
+  const {move}=minimax(G.grid,G.handB,G.handW,1,-Infinity,Infinity,isMax);
+  if(!move) return;
+  const prev={sel:G.selected,lsq:G.legalSq.slice()};
+  if(move.from) G.selected=move.from;
+  G.legalSq=[move.to];
+  renderBoard();
+  renderStatus('💡 ヒント: 光っているマスへ');
+  setTimeout(()=>{
+    G.selected=prev.sel; G.legalSq=prev.lsq;
+    renderBoard(); renderStatus('あなたの番');
+  },2200);
 }
 
 function moveToKif(mv){
@@ -736,12 +770,13 @@ function resolvePromotion(promote){
 }
 
 function executeMove(mv){
+  if(!mv.drop&&mv.to){const [tr,tc]=mv.to;if(G.grid[tr][tc])mv.capture=true;}
   const {grid:ng,handB:nhB,handW:nhW}=applyMove(G.grid,G.handB,G.handW,mv);
   G.grid=ng; G.handB=nhB; G.handW=nhW;
   G.moveHistory.push(mv);
   G.turn = G.turn==='b'?'w':'b';
 
-  renderBoard(); renderHands(); renderMoveList();
+  renderBoard(); renderHands(); renderMoveList(); updateEvalBar();
   checkFormations();
 
   // 詰み/詰めろチェック
@@ -778,12 +813,13 @@ function doAiMove(){
   }
   // pieceType を記録
   if(!mv.drop) mv.pieceType=G.grid[mv.from[0]][mv.from[1]].type;
+  if(!mv.drop&&mv.to){const [tr,tc]=mv.to;if(G.grid[tr][tc])mv.capture=true;}
   const {grid:ng,handB:nhB,handW:nhW}=applyMove(G.grid,G.handB,G.handW,mv);
   G.grid=ng; G.handB=nhB; G.handW=nhW;
   G.moveHistory.push(mv);
   G.turn=G.userSide;
 
-  renderBoard(); renderHands(); renderMoveList();
+  renderBoard(); renderHands(); renderMoveList(); updateEvalBar();
   checkFormations();
 
   const nextMoves=legalMoves(G.grid,G.handB,G.handW,G.turn);
