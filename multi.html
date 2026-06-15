@@ -112,6 +112,7 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
 .blv{font-size:.6rem;padding:1px 5px;border-radius:8px;background:var(--card);border:1px solid var(--border);color:var(--muted)}
 .resign-btn{font-size:.58rem;padding:1px 5px;border:1px solid rgba(224,85,85,.4);background:rgba(224,85,85,.1);color:#e08080;border-radius:4px;cursor:pointer;font-family:inherit;flex-shrink:0;display:none;transition:.1s}
 .hint-btn{font-size:.58rem;padding:1px 5px;border:1px solid rgba(85,200,138,.4);background:rgba(85,200,138,.1);color:#55c88a;border-radius:4px;cursor:pointer;font-family:inherit;flex-shrink:0;display:none;transition:.1s}
+.undo-btn{font-size:.58rem;padding:1px 5px;border:1px solid rgba(200,165,74,.4);background:rgba(200,165,74,.1);color:var(--gold);border-radius:4px;cursor:pointer;font-family:inherit;flex-shrink:0;display:none;transition:.1s}
 .resign-all-btn{font-size:.68rem;padding:2px 8px;border:1px solid rgba(224,85,85,.35);background:rgba(224,85,85,.08);color:#e09090;border-radius:6px;cursor:pointer;font-family:inherit;flex-shrink:0;transition:.1s}
 .resign-all-btn:hover{background:rgba(224,85,85,.2)}
 .resign-btn:hover{background:rgba(224,85,85,.25)}
@@ -174,6 +175,9 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
 /* アクティブ盤ハイライト点滅 */
 @keyframes pulse-border{0%,100%{box-shadow:0 0 16px rgba(200,165,74,.2)}50%{box-shadow:0 0 28px rgba(200,165,74,.45)}}
 .bc.active.my-turn{animation:pulse-border 1.5s infinite}
+
+/* 序盤名称 */
+.opening-label{font-size:.56rem;color:var(--muted);padding:1px 6px;display:none;border-top:1px solid rgba(255,255,255,.04);font-style:italic}
 
 /* 棋譜ログ */
 .mlog{padding:2px 6px 3px;border-top:1px solid var(--border);display:flex;gap:3px;flex-wrap:wrap;flex-shrink:0;min-height:18px}
@@ -386,11 +390,13 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
 <div id="rb">
   <h2 id="rb-title"></h2>
   <p id="rb-sub"></p>
+  <div id="rb-rating" style="font-size:.85rem;color:var(--muted);margin:4px 0"></div>
   <div id="rb-boards" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:12px 0;max-width:480px"></div>
   <div id="rb-levelup" style="display:none;max-width:400px;text-align:center"></div>
   <div class="rb-btns">
     <button style="background:var(--gold);color:#000" onclick="showSetup()">もう一度</button>
     <button style="background:var(--card);color:var(--text);border:1px solid var(--border)" onclick="rematch()">同じ設定でリマッチ</button>
+    <button style="background:var(--card);color:var(--green);border:1px solid rgba(85,200,138,.3)" onclick="downloadAllKif()">棋譜KIFダウンロード</button>
   </div>
 </div>
 
@@ -488,28 +494,57 @@ function saveSettings(){
 
 // ── 通算成績 ──
 const STATS_KEY='rb_multi_stats';
-function loadTotalStats(){return JSON.parse(localStorage.getItem(STATS_KEY)||'{"w":0,"l":0,"d":0,"games":0}');}
+const RATING_KEY='rb_rating';
+// AIレベルごとのレーティング（概算）
+const LEVEL_RATING={
+  '10k':400,'9k':500,'8k':600,'7k':700,'6k':800,'5k':900,'4k':1000,
+  '3k':1100,'2k':1200,'1k':1300,'1d':1400,'2d':1500,'3d':1600,
+  '4d':1700,'5d':1800,'6d':1900
+};
+function loadRating(){return parseFloat(localStorage.getItem(RATING_KEY)||'1000');}
+function saveRating(r){localStorage.setItem(RATING_KEY,String(Math.round(r)));}
+function updateRating(score,n){
+  let rating=loadRating();
+  const aiR=LEVEL_RATING[CFG.level.id]||1000;
+  const k=24;
+  for(let i=0;i<score.w;i++){const exp=1/(1+Math.pow(10,(aiR-rating)/400));rating+=k*(1-exp);}
+  for(let i=0;i<score.l;i++){const exp=1/(1+Math.pow(10,(aiR-rating)/400));rating+=k*(0-exp);}
+  for(let i=0;i<(score.d||0);i++){const exp=1/(1+Math.pow(10,(aiR-rating)/400));rating+=k*(.5-exp);}
+  rating=Math.max(100,Math.min(3000,rating));
+  saveRating(rating);return Math.round(rating);
+}
+function loadTotalStats(){return JSON.parse(localStorage.getItem(STATS_KEY)||'{"w":0,"l":0,"d":0,"games":0,"streak":0,"bestStreak":0}');}
 function saveTotalStats(s){localStorage.setItem(STATS_KEY,JSON.stringify(s));}
 function addSessionToStats(score){
   const s=loadTotalStats();
   s.w+=score.w;s.l+=score.l;s.d+=(score.d||0);s.games+=(score.w+score.l+(score.d||0));
+  // 連勝ストリーク
+  if(score.w>score.l){s.streak=(s.streak||0)+1;s.bestStreak=Math.max(s.bestStreak||0,s.streak);}
+  else{s.streak=0;}
   saveTotalStats(s);
+  const newR=updateRating(score,GAMES.length);
+  renderSetupStats(newR);
+}
+function clearStats(){
+  if(!confirm('通算成績とレーティングをリセットしますか？'))return;
+  localStorage.removeItem(STATS_KEY);localStorage.removeItem(RATING_KEY);
   renderSetupStats();
 }
-function clearStats(){if(!confirm('通算成績をリセットしますか？'))return;localStorage.removeItem(STATS_KEY);renderSetupStats();}
-function renderSetupStats(){
+function renderSetupStats(newRating){
   const s=loadTotalStats();
   const total=s.w+s.l+s.d;
   const card=document.getElementById('setup-stats');
-  if(!total){card.style.display='none';return;}
+  const rating=newRating||loadRating();
   card.style.display='block';
   const wr=total?Math.round(s.w/total*100):0;
   document.getElementById('setup-stats-row').innerHTML=`
+    <div class="stat-item"><div class="stat-val" style="color:var(--gold);font-size:1.1rem">${rating}</div><div class="stat-label">レート</div></div>
     <div class="stat-item"><div class="stat-val win">${s.w}</div><div class="stat-label">勝</div></div>
     <div class="stat-item"><div class="stat-val lose">${s.l}</div><div class="stat-label">負</div></div>
     <div class="stat-item"><div class="stat-val">${s.d}</div><div class="stat-label">引</div></div>
-    <div class="stat-item"><div class="stat-val">${s.games}</div><div class="stat-label">総局数</div></div>
-    <div class="stat-item"><div class="stat-val">${wr}%</div><div class="stat-label">勝率</div></div>`;
+    <div class="stat-item"><div class="stat-val">${total}</div><div class="stat-label">総局数</div></div>
+    <div class="stat-item"><div class="stat-val">${wr}%</div><div class="stat-label">勝率</div></div>
+    <div class="stat-item"><div class="stat-val" style="color:var(--green)">${s.bestStreak||0}</div><div class="stat-label">最大連勝</div></div>`;
   const wPct=total?s.w/total*100:0;
   const dPct=total?s.d/total*100:0;
   const lPct=total?s.l/total*100:0;
@@ -564,6 +599,58 @@ function mvText(mv,pj){
   const p=pj[mv.drop||mv.pieceType]||'?';
   if(mv.drop){return `${9-mv.to[1]}${RJ[mv.to[0]]}${p}打`;}
   return `${9-mv.to[1]}${RJ[mv.to[0]]}${p}${mv.promote?'成':''}`;
+}
+
+// 序盤名称判定（簡易）
+function detectOpening(g){
+  const grid=g.grid;
+  // 先手の飛車位置で判定
+  let bR=null,wR=null;
+  for(let r=0;r<9;r++)for(let c=0;c<9;c++){
+    const p=grid[r][c];
+    if(!p)continue;
+    if(p.type==='R'&&p.side==='b')bR=[r,c];
+    if(p.type==='R'&&p.side==='w')wR=[r,c];
+  }
+  const bRcol=bR?9-bR[1]:-1;
+  const wRcol=wR?9-wR[1]:-1;
+  if(g.moveNo>30)return '';
+  if(bRcol>=1&&bRcol<=3)return '▲振り飛車';
+  if(bRcol===8)return '▲居飛車';
+  if(bRcol===7||bRcol===6)return '▲中飛車系';
+  return '';
+}
+
+// KIF形式で棋譜を生成
+function toKif(g){
+  const date=new Date().toISOString().slice(0,10);
+  const userSide=CFG.userSide==='b'?'先手':'後手';
+  let kif=`# KIF形式棋譜ファイル
+開始日時：${date}
+棋戦：RB将棋道場 多面指し
+手合割：平手
+先手：${userSide==='先手'?'あなた':'AI('+CFG.level.name+')'}
+後手：${userSide==='後手'?'あなた':'AI('+CFG.level.name+')'}
+手数----指手---------消費時間--
+`;
+  g.log.forEach(e=>{kif+=`   ${String(e.no).padStart(3,' ')} ${e.txt.padEnd(14,' ')}\n`;});
+  const res=g.result==='w'?'先手勝ち':g.result==='l'?'後手勝ち':'中断';
+  kif+=`   ${String(g.log.length+1).padStart(3,' ')} ${res}\n`;
+  return kif;
+}
+
+function downloadKif(idx){
+  const g=GAMES[idx];
+  const kif=toKif(g);
+  const blob=new Blob([kif],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`kifu_ban${idx+1}_${new Date().toISOString().slice(0,10)}.kif`;
+  a.click();URL.revokeObjectURL(a.href);
+}
+
+function downloadAllKif(){
+  GAMES.forEach((g,i)=>{setTimeout(()=>downloadKif(i),i*300);});
 }
 
 // ══════════════════════════════════════════════════════
@@ -873,6 +960,20 @@ function resignAll(){
   GAMES.forEach(g=>{if(!g.over)endGame(g.id,'l');});
 }
 
+function undoMove(idx){
+  const g=GAMES[idx];
+  if(!g.undoStack||!g.undoStack.length){showToast('待ったはもう使えません','#e05555');return;}
+  const snap=g.undoStack.pop();
+  g.grid=snap.grid;g.handB=snap.handB;g.handW=snap.handW;
+  g.turn=snap.turn;g.moveNo=snap.moveNo;
+  g.log=snap.log;g.evalHistory=snap.evalHistory;g.lastTo=snap.lastTo;
+  g.sel=null;g.selDrop=null;g.legalSq=[];g.inCheck=false;g.aiThinking=false;g.over=false;
+  stopByoTimer(idx);
+  renderGame(idx);
+  showToast(`盤${idx+1}：待った！(残${g.undoStack.length}回)`,'#c8a54a');
+  if(idx===FOCUS&&g.turn===CFG.userSide)startByoTimer(idx);
+}
+
 // ポーズ機能
 let PAUSED=false;
 function togglePause(){
@@ -946,6 +1047,7 @@ function buildBoardsUI(){
         <span class="btimer" id="btimer-${g.id}">0:00</span>
         <button class="sfen-btn" id="sfenbtn-${g.id}" onclick="copySfen(${g.id})">SFEN</button>
         <button class="hint-btn" id="hintbtn-${g.id}" onclick="showHint(${g.id})" style="display:none">ヒント</button>
+        <button class="undo-btn" id="undobtn-${g.id}" onclick="undoMove(${g.id})" style="display:none">待った</button>
         <span class="bst" id="bst-${g.id}">待機中</span>
         <button class="resign-btn" onclick="resignGame(${g.id})">投了</button>
       </div>
@@ -961,7 +1063,8 @@ function buildBoardsUI(){
         <div class="hr" id="bh-${g.id}"></div>
       </div>
       <div class="sparkline" id="spark-${g.id}"></div>
-      <div class="mlog" id="mlog-${g.id}"></div>`;
+      <div class="mlog" id="mlog-${g.id}"></div>
+      <div class="opening-label" id="op-${g.id}"></div>`;
     grid.appendChild(card);
     renderGame(g.id);
   });
@@ -1019,6 +1122,9 @@ function refreshCard(idx){
   // 投了・ヒントボタン
   const rb=card.querySelector('.resign-btn');if(rb)rb.style.display=isActive&&!g.over?'inline-block':'none';
   const hb=card.querySelector('.hint-btn');if(hb)hb.style.display=isActive&&!g.over&&g.turn===CFG.userSide?'inline-block':'none';
+  const ub=card.querySelector('.undo-btn');if(ub)ub.style.display=isActive&&!g.over&&g.undoStack?.length?'inline-block':'none';
+  // 序盤名称
+  const op=document.getElementById('op-'+idx);if(op){const n=detectOpening(g);op.textContent=n;op.style.display=n?'block':'none';}
 }
 
 function renderGame(idx){renderBoard(idx);renderHand(idx,'b');renderHand(idx,'w');refreshCard(idx);}
@@ -1176,6 +1282,17 @@ function resolvePromotion(prom){
 
 function execMove(idx,mv){
   const g=GAMES[idx];
+  // 待ったスタック（ユーザーの手のみ保存・最大3回）
+  if(mv.side===CFG.userSide){
+    if(!g.undoStack)g.undoStack=[];
+    g.undoStack.push({
+      grid:g.grid.map(r=>r.map(p=>p?{...p}:null)),
+      handB:{...g.handB},handW:{...g.handW},
+      turn:g.turn,moveNo:g.moveNo,
+      log:g.log.slice(),evalHistory:g.evalHistory.slice(),lastTo:g.lastTo
+    });
+    if(g.undoStack.length>3)g.undoStack.shift();
+  }
   const wasCapture=!mv.drop&&!!g.grid[mv.to[0]][mv.to[1]];
   if(!mv.drop)mv.pieceType=mv.pieceType||g.grid[mv.from[0]][mv.from[1]].type;
   const{grid:ng,handB:nb,handW:nw}=applyMv(g.grid,g.handB,g.handW,mv);
@@ -1349,7 +1466,12 @@ function showResult(){
     } else {upEl.style.display='none';}
   }
   document.getElementById('rb').style.display='block';
+  const oldR=loadRating();
   addSessionToStats(SCORE);
+  const newR2=loadRating();
+  const diff=newR2-oldR;
+  const rEl=document.getElementById('rb-rating');
+  if(rEl)rEl.innerHTML=`レート: <strong>${newR2}</strong> <span style="color:${diff>=0?'var(--green)':'var(--red)'}">(${diff>=0?'+':''}${diff})</span>`;
 }
 
 // ── ヘルプオーバーレイ ──
@@ -1385,6 +1507,8 @@ document.addEventListener('keydown',e=>{
     if(ho.classList.contains('show')){ho.classList.remove('show');return;}
     const g=GAMES[FOCUS];if(!g||g.over)return;
     g.sel=null;g.selDrop=null;g.legalSq=[];renderGame(FOCUS);
+  }else if(e.key==='u'||e.key==='U'){
+    e.preventDefault();undoMove(FOCUS);
   }else if(e.key==='z'||e.key==='Z'){
     e.preventDefault();
     if(document.getElementById('zoom-overlay').classList.contains('show')){closeZoom();}
