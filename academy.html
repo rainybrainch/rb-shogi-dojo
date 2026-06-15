@@ -467,36 +467,47 @@ function updateStreak(){
   document.getElementById('statStreak').textContent=streak;
 }
 
-// Proper SVG shogi piece for mini board
-function miniPiece(kanji, side){
-  const isBk=side==='b';
-  const fill=isBk?'#f5e6c8':'#e8cfa8';
-  const textFill='#1a0800';
-  const rot=isBk?'':'rotate(180 15 15)';
-  return `<svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+function miniPiece(kanji,side,promoted){
+  const fill=promoted?'#c84040':side==='b'?'#f5e6c8':'#e8cfa8';
+  const rot=side==='b'?'':'rotate(180 15 15)';
+  const fs=kanji.length>1?'8':'11';const yy=kanji.length>1?'19':'21';
+  return`<svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
     <polygon points="15,1 29,8 29,29 1,29 1,8" fill="${fill}" stroke="#3a1a00" stroke-width="1"/>
-    <text x="15" y="21" text-anchor="middle" font-size="11" font-family="'Hiragino Kaku Gothic ProN',serif"
-      font-weight="bold" fill="${textFill}" transform="${rot}">${kanji}</text>
+    <text x="15" y="${yy}" text-anchor="middle" font-size="${fs}" font-family="'Noto Serif JP',serif"
+      font-weight="bold" fill="#1a0800" transform="${rot}">${kanji}</text>
   </svg>`;
 }
 
-// Daily board mini display (5×5, showing corner tsume position)
-// Position: 後手玉@1一, 先手飛@2三, 先手持ち:金 → ▲2二金打
+// Daily puzzles pool — rotates by day of year
+const DAILY_PUZZLES=[
+  {steps:'1手詰',hint:'▲先手番 — 1手で詰み！',
+   grid:[[null,null,null,null,{k:'玉',s:'w'}],[null,null,null,null,null],[null,null,null,{k:'飛',s:'b'},null],[null,null,null,null,null],[null,null,null,null,null]]},
+  {steps:'3手詰',hint:'▲先手番 — 3手で詰み！',
+   grid:[[null,null,null,{k:'玉',s:'w'},null],[null,null,null,null,null],[null,null,{k:'角',s:'b'},null,null],[null,null,null,null,null],[null,{k:'金',s:'b'},null,null,null]]},
+  {steps:'1手詰',hint:'▲先手番 — 持ち駒を活かせ！',
+   grid:[[null,null,null,null,{k:'玉',s:'w'}],[null,null,null,{k:'銀',s:'w'},null],[null,null,{k:'龍',s:'b'},null,null],[null,null,null,null,null],[null,null,null,null,null]]},
+  {steps:'5手詰',hint:'▲先手番 — 力強い一手から！',
+   grid:[[null,null,{k:'玉',s:'w'},null,null],[null,null,null,null,null],[null,{k:'飛',s:'b'},null,{k:'金',s:'b'},null],[null,null,null,null,null],[null,null,null,null,null]]},
+  {steps:'3手詰',hint:'▲先手番 — 追い詰めろ！',
+   grid:[[null,null,null,null,{k:'玉',s:'w'}],[null,null,null,{k:'角',s:'b'},null],[null,null,null,null,null],[null,null,{k:'香',s:'b'},null,null],[null,null,null,null,null]]},
+  {steps:'7手詰',hint:'▲先手番 — 最高難度に挑戦！',
+   grid:[[null,{k:'玉',s:'w'},null,null,null],[null,{k:'歩',s:'w'},null,null,null],[null,null,{k:'飛',s:'b'},null,null],[null,null,null,{k:'金',s:'b'},null],[null,null,null,null,null]]},
+  {steps:'1手詰',hint:'▲先手番 — シンプルに仕留めろ！',
+   grid:[[null,null,null,null,{k:'玉',s:'w'}],[null,null,null,null,{k:'歩',s:'w'}],[null,null,null,null,{k:'竜',s:'b'}],[null,null,null,null,null],[null,null,null,null,null]]},
+];
+
 function renderDailyBoard(){
   const board=document.getElementById('dailyBoard');
   if(!board)return;
-  // 5x5 grid: top-right corner of board (file 1-5, rank 1-5)
-  // Map: col in this grid = file (0=file5, 4=file1)
-  //      row = rank (0=rank1, 4=rank5)
-  const grid5=[
-    [null,null,null,null,{k:'玉',s:'w'}],  // rank1: 後手玉 at file1(col4)
-    [null,null,null,null,null],              // rank2: empty (▲2二金打の目標)
-    [null,null,null,{k:'飛',s:'b'},null],   // rank3: 先手飛 at file2(col3)
-    [null,null,null,null,null],
-    [null,null,null,null,null],
-  ];
-  board.innerHTML=grid5.map(row=>
-    row.map(cell=>`<div class="mini-sq">${cell?miniPiece(cell.k,cell.s):''}</div>`).join('')
+  const dayOfYear=Math.floor((Date.now()-new Date(new Date().getFullYear(),0,1))/86400000);
+  const puzzle=DAILY_PUZZLES[dayOfYear%DAILY_PUZZLES.length];
+  // Update puzzle badge and hint
+  const badge=document.querySelector('.puzzle-badge');
+  const hint=document.querySelector('.puzzle-hint');
+  if(badge)badge.textContent=puzzle.steps;
+  if(hint)hint.textContent=puzzle.hint;
+  board.innerHTML=puzzle.grid.map(row=>
+    row.map(cell=>`<div class="mini-sq">${cell?miniPiece(cell.k,cell.s,cell.pr||false):''}</div>`).join('')
   ).join('');
 }
 
