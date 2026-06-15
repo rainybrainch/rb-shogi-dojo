@@ -122,8 +122,12 @@ a{text-decoration:none;color:inherit}
       <div class="info-row"><span class="info-label">出身地</span><span class="info-value" id="m-place"></span></div>
       <div class="info-row"><span class="info-label">師匠</span><span class="info-value" id="m-master"></span></div>
       <div class="info-row"><span class="info-label">棋風</span><span class="info-value" id="m-style"></span></div>
+      <div class="section-label">棋風スコア</div>
+      <div id="m-radar" style="margin-bottom:6px"></div>
       <div class="section-label">プロフィール</div>
       <div class="desc-text" id="m-desc"></div>
+      <div class="section-label" id="m-quote-label" style="display:none">名言</div>
+      <div class="desc-text" id="m-quote" style="color:var(--gold);font-style:italic;border-left:3px solid var(--gold);padding-left:10px"></div>
       <div class="section-label">代表的な棋譜</div>
       <div class="kifu-links" id="m-kifu"></div>
     </div>
@@ -144,11 +148,15 @@ const PLAYERS=[
    avatar:'🌟',era:'2002年〜',style:'超攻撃型・終盤力世界最強',
    born:'2002年7月19日',place:'愛知県瀬戸市',master:'杉本昌隆八段',
    chips:[{num:'十段',lbl:'竜王'},{num:'名人',lbl:'最年少'},{num:'8冠',lbl:'同時制覇'}],
+   radar:{攻撃:98,守備:85,終盤:100,研究:99,精神力:95},
+   quote:'将棋は無限の可能性がある。だからこそ面白い。',
    desc:'2016年10月、14歳2ヶ月で史上最年少プロ棋士としてデビュー。2023年に史上初の八冠同時制覇を達成。AIを駆使した研究と卓越した終盤力で将棋界に革命をもたらした現代最強棋士。'},
   {id:'habu',name:'羽生善治',title:'十九世名人・永世七冠',category:'modern',
    avatar:'👑',era:'1970年〜',style:'万能型・柔軟な発想',
    born:'1970年9月27日',place:'東京都',master:'二上達也九段',
    chips:[{num:'99期',lbl:'タイトル'},{num:'七冠',lbl:'同時制覇'},{num:'永世',lbl:'七冠'}],
+   radar:{攻撃:88,守備:88,終盤:95,研究:92,精神力:99},
+   quote:'才能とは、努力を継続できる力のことだ。',
    desc:'1985年プロ入り。1996年に史上初の七冠同時制覇を達成。通算タイトル99期（最多）、一般棋戦優勝44回。将棋界の第一人者として30年以上君臨し続けた。2023年に国民栄誉賞受賞。'},
   {id:'ohyama',name:'大山康晴',title:'十五世名人',category:'legend',
    avatar:'🏆',era:'1923〜1992',style:'受け潰し・粘り強い実戦型',
@@ -265,6 +273,24 @@ function openModal(id){
   document.getElementById('m-desc').textContent=p.desc;
   document.getElementById('m-chips').innerHTML=p.chips.map(c=>`
     <div class="stat-chip"><div class="stat-chip-num">${c.num}</div><span class="stat-chip-lbl">${c.lbl}</span></div>`).join('');
+  // Radar / bar chart
+  const radar=document.getElementById('m-radar');
+  if(p.radar){
+    const keys=Object.keys(p.radar);
+    radar.innerHTML=keys.map(k=>`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+        <div style="font-size:.65rem;color:var(--muted);min-width:36px">${k}</div>
+        <div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${p.radar[k]}%;background:linear-gradient(90deg,var(--sky),var(--gold));border-radius:3px;transition:.6s"></div>
+        </div>
+        <div style="font-size:.62rem;color:var(--gold);min-width:26px;text-align:right">${p.radar[k]}</div>
+      </div>`).join('');
+  } else {radar.innerHTML='';}
+  // Quote
+  const quoteEl=document.getElementById('m-quote');
+  const quoteLbl=document.getElementById('m-quote-label');
+  if(p.quote){quoteEl.textContent='「'+p.quote+'」';quoteEl.style.display='block';quoteLbl.style.display='block';}
+  else{quoteEl.style.display='none';quoteLbl.style.display='none';}
   document.getElementById('m-kifu').innerHTML=`
     <div class="kifu-link-item" onclick="location.href='kifu.html'">
       <span>${p.name}の棋譜を見る</span><span style="color:var(--gold)">›</span>
