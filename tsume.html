@@ -707,11 +707,13 @@ function renderList(){
   const mc={'1':'m1','3':'m3','5':'m5','7':'m7'};
   document.getElementById('plist').innerHTML=list.map(p=>{
     const done=solved.has(p.id);
+    const best=done?localStorage.getItem('rb_tsume_best_'+p.id):null;
+    const bestStr=best?`⏱ ${parseInt(best)}秒`:'';
     return`<div class="pcard${done?' done':''}" id="pc-${p.id}">
       <div class="pcard-top">
         <div class="mbadge ${mc[p.moves]||'m1'}">${p.moves}手詰</div>
         <div class="pcard-title">${p.title}</div>
-        ${done?'<div class="pcard-check">✓</div>':''}
+        ${done?`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:.6rem;color:var(--gold);background:rgba(245,200,66,.12);padding:2px 6px;border-radius:20px;white-space:nowrap">${bestStr}</span><div class="pcard-check">✓</div></div>`:''}
       </div>
       <div class="pcard-hint">${p.hint}</div>
       <button class="solve-btn${done?' done':''}" onclick="openPuzzle(${p.id})">${done?'再挑戦':'解いてみる →'}</button>
@@ -917,7 +919,13 @@ function playCorrectMove(sol,r,c){
       updateStatDisplay();
     }
     stopTimer();
-    setStatus(`🎉 詰み！正解です！ (${curPuzzle.moves}手詰め / ${timerSec}秒)`, 'complete');
+    const prevBest=parseInt(localStorage.getItem('rb_tsume_best_'+curPuzzle.id)||'99999');
+    let newRecord='';
+    if(timerSec<prevBest){
+      localStorage.setItem('rb_tsume_best_'+curPuzzle.id,timerSec);
+      newRecord=prevBest===99999?'':'🏆 ベスト更新！';
+    }
+    setStatus(`🎉 詰み！正解です！ (${curPuzzle.moves}手詰め / ${timerSec}秒) ${newRecord}`, 'complete');
     renderBoard();
     const card=document.getElementById(`pc-${curPuzzle.id}`);
     if(card)card.classList.add('done');
