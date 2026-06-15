@@ -210,6 +210,7 @@ header{height:52px;background:rgba(8,8,15,.95);border-bottom:1px solid var(--bor
     <div class="result-stats">
       <div class="result-stat"><div class="result-stat-n" id="result-moves">0</div><div class="result-stat-l">手数</div></div>
       <div class="result-stat"><div class="result-stat-n" id="result-time">0:00</div><div class="result-stat-l">対局時間</div></div>
+      <div class="result-stat"><div class="result-stat-n" id="result-record">0勝0敗</div><div class="result-stat-l">通算成績</div></div>
     </div>
     <button class="btn primary" onclick="newGame()" style="width:100%;max-width:220px">もう一局</button>
     <button class="btn" onclick="document.getElementById('result-overlay').classList.remove('show')" style="width:100%;max-width:220px;margin-top:6px">盤面を確認</button>
@@ -882,6 +883,14 @@ function showResult(title,sub){
   document.getElementById('result-sub').textContent=sub;
   document.getElementById('result-moves').textContent=G.moveHistory.length;
   document.getElementById('result-time').textContent=fmt(total);
+  // Save and show win/loss stats
+  const stats=JSON.parse(localStorage.getItem('rb_play_stats')||'{"win":0,"loss":0}');
+  const isWin=title.includes('勝利');
+  const isResign=sub.includes('投了');
+  if(isWin)stats.win++;
+  else if(!isResign||sub.includes('AIの勝ち'))stats.loss++;
+  localStorage.setItem('rb_play_stats',JSON.stringify(stats));
+  document.getElementById('result-record').textContent=stats.win+'勝'+stats.loss+'敗';
   document.getElementById('result-overlay').classList.add('show');
 }
 
