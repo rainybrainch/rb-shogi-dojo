@@ -75,6 +75,40 @@ a{text-decoration:none;color:inherit}
 .kifu-link-item{background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-size:.75rem}
 .kifu-link-item:hover{border-color:var(--gold)}
 
+/* COMPARE MODE */
+.cmp-toggle{display:flex;align-items:center;gap:6px;padding:5px 14px;border:1.5px solid var(--sky);border-radius:20px;font-size:.68rem;cursor:pointer;color:var(--sky);background:transparent;font-family:inherit;transition:.15s;white-space:nowrap}
+.cmp-toggle.on{background:rgba(91,200,232,.15)}
+.compare-banner{background:rgba(91,200,232,.08);border:1.5px solid rgba(91,200,232,.25);border-radius:10px;padding:9px 14px;margin:6px 16px;font-size:.72rem;color:var(--sky);text-align:center;display:none}
+.compare-banner.show{display:block}
+.compare-mode .player-card{border-color:rgba(91,200,232,.2)}
+.compare-mode .player-card.cmp-sel{border-color:var(--sky)!important;box-shadow:0 0 0 3px rgba(91,200,232,.3),4px 4px 0 var(--sky)!important}
+.cmp-sel-badge{position:absolute;top:-6px;left:-6px;width:20px;height:20px;background:var(--sky);color:var(--dark);font-family:'Dela Gothic One',sans-serif;font-size:.68rem;border-radius:50%;display:none;align-items:center;justify-content:center;z-index:6}
+.cmp-sel .cmp-sel-badge{display:flex}
+
+/* COMPARE PANEL */
+.cmp-panel{position:fixed;bottom:68px;left:0;right:0;background:var(--dark2);border-top:2px solid var(--sky);border-radius:20px 20px 0 0;padding:16px;z-index:62;transform:translateY(100%);transition:.3s ease;max-height:82vh;overflow-y:auto}
+.cmp-panel.show{transform:none}
+.cmp-panel-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.cmp-panel-title{font-family:'Dela Gothic One',sans-serif;font-size:.95rem;color:var(--sky)}
+.cmp-panel-close{color:var(--muted);cursor:pointer;font-size:1.3rem;line-height:1}
+.cmp-heads{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;margin-bottom:14px;align-items:center}
+.cmp-head{text-align:center;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 6px}
+.cmp-head-av{font-size:2rem;margin-bottom:4px}
+.cmp-head-name{font-family:'Dela Gothic One',sans-serif;font-size:.78rem}
+.cmp-head-ttl{font-size:.55rem;color:var(--gold);margin-top:2px;line-height:1.4}
+.cmp-vs{font-family:'Dela Gothic One',sans-serif;font-size:1rem;color:var(--muted);text-align:center}
+.cmp-stat-lbl{font-size:.62rem;color:var(--muted);text-align:center;margin:10px 0 4px;font-family:'Dela Gothic One',sans-serif}
+.cmp-bar-row{display:grid;grid-template-columns:1fr 28px 1fr;align-items:center;gap:6px;margin-bottom:6px}
+.cmp-bw{height:7px;background:rgba(255,255,255,.07);border-radius:4px;overflow:hidden;position:relative}
+.cmp-bl{height:100%;border-radius:4px;float:right;transition:.6s}
+.cmp-br{height:100%;border-radius:4px;transition:.6s}
+.cmp-num{font-size:.6rem;font-family:'Dela Gothic One',sans-serif;text-align:center}
+.cmp-sum{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.cmp-sum-box{background:var(--card);border-radius:10px;padding:10px 12px;text-align:center;border:1.5px solid var(--border)}
+.cmp-sum-box.winner{border-color:var(--gold)}
+.cmp-sum-val{font-family:'Dela Gothic One',sans-serif;font-size:1.3rem;color:var(--gold)}
+.cmp-sum-lbl{font-size:.6rem;color:var(--muted);margin-top:2px}
+
 /* BOTTOM NAV */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--dark2);border-top:2px solid var(--gold);display:flex;z-index:50}
 .nav-item{flex:1;padding:10px 4px 8px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:background .12s}
@@ -106,7 +140,9 @@ a{text-decoration:none;color:inherit}
   <button class="filter-btn" data-cat="modern" onclick="filterPlayers('modern',this)">現代</button>
   <button class="filter-btn" data-cat="female" onclick="filterPlayers('female',this)">女流</button>
   <button class="filter-btn" data-cat="fav" onclick="filterPlayers('fav',this)">⭐ お気に入り</button>
+  <button class="cmp-toggle" id="cmpToggleBtn" onclick="toggleCompareMode()">⚔️ 比較モード</button>
 </div>
+<div class="compare-banner" id="cmpBanner">2人の棋士を選んでください（<span id="cmpCount">0</span>/2）</div>
 
 <div class="section">
   <div class="player-grid" id="playerGrid"></div>
@@ -139,6 +175,15 @@ a{text-decoration:none;color:inherit}
       <div class="kifu-links" id="m-kifu"></div>
     </div>
   </div>
+</div>
+
+<!-- COMPARE PANEL -->
+<div class="cmp-panel" id="cmpPanel">
+  <div class="cmp-panel-hdr">
+    <div class="cmp-panel-title">⚔️ 棋士比較</div>
+    <div class="cmp-panel-close" onclick="closeCompare()">✕</div>
+  </div>
+  <div id="cmpContent"></div>
 </div>
 
 <nav class="bottom-nav">
@@ -266,7 +311,11 @@ function renderPlayers(filter){
   }
   grid.innerHTML=list.map(p=>{
     const isFav=favs.includes(p.id);
-    return`<div class="player-card" onclick="openModal('${p.id}')">
+    const cmpIdx=cmpSelected.indexOf(p.id);
+    const isSel=cmpIdx>=0;
+    const selNum=isSel?cmpIdx+1:'';
+    return`<div class="player-card${isSel?' cmp-sel':''}" onclick="${compareMode?`toggleCmpSelect('${p.id}',event)`:`openModal('${p.id}')`}">
+      <div class="cmp-sel-badge">${selNum}</div>
       <button class="fav-btn" onclick="toggleFav('${p.id}',event)" title="お気に入り">${isFav?'⭐':'☆'}</button>
       <div class="player-avatar">${p.avatar}</div>
       <div class="player-name">${p.name}</div>
@@ -330,6 +379,89 @@ function openModal(id){
 function closeModal(){
   document.getElementById('modal').classList.remove('show');
 }
+
+// ── COMPARE MODE ──────────────────────────────────────────
+let compareMode=false;
+let cmpSelected=[];
+
+function toggleCompareMode(){
+  compareMode=!compareMode;
+  const btn=document.getElementById('cmpToggleBtn');
+  const banner=document.getElementById('cmpBanner');
+  btn.classList.toggle('on',compareMode);
+  banner.classList.toggle('show',compareMode);
+  if(!compareMode){cmpSelected=[];closeCompare();}
+  document.getElementById('playerGrid').classList.toggle('compare-mode',compareMode);
+  renderPlayers(currentFilter);
+}
+
+function toggleCmpSelect(id,event){
+  event.stopPropagation();
+  if(!compareMode)return;
+  const idx=cmpSelected.indexOf(id);
+  if(idx>=0){cmpSelected.splice(idx,1);}
+  else if(cmpSelected.length<2){cmpSelected.push(id);}
+  document.getElementById('cmpCount').textContent=cmpSelected.length;
+  renderPlayers(currentFilter);
+  if(cmpSelected.length===2)showCompare();
+  else closeCompare();
+}
+
+function showCompare(){
+  const [a,b]=[PLAYERS.find(p=>p.id===cmpSelected[0]),PLAYERS.find(p=>p.id===cmpSelected[1])];
+  if(!a||!b)return;
+  const statKeys=a.radar&&b.radar?Object.keys(a.radar):[];
+  const aTotal=statKeys.reduce((s,k)=>s+(a.radar[k]||0),0);
+  const bTotal=statKeys.reduce((s,k)=>s+(b.radar[k]||0),0);
+  const aWins=statKeys.filter(k=>(a.radar[k]||0)>(b.radar[k]||0)).length;
+  const bWins=statKeys.filter(k=>(b.radar[k]||0)>(a.radar[k]||0)).length;
+
+  const bars=statKeys.map(k=>{
+    const av=a.radar[k]||0,bv=b.radar[k]||0;
+    const aCol=av>=bv?'var(--sky)':'rgba(91,200,232,.3)';
+    const bCol=bv>=av?'var(--gold)':'rgba(245,200,66,.3)';
+    return`<div style="font-size:.6rem;color:var(--muted);text-align:center;margin:8px 0 3px;font-family:'Dela Gothic One',sans-serif">${k}</div>
+    <div class="cmp-bar-row">
+      <div class="cmp-bw"><div class="cmp-bl" style="width:${av}%;background:${aCol}"></div></div>
+      <div class="cmp-num" style="color:${av>bv?'var(--sky)':av<bv?'var(--muted)':'#fff'}">${av}</div>
+      <div class="cmp-bw"><div class="cmp-br" style="width:${bv}%;background:${bCol}"></div></div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('cmpContent').innerHTML=`
+  <div class="cmp-heads">
+    <div class="cmp-head">
+      <div class="cmp-head-av">${a.avatar}</div>
+      <div class="cmp-head-name">${a.name}</div>
+      <div class="cmp-head-ttl">${a.title.split('・')[0]}</div>
+    </div>
+    <div class="cmp-vs">VS</div>
+    <div class="cmp-head">
+      <div class="cmp-head-av">${b.avatar}</div>
+      <div class="cmp-head-name">${b.name}</div>
+      <div class="cmp-head-ttl">${b.title.split('・')[0]}</div>
+    </div>
+  </div>
+  ${bars}
+  <div class="cmp-sum">
+    <div class="cmp-sum-box${aTotal>=bTotal?' winner':''}">
+      <div class="cmp-sum-val">${aTotal}</div>
+      <div class="cmp-sum-lbl">${a.name} 総合</div>
+      <div style="font-size:.58rem;margin-top:3px;color:var(--muted)">${aWins}項目で上位</div>
+    </div>
+    <div class="cmp-sum-box${bTotal>aTotal?' winner':''}">
+      <div class="cmp-sum-val">${bTotal}</div>
+      <div class="cmp-sum-lbl">${b.name} 総合</div>
+      <div style="font-size:.58rem;margin-top:3px;color:var(--muted)">${bWins}項目で上位</div>
+    </div>
+  </div>`;
+  document.getElementById('cmpPanel').classList.add('show');
+}
+
+function closeCompare(){
+  document.getElementById('cmpPanel').classList.remove('show');
+}
+// ── /COMPARE ──────────────────────────────────────────────
 
 // Check URL anchor
 const hash=location.hash.replace('#','');
