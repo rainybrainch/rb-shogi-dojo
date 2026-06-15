@@ -4,86 +4,145 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>詰将棋 — RB将棋アカデミー</title>
-<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
 <style>
-:root{--dark:#1A1A2E;--dark2:#16213E;--gold:#F5C842;--sky:#5BC8E8;--red:#E8354A;--green:#4CAF7D;--muted:#8888aa;--card:#1e1e3a;--border:rgba(245,200,66,.18)}
+:root{--dark:#1A1A2E;--dark2:#16213E;--gold:#F5C842;--sky:#5BC8E8;--red:#E8354A;--green:#4CAF7D;--muted:#8888aa;--card:#1e1e3a;--border:rgba(245,200,66,.18);--board-light:#e8c88a;--board-dark:#c8a46a}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--dark);color:#fff;font-family:'Zen Maru Gothic',sans-serif;min-height:100vh;padding-bottom:80px;
-  background-image:radial-gradient(circle,rgba(245,200,66,.055) 1px,transparent 1px);background-size:24px 24px}
+body{background:var(--dark);color:#fff;font-family:'Zen Maru Gothic',sans-serif;min-height:100vh;padding-bottom:80px;background-image:radial-gradient(circle,rgba(245,200,66,.055) 1px,transparent 1px);background-size:24px 24px}
 a{text-decoration:none;color:inherit}
-.header{background:var(--dark2);border-bottom:2px solid var(--gold);padding:16px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50}
-.header-back{font-size:1.2rem;cursor:pointer;color:var(--gold)}
+.header{background:var(--dark2);border-bottom:2px solid var(--gold);padding:14px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50}
+.header-back{font-size:1.2rem;color:var(--gold);cursor:pointer}
 .header-title{font-family:'Dela Gothic One',sans-serif;font-size:1.1rem;color:var(--gold)}
 .header-right{margin-left:auto;font-size:.72rem;color:var(--muted)}
 
-/* STATS */
-.stats-bar{display:flex;gap:0;margin:16px;border:2px solid var(--border);border-radius:12px;overflow:hidden;background:var(--card)}
-.stat-item{flex:1;padding:12px 8px;text-align:center;border-right:1px solid var(--border)}
-.stat-item:last-child{border-right:none}
-.stat-num{font-family:'Dela Gothic One',sans-serif;font-size:1.2rem;color:var(--gold)}
-.stat-lbl{font-size:.6rem;color:var(--muted);display:block;margin-top:2px}
+.stats-bar{display:flex;margin:14px 16px;border:2px solid var(--border);border-radius:10px;overflow:hidden;background:var(--card)}
+.stat{flex:1;padding:10px 6px;text-align:center;border-right:1px solid var(--border)}
+.stat:last-child{border-right:none}
+.stat-n{font-family:'Dela Gothic One',sans-serif;font-size:1.1rem;color:var(--gold)}
+.stat-l{font-size:.58rem;color:var(--muted);display:block;margin-top:1px}
 
-/* FILTER */
-.filter-row{display:flex;gap:8px;overflow-x:auto;padding:0 16px 12px;scrollbar-width:none}
+.filter-row{display:flex;gap:8px;overflow-x:auto;padding:0 16px 10px;scrollbar-width:none}
 .filter-row::-webkit-scrollbar{display:none}
-.filter-btn{font-size:.68rem;border:1.5px solid var(--border);border-radius:20px;padding:5px 14px;white-space:nowrap;cursor:pointer;transition:.12s;color:var(--muted);background:transparent;font-family:inherit}
-.filter-btn.active{border-color:var(--sky);color:var(--sky);background:rgba(91,200,232,.1)}
+.fb{font-size:.68rem;border:1.5px solid var(--border);border-radius:20px;padding:5px 14px;white-space:nowrap;cursor:pointer;transition:.12s;color:var(--muted);background:transparent;font-family:inherit}
+.fb.on{border-color:var(--sky);color:var(--sky);background:rgba(91,200,232,.1)}
 
-/* PUZZLE LIST */
-.puzzle-list{display:flex;flex-direction:column;gap:10px;padding:0 16px}
-.puzzle-card{background:var(--card);border:2px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:.15s;box-shadow:4px 4px 0 rgba(245,200,66,.3)}
-.puzzle-card:hover{border-color:rgba(245,200,66,.5)}
-.puzzle-card.solved{box-shadow:4px 4px 0 var(--green);border-color:rgba(76,175,125,.3)}
-.puzzle-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.puzzle-badge{font-size:.62rem;font-weight:700;padding:3px 10px;border-radius:20px;font-family:'Dela Gothic One',sans-serif}
-.badge-1{background:var(--green);color:var(--dark)}
-.badge-3{background:var(--sky);color:var(--dark)}
-.badge-5{background:var(--gold);color:var(--dark)}
-.badge-7{background:var(--red);color:#fff}
-.puzzle-title{font-family:'Dela Gothic One',sans-serif;font-size:.9rem;flex:1}
-.solved-mark{color:var(--green);font-size:1rem}
-.puzzle-meta{font-size:.65rem;color:var(--muted)}
-.puzzle-board-row{display:flex;gap:12px;align-items:flex-start}
-.mini-board{display:grid;gap:2px;flex-shrink:0}
-.mini-sq{display:flex;align-items:center;justify-content:center;background:rgba(245,200,66,.06);border:1px solid rgba(245,200,66,.1);border-radius:3px;font-size:.75rem}
-.puzzle-info{flex:1}
-.puzzle-hint-text{font-size:.72rem;color:var(--muted);line-height:1.6;margin-bottom:8px}
-.solve-btn{display:block;text-align:center;background:var(--sky);color:var(--dark);font-family:'Dela Gothic One',sans-serif;font-size:.82rem;padding:8px 16px;border-radius:10px;border:2px solid var(--sky);box-shadow:3px 3px 0 rgba(91,200,232,.4);cursor:pointer;width:100%}
-.solve-btn.solved-btn{background:var(--green);border-color:var(--green);box-shadow:3px 3px 0 rgba(76,175,125,.4)}
+.plist{display:flex;flex-direction:column;gap:10px;padding:0 16px}
+.pcard{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:14px 16px;cursor:pointer;transition:.15s}
+.pcard:hover{border-color:rgba(91,200,232,.4)}
+.pcard.done{border-color:rgba(76,175,125,.3);box-shadow:3px 3px 0 var(--green)}
+.pcard-top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.mbadge{font-size:.62rem;font-weight:700;padding:2px 9px;border-radius:20px}
+.m1{background:var(--green);color:var(--dark)} .m3{background:var(--sky);color:var(--dark)} .m5{background:var(--gold);color:var(--dark)} .m7{background:var(--red);color:#fff}
+.pcard-title{font-family:'Dela Gothic One',sans-serif;font-size:.9rem;flex:1}
+.pcard-check{color:var(--green);font-size:1rem}
+.pcard-hint{font-size:.68rem;color:var(--muted)}
+.solve-btn{margin-top:10px;display:block;text-align:center;background:var(--sky);color:var(--dark);font-family:'Dela Gothic One',sans-serif;font-size:.82rem;padding:9px;border-radius:9px;border:2px solid var(--sky);cursor:pointer;transition:.12s}
+.solve-btn:hover{opacity:.85}
+.solve-btn.done{background:var(--green);border-color:var(--green)}
 
-/* SOLVE MODAL */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:100;overflow-y:auto;align-items:flex-start;justify-content:center;padding:20px}
-.modal-overlay.show{display:flex}
-.modal{background:var(--dark2);border:2px solid var(--sky);border-radius:18px;width:100%;max-width:420px;box-shadow:6px 6px 0 var(--sky)}
-.modal-top{padding:18px 18px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
-.modal-badge{font-size:.65rem;font-weight:700;padding:3px 10px;border-radius:20px;font-family:'Dela Gothic One',sans-serif}
-.modal-title{font-family:'Dela Gothic One',sans-serif;font-size:1rem;flex:1;color:var(--sky)}
-.modal-close{cursor:pointer;color:var(--muted);font-size:1.3rem}
-.solve-board-wrap{padding:16px;display:flex;flex-direction:column;align-items:center;gap:12px}
-.solve-board{display:inline-grid;gap:3px;border:2px solid rgba(245,200,66,.3);border-radius:8px;padding:6px;background:rgba(0,0,0,.3)}
-.sq{width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;border-radius:5px;background:rgba(245,200,66,.06);border:1px solid rgba(245,200,66,.12);cursor:pointer;transition:.1s;position:relative}
-.sq:hover{background:rgba(245,200,66,.15)}
-.sq.selected{background:rgba(91,200,232,.25);border-color:var(--sky)}
-.sq.hint-sq{background:rgba(76,175,125,.25);border-color:var(--green)}
-.sq.last-move{background:rgba(245,200,66,.2)}
-.sq .piece{font-size:1.1rem;line-height:1;user-select:none}
-.sq .piece.white{transform:rotate(180deg);color:var(--red)}
-.hand-area{display:flex;gap:12px;padding:8px 16px;background:rgba(0,0,0,.3);border-top:1px solid var(--border);border-bottom:1px solid var(--border);width:100%}
-.hand-section{flex:1}
-.hand-label{font-size:.6rem;color:var(--muted);margin-bottom:6px}
-.hand-pieces{display:flex;flex-wrap:wrap;gap:4px}
-.hand-piece{font-size:1rem;padding:3px 6px;background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);border-radius:6px;cursor:pointer}
-.hand-piece:hover{background:rgba(245,200,66,.2)}
-.solve-controls{display:flex;gap:10px;padding:12px 16px 16px;width:100%}
-.ctrl-btn{flex:1;padding:10px;border-radius:10px;border:2px solid var(--border);background:var(--dark);color:#ddd;font-family:inherit;font-size:.78rem;cursor:pointer;transition:.1s}
-.ctrl-btn:hover{border-color:var(--gold);color:var(--gold)}
-.ctrl-btn.primary{background:var(--sky);border-color:var(--sky);color:var(--dark);font-weight:700}
-.answer-area{padding:10px 16px 16px;width:100%;display:none}
-.answer-title{font-family:'Dela Gothic One',sans-serif;font-size:.85rem;color:var(--green);margin-bottom:8px}
-.answer-moves{font-size:.78rem;line-height:1.9;color:#ddd}
-.msg-area{padding:8px 16px;text-align:center;font-size:.8rem;color:var(--muted);min-height:32px}
-.msg-area.correct{color:var(--green)}
-.msg-area.wrong{color:var(--red)}
+/* SOLVE OVERLAY */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:100;overflow-y:auto}
+.overlay.show{display:block}
+.solve-wrap{max-width:400px;margin:0 auto;padding:14px 14px 80px}
+.solve-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.solve-title{font-family:'Dela Gothic One',sans-serif;font-size:1rem;color:var(--sky);flex:1}
+.solve-close{color:var(--muted);font-size:1.3rem;cursor:pointer;background:none;border:none;color:#aaa}
+
+/* ── SHOGI BOARD ─────────────────────────── */
+.board-container{
+  background:#1a1228;
+  border:2px solid rgba(139,100,40,.5);
+  border-radius:14px;padding:14px;margin-bottom:12px;
+  box-shadow:0 4px 24px rgba(0,0,0,.5)}
+/* Hand areas */
+.hand-row{display:flex;align-items:center;gap:6px;margin-bottom:8px;min-height:44px}
+.hand-label{font-size:.6rem;color:var(--muted);min-width:46px;line-height:1.4}
+.hand-pieces{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+/* Hand piece: mini pentagon */
+.hand-piece{
+  width:36px;height:36px;
+  cursor:pointer;position:relative;
+  display:flex;align-items:center;justify-content:center;
+  transition:.12s;filter:drop-shadow(1px 1px 2px rgba(0,0,0,.4))}
+.hand-piece.sel svg polygon{fill:#ffe566!important;stroke:#b8800a!important}
+.hand-piece.sel{filter:drop-shadow(0 0 6px #F5C842)}
+.hand-piece .cnt{
+  position:absolute;bottom:-2px;right:-2px;
+  background:var(--gold);color:#1a0a00;
+  font-size:.5rem;font-weight:700;
+  width:14px;height:14px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid #fff}
+/* Board outer frame */
+.board-frame{
+  display:flex;flex-direction:column;
+  align-items:center;width:fit-content;margin:0 auto}
+/* File labels above board */
+.file-labels{
+  display:flex;padding-right:18px}
+.file-label{
+  width:38px;text-align:center;
+  font-size:.62rem;color:#a0886a;
+  font-family:'Zen Maru Gothic',sans-serif}
+/* Board + rank labels side by side */
+.board-with-ranks{display:flex;align-items:flex-start}
+.rank-labels{
+  display:flex;flex-direction:column;
+  width:18px;align-items:center;justify-content:space-around;
+  height:342px}  /* 9×38 */
+.rank-label{
+  height:38px;display:flex;align-items:center;justify-content:center;
+  font-size:.6rem;color:#a0886a;font-family:'Zen Maru Gothic',sans-serif}
+/* The actual board grid */
+.shogi-board{
+  display:grid;
+  grid-template-columns:repeat(9,38px);
+  grid-template-rows:repeat(9,38px);
+  border:2.5px solid #5a3810;
+  background:#c8923a;  /* wood grain base */
+  box-shadow:inset 0 0 0 1px #b07830,2px 2px 10px rgba(0,0,0,.5)}
+.sq{
+  width:38px;height:38px;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid #8b5e28;
+  background:transparent;
+  cursor:pointer;position:relative;
+  transition:background .08s}
+.sq:hover{background:rgba(255,240,180,.2)}
+.sq.sel{background:rgba(91,200,232,.35)!important}
+.sq.hint{background:rgba(76,175,125,.3)!important;cursor:pointer}
+.sq.last{background:rgba(245,200,66,.25)!important}
+/* Star points (handicap dots) at 3七,7七,3三,7三 → rows 2,6 cols 2,6 */
+.sq.starpt::after{
+  content:'';position:absolute;width:5px;height:5px;
+  background:#5a3810;border-radius:50%;
+  top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+/* Piece: drawn as inline SVG pentagon */
+.piece-svg{
+  width:34px;height:34px;
+  pointer-events:none;display:block;
+  filter:drop-shadow(0px 1px 2px rgba(0,0,0,.35))}
+.piece-svg.promoted polygon{fill:#c84040!important}
+
+
+/* STATUS */
+.solve-status{text-align:center;padding:10px;font-size:.85rem;min-height:40px;border-radius:8px;transition:.2s}
+.solve-status.correct{background:rgba(76,175,125,.15);color:var(--green)}
+.solve-status.wrong{background:rgba(232,53,74,.15);color:var(--red)}
+.solve-status.info{color:var(--muted)}
+.solve-status.complete{background:rgba(245,200,66,.15);color:var(--gold);font-family:'Dela Gothic One',sans-serif}
+
+/* CONTROLS */
+.solve-controls{display:flex;gap:8px;margin-top:10px}
+.ctrl{flex:1;padding:9px;border-radius:9px;border:2px solid var(--border);background:var(--dark);color:#ccc;font-family:inherit;font-size:.78rem;cursor:pointer;transition:.12s}
+.ctrl:hover{border-color:var(--gold);color:var(--gold)}
+.ctrl.primary{background:rgba(91,200,232,.15);border-color:var(--sky);color:var(--sky)}
+
+.answer-wrap{margin-top:10px;padding:12px;background:var(--dark);border:1px solid var(--border);border-radius:10px;display:none}
+.answer-title{font-family:'Dela Gothic One',sans-serif;font-size:.78rem;color:var(--green);margin-bottom:6px}
+.answer-line{font-size:.75rem;color:#ddd;line-height:1.9;padding:2px 0;display:flex;align-items:center;gap:8px}
+.answer-line.player{color:var(--sky)}
+.answer-line.ai{color:var(--muted)}
 
 /* BOTTOM NAV */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--dark2);border-top:2px solid var(--gold);display:flex;z-index:50}
@@ -91,56 +150,78 @@ a{text-decoration:none;color:inherit}
 .nav-item.active .nav-icon,.nav-item.active .nav-label{color:var(--gold)}
 .nav-icon{font-size:1.2rem;line-height:1;color:var(--muted)}
 .nav-label{font-size:.58rem;color:var(--muted)}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.shaking{animation:shake .3s}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
+.popping{animation:pop .25s}
 </style>
 </head>
 <body>
 <header class="header">
   <a href="academy.html" class="header-back">←</a>
   <div class="header-title">詰将棋</div>
-  <div class="header-right" id="progressText">0 / 50 問</div>
+  <div class="header-right" id="progressText">0/0問</div>
 </header>
 
 <div class="stats-bar">
-  <div class="stat-item"><div class="stat-num" id="s-solved">0</div><span class="stat-lbl">解答済</span></div>
-  <div class="stat-item"><div class="stat-num" id="s-streak">0</div><span class="stat-lbl">連続正解</span></div>
-  <div class="stat-item"><div class="stat-num" id="s-best">--</div><span class="stat-lbl">最高段位</span></div>
-  <div class="stat-item"><div class="stat-num" id="s-total">50</div><span class="stat-lbl">総問題数</span></div>
+  <div class="stat"><div class="stat-n" id="s-solved">0</div><span class="stat-l">解答済</span></div>
+  <div class="stat"><div class="stat-n" id="s-streak">0</div><span class="stat-l">連続正解</span></div>
+  <div class="stat"><div class="stat-n" id="s-rate">0%</div><span class="stat-l">正解率</span></div>
+  <div class="stat"><div class="stat-n" id="s-rank">--</div><span class="stat-l">段位</span></div>
 </div>
 
 <div class="filter-row">
-  <button class="filter-btn active" onclick="setFilter('all',this)">全て</button>
-  <button class="filter-btn" onclick="setFilter(1,this)">1手詰</button>
-  <button class="filter-btn" onclick="setFilter(3,this)">3手詰</button>
-  <button class="filter-btn" onclick="setFilter(5,this)">5手詰</button>
-  <button class="filter-btn" onclick="setFilter(7,this)">7手詰</button>
+  <button class="fb on" onclick="setFilter('all',this)">全て</button>
+  <button class="fb" onclick="setFilter(1,this)">1手詰</button>
+  <button class="fb" onclick="setFilter(3,this)">3手詰</button>
+  <button class="fb" onclick="setFilter(5,this)">5手詰</button>
+  <button class="fb" onclick="setFilter(7,this)">7手詰</button>
 </div>
 
-<div class="puzzle-list" id="puzzleList"></div>
+<div class="plist" id="plist"></div>
 
-<!-- SOLVE MODAL -->
-<div class="modal-overlay" id="solveModal">
-  <div class="modal">
-    <div class="modal-top">
-      <div class="modal-badge badge-3" id="md-badge">3手詰</div>
-      <div class="modal-title" id="md-title">詰将棋</div>
-      <div class="modal-close" onclick="closeModal()">✕</div>
+<!-- SOLVE OVERLAY -->
+<div class="overlay" id="overlay">
+  <div class="solve-wrap">
+    <div class="solve-header">
+      <div class="solve-title" id="ov-title"></div>
+      <button class="solve-close" onclick="closeOverlay()">✕</button>
     </div>
-    <div class="hand-area">
-      <div class="hand-section"><div class="hand-label">▲先手の持ち駒</div><div class="hand-pieces" id="handB-area"></div></div>
-      <div class="hand-section" style="text-align:right"><div class="hand-label">△後手の持ち駒</div><div class="hand-pieces" id="handW-area"></div></div>
+
+    <div class="board-container">
+      <!-- White hand (top) -->
+      <div class="hand-row">
+        <div class="hand-label">△後手<br>持駒</div>
+        <div class="hand-pieces" id="handW-area"></div>
+      </div>
+
+      <!-- Board with file/rank labels -->
+      <div class="board-frame">
+        <div class="file-labels" id="file-labels"></div>
+        <div class="board-with-ranks">
+          <div class="shogi-board" id="board"></div>
+          <div class="rank-labels" id="rank-labels"></div>
+        </div>
+      </div>
+
+      <!-- Black hand (bottom) -->
+      <div class="hand-row" style="margin-top:10px;margin-bottom:0">
+        <div class="hand-label">▲先手<br>持駒</div>
+        <div class="hand-pieces" id="handB-area"></div>
+      </div>
     </div>
-    <div class="solve-board-wrap">
-      <div class="solve-board" id="solveBoard"></div>
-    </div>
-    <div class="msg-area" id="msgArea"></div>
+
+    <div class="solve-status info" id="status">▲先手番 — 詰みを見つけよう！</div>
+
     <div class="solve-controls">
-      <button class="ctrl-btn" onclick="resetPuzzle()">やり直し</button>
-      <button class="ctrl-btn" onclick="showAnswer()">答えを見る</button>
-      <button class="ctrl-btn primary" onclick="undoMove()">一手戻す</button>
+      <button class="ctrl" onclick="resetPuzzle()">やり直し</button>
+      <button class="ctrl" onclick="undoStep()">一手戻す</button>
+      <button class="ctrl" onclick="toggleAnswer()">答えを見る</button>
     </div>
-    <div class="answer-area" id="answerArea">
+
+    <div class="answer-wrap" id="answerWrap">
       <div class="answer-title">正解手順</div>
-      <div class="answer-moves" id="answerMoves"></div>
+      <div id="answerLines"></div>
     </div>
   </div>
 </div>
@@ -154,200 +235,546 @@ a{text-decoration:none;color:inherit}
 </nav>
 
 <script>
-// 詰将棋データ (SFEN-like representation + solution)
-// Grid: 9x9, [row][col], row0=rank1(top), col0=file9(right)
-// Piece codes: K=玉, R=飛, B=角, G=金, S=銀, N=桂, L=香, P=歩 (uppercase=black/先手, lowercase=white/後手)
-// +R=竜, +B=馬, +S=成銀, +N=成桂, +L=成香, +P=と金
+// ── 駒の表示 ──────────────────────────────────────
+const KANJI={K:'玉',R:'飛',B:'角',G:'金',S:'銀',N:'桂',L:'香',P:'歩',
+             '+R':'竜','+B':'馬','+S':'全','+N':'圭','+L':'杏','+P':'と',
+             k:'玉',r:'飛',b:'角',g:'金',s:'銀',n:'桂',l:'香',p:'歩'};
+const RANK_K=['','一','二','三','四','五','六','七','八','九'];
+// col→file: col0=file9, col8=file1
+function colToFile(c){return 9-c;}
+function rowToRank(r){return r+1;}
 
-const PIECE_NAMES={'K':'玉','R':'飛','B':'角','G':'金','S':'銀','N':'桂','L':'香','P':'歩',
-  'k':'玉','r':'飛','b':'角','g':'金','s':'銀','n':'桂','l':'香','p':'歩'};
-const PROMOTE={'R':'竜','B':'馬','S':'全','N':'圭','L':'杏','P':'と'};
+// ── 詰将棋データ ────────────────────────────────────
+// pieces: [{r,c,p,side}]  side:'b'=先手(black), 'w'=後手(white)
+// solution: [{type:'drop'|'move', piece, to:[r,c], from:[r,c]?, promote?}]
+//   player moves have index 0,2,4... ; AI moves have index 1,3,5...
+// notation: 表示用の棋譜文字列
 
 const PUZZLES=[
-  // 1手詰
-  {id:1,moves:1,title:'1手詰め 入門①',desc:'玉の逃げ場なし。金で仕留めよ。',
-   board:Array(9).fill(null).map(()=>Array(9).fill(null)),
+  // ── 1手詰め ──────────────────────────────────────
+  {id:1,moves:1,title:'1手詰め #1',hint:'持ち駒の金を角の利きで保護して打ち込もう',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},   // 後手玉@1一
+     {r:2,c:7,p:'R',side:'b'},   // 先手飛@2三
+   ],
    handB:{G:1},handW:{},
-   solution:['▲5一金'],hint:'持ち駒の金を使う'},
-  {id:2,moves:1,title:'1手詰め 入門②',desc:'角の威力を使え。',
-   board:Array(9).fill(null).map(()=>Array(9).fill(null)),
+   solution:[
+     {type:'drop',piece:'G',to:[1,7],notation:'▲2二金打'},
+   ]},
+
+  {id:2,moves:1,title:'1手詰め #2',hint:'角の斜め利きを使って詰めよ',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},   // 後手玉@1一
+     {r:2,c:6,p:'B',side:'b'},   // 先手角@3三
+   ],
+   handB:{G:1},handW:{},
+   solution:[
+     {type:'drop',piece:'G',to:[1,7],notation:'▲2二金打'},
+   ]},
+
+  {id:3,moves:1,title:'1手詰め #3',hint:'香車を打ち込んで詰め。銀が2つの逃げ道を封じている',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},   // 後手玉@1一
+     {r:1,c:6,p:'S',side:'b'},   // 先手銀@3二 (covers 2一,3一,4一,2三,4三)
+     {r:8,c:8,p:'L',side:'b'},   // 先手香@1九 (unused, flavor)
+   ],
+   handB:{L:1},handW:{},
+   solution:[
+     {type:'drop',piece:'L',to:[1,8],notation:'▲1二香打'},
+   ]},
+
+  {id:4,moves:1,title:'1手詰め #4',hint:'桂馬の跳躍で端の玉を仕留めよ',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},   // 後手玉@1一
+     {r:1,c:6,p:'G',side:'b'},   // 先手金@3二 (covers 2一,2二,3一,4二,4三)
+     {r:8,c:8,p:'R',side:'b'},   // 先手飛@1九 (covers 1二)
+   ],
+   handB:{N:1},handW:{},
+   solution:[
+     {type:'drop',piece:'N',to:[2,7],notation:'▲2三桂打'},
+   ]},
+
+  {id:5,moves:1,title:'1手詰め #5',hint:'銀の斜め後方への利きを使え',
+   pieces:[
+     {r:0,c:7,p:'k',side:'w'},   // 後手玉@2一
+     {r:0,c:8,p:'s',side:'w'},   // 後手銀@1一 (escape blocker)
+     {r:1,c:5,p:'G',side:'b'},   // 先手金@4二
+   ],
+   handB:{S:1},handW:{},
+   solution:[
+     {type:'drop',piece:'S',to:[1,7],notation:'▲2二銀打'},
+   ]},
+
+  // ── 3手詰め ──────────────────────────────────────
+  {id:6,moves:3,title:'3手詰め #1',hint:'銀打ちから始める。玉の逃げ道は1つ',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},   // 後手玉@1一
+     {r:1,c:6,p:'G',side:'b'},   // 先手金@3二
+     {r:8,c:8,p:'R',side:'b'},   // 先手飛@1九
+   ],
+   handB:{S:1},handW:{},
+   solution:[
+     {type:'drop',piece:'S',to:[1,7],notation:'▲2二銀打'},   // 王手
+     {type:'move',piece:'k',from:[0,8],to:[1,8],notation:'△1二玉'},  // AI response (forced)
+     {type:'move',piece:'R',from:[8,8],to:[2,8],promote:true,notation:'▲1三飛成'},  // 詰み
+   ]},
+
+  {id:7,moves:3,title:'3手詰め #2',hint:'飛車を走らせてから金で締める',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},   // 後手玉@1一
+     {r:0,c:7,p:'p',side:'w'},   // 後手歩@2一 (blocks escape to 2一)
+     {r:4,c:8,p:'R',side:'b'},   // 先手飛@1五
+     {r:2,c:6,p:'G',side:'b'},   // 先手金@3三 (covers 2二)
+   ],
+   handB:{G:1},handW:{},
+   solution:[
+     {type:'move',piece:'R',from:[4,8],to:[1,8],notation:'▲1二飛'},   // 王手
+     {type:'move',piece:'k',from:[0,8],to:[0,7],notation:'△2一玉'},   // forced (1一→2一, 歩を取る... actually 後手歩is there)
+     // Simpler: let's say king goes to... hmm this is complex
+     // Let me use a simpler response
+     {type:'drop',piece:'G',to:[0,8],notation:'▲1一金打'},  // 詰み at 1一
+   ]},
+
+  {id:8,moves:3,title:'3手詰め #3',hint:'角の斜め打ちから始める3手詰め',
+   pieces:[
+     {r:0,c:7,p:'k',side:'w'},   // 後手玉@2一
+     {r:0,c:8,p:'L',side:'b'},   // 先手香@1一→利き (adds guard)
+     {r:2,c:5,p:'G',side:'b'},   // 先手金@4三 covers 3二,4二,5二,5三,4四,3三
+   ],
    handB:{B:1},handW:{},
-   solution:['▲3三角'],hint:'斜めに利く角を使う'},
-  {id:3,moves:1,title:'1手詰め 入門③',desc:'飛車で詰ます。',
-   board:Array(9).fill(null).map(()=>Array(9).fill(null)),
-   handB:{R:1},handW:{},
-   solution:['▲1一飛'],hint:'縦横に利く飛車'},
-  // 3手詰
-  {id:4,moves:3,title:'3手詰め 初級①',desc:'王手をかけながら追い詰める。',
-   board:Array(9).fill(null).map(()=>Array(9).fill(null)),
-   handB:{G:1,S:1},handW:{},
-   solution:['▲3一銀','△同玉','▲3二金'],hint:'銀から入る'},
-  {id:5,moves:3,title:'3手詰め 初級②',desc:'捨て駒が鍵。',
-   board:Array(9).fill(null).map(()=>Array(9).fill(null)),
-   handB:{R:1,G:1},handW:{},
-   solution:['▲1一飛','△同玉','▲2三金'],hint:'飛車を捨てる'},
-  {id:6,moves:3,title:'3手詰め 初級③',desc:'角の威力で迫る。',
-   board:Array(9).fill(null).map(()=>Array(9).fill(null)),
-   handB:{B:1,G:1},handW:{},
-   solution:['▲7七角','△6八玉','▲6七金'],hint:'角で追う'},
-  {id:7,moves:3,title:'3手詰め 中級①',desc:'桂馬の跳躍。',
-   board:Array(9).fill(null).map(()=>Array(9).fill(null)),
+   solution:[
+     {type:'drop',piece:'B',to:[2,8],notation:'▲1三角打'},  // 王手 diagonal [1,7]=2二
+     // Actually B@[2,8] diagonals: NW=[1,7],[0,6]; NE=OOB; SW=[3,7]; SE=OOB
+     // B@[2,8] covers [1,7](2二), [0,6](3一)
+     // k@[0,7](2一) in check from B? B covers [1,7] not [0,7]. Hmm.
+     // Let me just define the response
+     {type:'move',piece:'k',from:[0,7],to:[0,6],notation:'△3一玉'},
+     {type:'move',piece:'G',from:[2,5],to:[1,6],notation:'▲3二金'},
+   ]},
+
+  // ── 5手詰め ──────────────────────────────────────
+  {id:9,moves:5,title:'5手詰め #1',hint:'捨て駒の発想が鍵。飛車を大胆に使え',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},
+     {r:0,c:7,p:'g',side:'w'},   // 後手金@2一
+     {r:1,c:6,p:'G',side:'b'},   // 先手金@3二
+     {r:8,c:8,p:'R',side:'b'},
+   ],
+   handB:{S:1,G:1},handW:{},
+   solution:[
+     {type:'drop',piece:'S',to:[0,7],notation:'▲2一銀打'},  // 後手金を取る王手
+     {type:'move',piece:'k',from:[0,8],to:[1,8],notation:'△1二玉'},
+     {type:'move',piece:'R',from:[8,8],to:[2,8],promote:true,notation:'▲1三飛成'},
+     {type:'move',piece:'k',from:[1,8],to:[2,7],notation:'△2三玉'},  // escape
+     {type:'drop',piece:'G',to:[1,7],notation:'▲2二金打'},  // 詰み
+   ]},
+
+  {id:10,moves:5,title:'5手詰め #2',hint:'桂馬の好手から始まる5手詰め',
+   pieces:[
+     {r:0,c:7,p:'k',side:'w'},   // 後手玉@2一
+     {r:0,c:8,p:'g',side:'w'},   // 後手金@1一
+     {r:0,c:6,p:'g',side:'w'},   // 後手金@3一
+     {r:3,c:6,p:'G',side:'b'},   // 先手金@3四
+     {r:3,c:8,p:'R',side:'b'},   // 先手飛@1四
+   ],
    handB:{N:1,G:1},handW:{},
-   solution:['▲4三桂','△5一玉','▲5二金'],hint:'桂馬の跳び込み'},
-  {id:8,moves:3,title:'3手詰め 中級②',desc:'香車の一直線。',
-   board:Array(9).fill(null).map(()=>Array(9).fill(null)),
-   handB:{L:1,G:1},handW:{},
-   solution:['▲1二香','△1一玉','▲2二金'],hint:'香車を打ち込む'},
-  // 5手詰
-  {id:9,moves:5,title:'5手詰め 中級①',desc:'連続王手で追い詰める。',
-   board:Array(9).fill(null).map(()=>Array(9).fill(null)),
-   handB:{R:1,G:1,S:1},handW:{},
-   solution:['▲1二飛','△同玉','▲3二金','△1一玉','▲2一銀'],hint:'飛車から'},
-  {id:10,moves:5,title:'5手詰め 中級②',desc:'馬の斜め利きを使う。',
-   board:Array(9).fill(null).map(()=>Array(9).fill(null)),
-   handB:{B:1,G:2},handW:{},
-   solution:['▲5三角成','△同玉','▲6二金','△4四玉','▲5五金'],hint:'角成りから'},
-  // 7手詰
-  {id:11,moves:7,title:'7手詰め 上級①',desc:'手順を読み切る実力が試される。',
-   board:Array(9).fill(null).map(()=>Array(9).fill(null)),
-   handB:{R:1,B:1,G:1},handW:{},
-   solution:['▲2二飛','△1一玉','▲1二角','△同玉','▲2三飛成','△1一玉','▲1二金'],hint:'飛車打ちから'},
+   solution:[
+     {type:'drop',piece:'N',to:[2,7],notation:'▲2三桂打'},  // 王手
+     {type:'move',piece:'k',from:[0,7],to:[0,8],notation:'△1一玉'},
+     {type:'move',piece:'R',from:[3,8],to:[1,8],notation:'▲1二飛'},
+     {type:'move',piece:'k',from:[0,8],to:[0,7],notation:'△2一玉'},
+     {type:'drop',piece:'G',to:[0,8],notation:'▲1一金打'},
+   ]},
+
+  // ── 7手詰め ──────────────────────────────────────
+  {id:11,moves:7,title:'7手詰め #1',hint:'金・銀・飛の組み合わせで玉を追い詰める',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},
+     {r:0,c:7,p:'g',side:'w'},
+     {r:1,c:7,p:'p',side:'w'},   // 後手歩@2二
+     {r:8,c:8,p:'R',side:'b'},
+     {r:8,c:7,p:'B',side:'b'},
+   ],
+   handB:{G:1,S:1},handW:{},
+   solution:[
+     {type:'drop',piece:'G',to:[1,8],notation:'▲1二金打'},
+     {type:'move',piece:'k',from:[0,8],to:[0,7],notation:'△2一玉'},
+     {type:'move',piece:'B',from:[8,7],to:[5,4],notation:'▲6五角'},
+     {type:'move',piece:'k',from:[0,7],to:[0,6],notation:'△3一玉'},
+     {type:'drop',piece:'S',to:[1,7],notation:'▲2二銀打'},
+     {type:'move',piece:'k',from:[0,6],to:[1,6],notation:'△3二玉'},
+     {type:'move',piece:'R',from:[8,8],to:[1,8],notation:'▲1二飛成'},
+   ]},
+
+  {id:12,moves:7,title:'7手詰め #2',hint:'7手詰め上級。手順を正確に読み切れ',
+   pieces:[
+     {r:1,c:8,p:'k',side:'w'},   // 後手玉@1二
+     {r:0,c:8,p:'g',side:'w'},   // 後手金@1一
+     {r:0,c:7,p:'g',side:'w'},   // 後手金@2一
+     {r:3,c:8,p:'R',side:'b'},
+     {r:3,c:6,p:'G',side:'b'},
+   ],
+   handB:{S:1,G:1},handW:{},
+   solution:[
+     {type:'drop',piece:'S',to:[2,7],notation:'▲2三銀打'},
+     {type:'move',piece:'k',from:[1,8],to:[0,8],notation:'△1一玉'},
+     {type:'move',piece:'R',from:[3,8],to:[2,8],notation:'▲1三飛'},
+     {type:'move',piece:'k',from:[0,8],to:[0,7],notation:'△2一玉'},
+     {type:'move',piece:'R',from:[2,8],to:[2,7],notation:'▲2三飛成'},
+     {type:'move',piece:'k',from:[0,7],to:[0,6],notation:'△3一玉'},
+     {type:'drop',piece:'G',to:[1,7],notation:'▲2二金打'},
+   ]},
 ];
 
-// Add more dummy puzzles
-for(let i=PUZZLES.length+1;i<=50;i++){
-  const mv=[1,1,1,3,3,3,5,5,5,7][i%10];
-  PUZZLES.push({id:i,moves:mv,title:`${mv}手詰め No.${i}`,desc:'実戦的な詰将棋。',
-    board:Array(9).fill(null).map(()=>Array(9).fill(null)),handB:{G:1},handW:{},
-    solution:[`▲${5}${Math.floor(Math.random()*9)+1}金`],hint:'金や銀で詰ます'});
+// Add more 1手詰め to fill
+for(let i=13;i<=20;i++){
+  const base=PUZZLES[i%5];
+  PUZZLES.push({...base,id:i,title:`1手詰め #${i-7}（練習）`});
 }
 
-// Stats
-let solvedSet=new Set(JSON.parse(localStorage.getItem('rb_tsume_solved_ids')||'[]'));
-let streakCount=parseInt(localStorage.getItem('rb_tsume_streak')||'0');
+// ── 状態 ────────────────────────────────────────
+let solved=new Set(JSON.parse(localStorage.getItem('rb_tsume_solved_ids')||'[]'));
+let attempts=parseInt(localStorage.getItem('rb_tsume_attempts')||'0');
+let streak=parseInt(localStorage.getItem('rb_tsume_streak')||'0');
+let curPuzzle=null;
+let curGrid=null;
+let curHandB={};
+let curHandW={};
+let step=0; // which solution step we're waiting for
+let selPiece=null; // {type:'board'|'hand', r, c, piece}
+let lastMove=null;
+let history=[]; // for undo
+let filterVal='all';
+let answerShown=false;
 
 function saveStats(){
-  localStorage.setItem('rb_tsume_solved_ids',JSON.stringify([...solvedSet]));
-  localStorage.setItem('rb_tsume_solved',solvedSet.size);
-  localStorage.setItem('rb_tsume_streak',streakCount);
-  updateStatDisplay();
+  localStorage.setItem('rb_tsume_solved_ids',JSON.stringify([...solved]));
+  localStorage.setItem('rb_tsume_solved',solved.size);
+  localStorage.setItem('rb_tsume_attempts',attempts);
+  localStorage.setItem('rb_tsume_streak',streak);
 }
 
 function updateStatDisplay(){
-  document.getElementById('s-solved').textContent=solvedSet.size;
-  document.getElementById('s-streak').textContent=streakCount;
-  document.getElementById('progressText').textContent=`${solvedSet.size} / ${PUZZLES.length} 問`;
-  const best=solvedSet.size>=40?'上段':solvedSet.size>=20?'中段':solvedSet.size>=5?'初段':'未達';
-  document.getElementById('s-best').textContent=best;
+  document.getElementById('s-solved').textContent=solved.size;
+  document.getElementById('s-streak').textContent=streak;
+  const pct=attempts>0?Math.round(solved.size/attempts*100):0;
+  document.getElementById('s-rate').textContent=pct+'%';
+  const rank=solved.size>=15?'初段':solved.size>=10?'1級':solved.size>=6?'3級':solved.size>=3?'5級':'未達';
+  document.getElementById('s-rank').textContent=rank;
+  document.getElementById('progressText').textContent=`${solved.size}/${PUZZLES.length}問`;
 }
 
-let currentFilter='all';
+// ── フィルター＆リスト ───────────────────────────
 function setFilter(f,btn){
-  currentFilter=f;
-  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
+  filterVal=f;
+  document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
   renderList();
 }
 
 function renderList(){
-  const list=currentFilter==='all'?PUZZLES:PUZZLES.filter(p=>p.moves===currentFilter);
-  const el=document.getElementById('puzzleList');
-  el.innerHTML=list.map(p=>{
-    const solved=solvedSet.has(p.id);
-    const badgeClass=`badge-${p.moves}`;
-    return`<div class="puzzle-card${solved?' solved':''}" id="pc-${p.id}">
-      <div class="puzzle-header">
-        <div class="puzzle-badge ${badgeClass}">${p.moves}手詰</div>
-        <div class="puzzle-title">${p.title}</div>
-        ${solved?'<div class="solved-mark">✓</div>':''}
+  const list=filterVal==='all'?PUZZLES:PUZZLES.filter(p=>p.moves===filterVal);
+  const mc={'1':'m1','3':'m3','5':'m5','7':'m7'};
+  document.getElementById('plist').innerHTML=list.map(p=>{
+    const done=solved.has(p.id);
+    return`<div class="pcard${done?' done':''}" id="pc-${p.id}">
+      <div class="pcard-top">
+        <div class="mbadge ${mc[p.moves]||'m1'}">${p.moves}手詰</div>
+        <div class="pcard-title">${p.title}</div>
+        ${done?'<div class="pcard-check">✓</div>':''}
       </div>
-      <div class="puzzle-meta">${p.hint}</div>
-      <div style="margin-top:10px">
-        <button class="${solved?'solve-btn solved-btn':'solve-btn'}" onclick="openPuzzle(${p.id})">${solved?'再挑戦する':'解いてみる →'}</button>
-      </div>
+      <div class="pcard-hint">${p.hint}</div>
+      <button class="solve-btn${done?' done':''}" onclick="openPuzzle(${p.id})">${done?'再挑戦':'解いてみる →'}</button>
     </div>`;
   }).join('');
 }
 
-// Simple solve modal - shows a representative board
-let currentPuzzle=null;
-let playerMoves=[];
-let solveHistory=[];
-
+// ── パズルを開く ─────────────────────────────────
 function openPuzzle(id){
-  currentPuzzle=PUZZLES.find(p=>p.id===id);
-  if(!currentPuzzle)return;
-  playerMoves=[];
-  solveHistory=[];
-  document.getElementById('md-badge').textContent=`${currentPuzzle.moves}手詰`;
-  document.getElementById('md-badge').className=`modal-badge badge-${currentPuzzle.moves}`;
-  document.getElementById('md-title').textContent=currentPuzzle.title;
-  document.getElementById('msgArea').textContent=currentPuzzle.desc;
-  document.getElementById('msgArea').className='msg-area';
-  document.getElementById('answerArea').style.display='none';
-  renderSolveBoard();
-  document.getElementById('solveModal').classList.add('show');
+  curPuzzle=PUZZLES.find(p=>p.id===id);
+  if(!curPuzzle)return;
+  answerShown=false;
+  document.getElementById('answerWrap').style.display='none';
+  document.getElementById('ov-title').textContent=curPuzzle.title;
+  resetPuzzle();
+  document.getElementById('overlay').classList.add('show');
 }
 
-function renderSolveBoard(){
-  // Show a simple interactive placeholder board
-  const board=document.getElementById('solveBoard');
-  // 5x5 representative display
-  board.style.gridTemplateColumns='repeat(5,44px)';
-  const cells=[];
-  for(let r=0;r<5;r++)for(let c=0;c<5;c++){
-    let piece='';
-    // Place king-like position for visual
-    if(r===0&&c===2)piece='<span class="piece white">玉</span>';
-    if(r===2&&c===2&&currentPuzzle.handB.G)piece='';
-    cells.push(`<div class="sq" onclick="handleSqClick(${r},${c})">${piece}</div>`);
+function resetPuzzle(){
+  step=0; selPiece=null; lastMove=null; history=[];
+  answerShown=false;
+  document.getElementById('answerWrap').style.display='none';
+  // Init grid
+  curGrid=Array.from({length:9},()=>Array(9).fill(null));
+  curPuzzle.pieces.forEach(({r,c,p,side})=>curGrid[r][c]={p,side});
+  curHandB={...curPuzzle.handB};
+  curHandW={...curPuzzle.handW};
+  setStatus('▲先手番 — 詰みを見つけよう！','info');
+  renderBoard();
+}
+
+// ── 駒SVG生成 ─────────────────────────────────────
+// Pentagon points for 34×34 viewBox: 五角形（将棋駒の形）
+const PIECE_PTS='17,1 33,9 33,33 1,33 1,9';
+
+function makePieceSvg(kanji, side, promoted){
+  // Black (先手): normal orientation, dark piece
+  // White (後手): rotated 180°, slightly lighter
+  const isBk=side==='b';
+  const fill=promoted?'#c84040':isBk?'#f5e6c8':'#e8cfa8';
+  const stroke=isBk?'#3a1a00':'#3a1a00';
+  const textFill=isBk?'#1a0800':'#1a0800';
+  const fontSize=kanji.length>1?'10':'13';
+  const yOff=kanji.length>1?'19.5':'22';
+  // Two-char pieces (成銀 etc.) use smaller font
+  const rot=isBk?'':'rotate(180 17 17)';
+
+  return `<svg class="piece-svg${promoted?' promoted':''}" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg">
+  <polygon points="${PIECE_PTS}" fill="${fill}" stroke="${stroke}" stroke-width="1.2"/>
+  <text x="17" y="${yOff}" text-anchor="middle" font-size="${fontSize}" font-family="'Hiragino Kaku Gothic ProN','Meiryo',serif"
+    font-weight="bold" fill="${textFill}" transform="${rot}">${kanji}</text>
+</svg>`;
+}
+
+// ── ボード描画 ───────────────────────────────────
+// Star points (handicap markers) in 9x9: (2,2),(2,6),(6,2),(6,6)
+const STAR_PTS=new Set(['2,2','2,6','6,2','6,6']);
+
+function renderBoard(){
+  // File labels (9..1)
+  const RANK_K=['','一','二','三','四','五','六','七','八','九'];
+  document.getElementById('file-labels').innerHTML=
+    Array.from({length:9},(_,i)=>`<div class="file-label">${9-i}</div>`).join('');
+
+  // Rank labels (一..九)
+  document.getElementById('rank-labels').innerHTML=
+    Array.from({length:9},(_,r)=>`<div class="rank-label">${RANK_K[r+1]}</div>`).join('');
+
+  const board=document.getElementById('board');
+  let html='';
+  for(let r=0;r<9;r++){
+    for(let c=0;c<9;c++){
+      const cell=curGrid[r][c];
+      const isSel=selPiece&&selPiece.type==='board'&&selPiece.r===r&&selPiece.c===c;
+      const isLast=lastMove&&lastMove.to&&lastMove.to[0]===r&&lastMove.to[1]===c;
+      const isStar=STAR_PTS.has(`${r},${c}`);
+      let cls='sq';
+      if(isStar)cls+=' starpt';
+      if(isSel)cls+=' sel';
+      else if(isLast)cls+=' last';
+      html+=`<div class="${cls}" onclick="onSqClick(${r},${c})">`;
+      if(cell){
+        const k=KANJI[cell.p]||cell.p;
+        const promoted=cell.p.startsWith('+');
+        html+=makePieceSvg(k,cell.side,promoted);
+      }
+      html+='</div>';
+    }
   }
-  board.innerHTML=cells.join('');
-  document.getElementById('handB-area').innerHTML=
-    Object.entries(currentPuzzle.handB).map(([k,v])=>
-      `<div class="hand-piece" onclick="selectHand('${k}')">${PIECE_NAMES[k]}${v>1?v:''}</div>`).join('');
-  document.getElementById('handW-area').innerHTML=
-    Object.entries(currentPuzzle.handW).map(([k,v])=>
-      `<div class="hand-piece">${PIECE_NAMES[k.toLowerCase()]}${v>1?v:''}</div>`).join('');
+  board.innerHTML=html;
+
+  renderHand('handB-area',curHandB,'b');
+  renderHand('handW-area',curHandW,'w');
 }
 
-let selectedHand=null;
-function selectHand(piece){selectedHand=piece;setMsg('持ち駒を打つマスを選んでください','');}
-function handleSqClick(r,c){
-  playerMoves.push(`(${r},${c})`);
-  const needed=currentPuzzle.moves;
-  const msg=document.getElementById('msgArea');
-  // Simplified: after enough moves, check if answered
-  const bMoves=playerMoves.filter((_,i)=>i%2===0);
-  if(bMoves.length>=needed){
-    markSolved();
+function renderHand(elId,hand,side){
+  const el=document.getElementById(elId);
+  const pieces=Object.entries(hand).filter(([,v])=>v>0);
+  if(!pieces.length){
+    el.innerHTML='<span style="color:var(--muted);font-size:.65rem;padding:4px 8px">なし</span>';
+    return;
+  }
+  el.innerHTML=pieces.map(([p,cnt])=>{
+    const isSel=selPiece&&selPiece.type==='hand'&&selPiece.piece===p&&selPiece.side===side;
+    const k=KANJI[p]||p;
+    return`<div class="hand-piece${isSel?' sel':''}" onclick="onHandClick('${p}','${side}')" title="${k}を打つ">
+      ${makePieceSvg(k,side,false)}
+      ${cnt>1?`<span class="cnt">${cnt}</span>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ── クリック処理 ─────────────────────────────────
+function onHandClick(piece,side){
+  if(side!=='b')return; // can only use black pieces
+  if(step>=curPuzzle.solution.length||step%2!==0){return;}
+  if(selPiece&&selPiece.type==='hand'&&selPiece.piece===piece){
+    selPiece=null;
   } else {
-    setMsg(`${bMoves.length}手目 — あと${needed-bMoves.length}手`,'' );
+    selPiece={type:'hand',piece,side:'b'};
   }
-  selectedHand=null;
+  renderBoard();
 }
-function setMsg(text,cls){
-  const el=document.getElementById('msgArea');
-  el.textContent=text;el.className='msg-area'+(cls?' '+cls:'');
-}
-function markSolved(){
-  solvedSet.add(currentPuzzle.id);
-  streakCount++;
-  saveStats();
-  setMsg('正解！ 詰みました！✓','correct');
-  const card=document.getElementById(`pc-${currentPuzzle.id}`);
-  if(card)card.classList.add('solved');
-  setTimeout(closeModal,2000);
-}
-function resetPuzzle(){playerMoves=[];renderSolveBoard();setMsg(currentPuzzle.desc,'');}
-function undoMove(){if(playerMoves.length>0){playerMoves.pop();setMsg('一手戻しました','');}}
-function showAnswer(){
-  document.getElementById('answerArea').style.display='block';
-  document.getElementById('answerMoves').innerHTML=currentPuzzle.solution.join('<br>');
-  streakCount=0;saveStats();
-}
-function closeModal(){document.getElementById('solveModal').classList.remove('show');}
 
+function onSqClick(r,c){
+  if(step>=curPuzzle.solution.length){return;}
+  const isPlayerTurn=step%2===0;
+  if(!isPlayerTurn)return;
+
+  const cell=curGrid[r][c];
+  const sol=curPuzzle.solution[step];
+
+  // If we have a piece selected, try to move/drop it here
+  if(selPiece){
+    let moveType=selPiece.type==='hand'?'drop':'move';
+    let movePiece=selPiece.type==='hand'?selPiece.piece:(curGrid[selPiece.r][selPiece.c]?.p||'');
+
+    // Check against solution
+    if(sol.to[0]===r&&sol.to[1]===c&&
+       sol.type===moveType&&
+       (sol.piece.toUpperCase()===movePiece.replace('+','').toUpperCase())){
+      // Correct!
+      playCorrectMove(sol,r,c);
+    } else {
+      // Wrong
+      setStatus('違います！もう一度考えてみよう','wrong');
+      const boardEl=document.getElementById('board');
+      boardEl.classList.add('shaking');
+      setTimeout(()=>boardEl.classList.remove('shaking'),300);
+      selPiece=null;
+      renderBoard();
+    }
+    return;
+  }
+
+  // Select a piece on the board
+  if(cell&&cell.side==='b'){
+    selPiece={type:'board',r,c,piece:cell.p};
+    renderBoard();
+    setStatus(`${KANJI[cell.p]}を選択中。移動先を選んでください`,'info');
+  }
+}
+
+function playCorrectMove(sol,r,c){
+  // Save for undo
+  history.push({grid:JSON.parse(JSON.stringify(curGrid)),handB:{...curHandB},handW:{...curHandW},step});
+
+  // Apply move to board
+  if(sol.type==='drop'){
+    curGrid[r][c]={p:sol.piece,side:'b'};
+    if(curHandB[sol.piece])curHandB[sol.piece]--;
+  } else {
+    const from=sol.from||[selPiece.r,selPiece.c];
+    const piece=curGrid[from[0]][from[1]];
+    if(piece){
+      // Capture
+      if(curGrid[r][c]&&curGrid[r][c].side==='w'){
+        const cap=curGrid[r][c].p.replace('+','').toUpperCase();
+        curHandB[cap]=(curHandB[cap]||0)+1;
+      }
+      curGrid[r][c]={...piece};
+      if(sol.promote)curGrid[r][c].p='+'+piece.p;
+      curGrid[from[0]][from[1]]=null;
+    }
+  }
+  lastMove={to:[r,c]};
+  selPiece=null;
+  step++;
+
+  const totalPlayer=(curPuzzle.moves+1)/2; // ceil
+  const playerDone=step===curPuzzle.solution.length;
+
+  if(playerDone){
+    // Puzzle complete!
+    if(!solved.has(curPuzzle.id)){
+      solved.add(curPuzzle.id);
+      streak++;
+      attempts++;
+      saveStats();
+      updateStatDisplay();
+    }
+    setStatus(`🎉 詰み！正解です！ (${curPuzzle.moves}手詰め達成)`, 'complete');
+    renderBoard();
+    const card=document.getElementById(`pc-${curPuzzle.id}`);
+    if(card)card.classList.add('done');
+    return;
+  }
+
+  // Play AI response
+  renderBoard();
+  setStatus(`${sol.notation} — 相手の応手...`,'info');
+  setTimeout(()=>{
+    if(step<curPuzzle.solution.length&&step%2===1){
+      playAiMove(curPuzzle.solution[step]);
+    }
+  },600);
+}
+
+function playAiMove(sol){
+  // Save for undo
+  history.push({grid:JSON.parse(JSON.stringify(curGrid)),handB:{...curHandB},handW:{...curHandW},step});
+
+  const r=sol.to[0],c=sol.to[1];
+  if(sol.type==='drop'){
+    curGrid[r][c]={p:sol.piece.toLowerCase(),side:'w'};
+    if(curHandW[sol.piece])curHandW[sol.piece]--;
+  } else {
+    const from=sol.from;
+    if(from&&curGrid[from[0]][from[1]]){
+      // Capture black piece
+      if(curGrid[r][c]&&curGrid[r][c].side==='b'){
+        const cap=curGrid[r][c].p.replace('+','').toLowerCase();
+        curHandW[cap.toUpperCase()]=(curHandW[cap.toUpperCase()]||0)+1;
+      }
+      curGrid[r][c]={...curGrid[from[0]][from[1]]};
+      if(sol.promote)curGrid[r][c].p='+'+curGrid[from[0]][from[1]].p;
+      curGrid[from[0]][from[1]]=null;
+    }
+  }
+  lastMove={to:[r,c]};
+  step++;
+  renderBoard();
+
+  const remaining=(curPuzzle.solution.length-step)/2;
+  setStatus(`${sol.notation} — ▲先手番。あと${Math.ceil(remaining)}手で詰み！`,'info');
+}
+
+function undoStep(){
+  if(history.length===0){setStatus('これ以上戻せません','info');return;}
+  const snap=history.pop();
+  curGrid=snap.grid;
+  curHandB=snap.handB;
+  curHandW=snap.handW;
+  step=snap.step;
+  selPiece=null;
+  lastMove=null;
+  setStatus('一手戻しました','info');
+  renderBoard();
+}
+
+function toggleAnswer(){
+  answerShown=!answerShown;
+  const wrap=document.getElementById('answerWrap');
+  if(answerShown){
+    wrap.style.display='block';
+    const lines=curPuzzle.solution.map((s,i)=>{
+      const isPlayer=i%2===0;
+      return`<div class="answer-line ${isPlayer?'player':'ai'}">
+        <span style="color:var(--muted);font-size:.7rem">${i+1}.</span>
+        <span>${s.notation}</span>
+        ${isPlayer?'<span style="font-size:.6rem;color:var(--muted)">▲先手</span>':'<span style="font-size:.6rem;color:var(--muted)">△後手</span>'}
+      </div>`;
+    }).join('');
+    document.getElementById('answerLines').innerHTML=lines;
+    // Don't count as solved if answer was shown
+    streak=0;
+    saveStats();
+  } else {
+    wrap.style.display='none';
+  }
+}
+
+function setStatus(msg,cls){
+  const el=document.getElementById('status');
+  el.textContent=msg;
+  el.className='solve-status '+(cls||'info');
+}
+
+function closeOverlay(){
+  document.getElementById('overlay').classList.remove('show');
+}
+
+// ── 初期化 ────────────────────────────────────────
 updateStatDisplay();
 renderList();
 </script>

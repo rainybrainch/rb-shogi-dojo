@@ -30,11 +30,13 @@ a{text-decoration:none;color:inherit}
 .castle-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .castle-card{background:var(--card);border:2px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:.15s;box-shadow:4px 4px 0 rgba(245,200,66,.25)}
 .castle-card:hover{border-color:rgba(245,200,66,.5)}
-.castle-board{display:grid;grid-template-columns:repeat(5,28px);gap:2px;padding:10px;margin:0 auto;width:fit-content}
-.csq{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:.7rem;border-radius:3px;background:rgba(245,200,66,.05);border:1px solid rgba(245,200,66,.1)}
-.csq.k{background:rgba(245,200,66,.2);border-color:var(--gold)}
-.csq.g{background:rgba(91,200,232,.15);border-color:rgba(91,200,232,.3)}
-.csq.s{background:rgba(76,175,125,.12);border-color:rgba(76,175,125,.25)}
+/* Proper wood board for castle diagrams */
+.castle-board{display:grid;grid-template-columns:repeat(5,28px);grid-template-rows:repeat(5,28px);
+  gap:0;padding:0;margin:10px auto;width:fit-content;
+  border:2px solid #5a3810;background:#c8923a}
+.csq{width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+  border:1px solid #8b5e28;background:transparent}
+.csq svg{width:24px;height:24px;display:block}
 .castle-info{padding:10px 12px 14px;border-top:1px solid var(--border)}
 .castle-name{font-family:'Dela Gothic One',sans-serif;font-size:.9rem;margin-bottom:3px}
 .castle-desc{font-size:.65rem;color:var(--muted);line-height:1.5}
@@ -404,14 +406,31 @@ const JOSEKI_DATA={
     usage:'現代の居飛車対局。矢倉の代替として。'},
 };
 
+function castlePieceSvg(piece){
+  if(!piece)return'';
+  const kanji={K:'玉',G:'金',S:'銀',N:'桂',L:'香',P:'歩'}[piece]||piece;
+  return`<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="12,1 23,6 23,23 1,23 1,6" fill="#f5e6c8" stroke="#3a1a00" stroke-width="1"/>
+    <text x="12" y="17" text-anchor="middle" font-size="8.5" font-family="'Hiragino Kaku Gothic ProN',serif"
+      font-weight="bold" fill="#1a0800">${kanji}</text>
+  </svg>`;
+}
+
 function renderCastleBoard(id,key){
   const el=document.getElementById(`board-${key}`);
   if(!el||!CASTLES[key])return;
   const {grid}=CASTLES[key];
-  el.innerHTML=grid.map(p=>{
-    const cls=p==='K'?'k':p==='G'?'g':p==='S'?'s':'';
-    return`<div class="csq${cls?' '+cls:''}">${p||''}</div>`;
-  }).join('');
+  el.innerHTML=grid.map(p=>`<div class="csq">${castlePieceSvg(p)}</div>`).join('');
+}
+
+function modalPieceSvg(piece){
+  if(!piece)return'';
+  const kanji={K:'玉',G:'金',S:'銀',N:'桂',L:'香',P:'歩'}[piece]||piece;
+  return`<svg viewBox="0 0 33 33" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="16.5,1 32,8 32,32 1,32 1,8" fill="#f5e6c8" stroke="#3a1a00" stroke-width="1.2"/>
+    <text x="16.5" y="23" text-anchor="middle" font-size="12" font-family="'Hiragino Kaku Gothic ProN',serif"
+      font-weight="bold" fill="#1a0800">${kanji}</text>
+  </svg>`;
 }
 
 function openCastle(key){
@@ -423,10 +442,10 @@ function openCastle(key){
   document.getElementById('dm-usage').textContent=c.usage;
   const b=document.getElementById('dm-board');
   b.style.gridTemplateColumns='repeat(5,38px)';
-  b.innerHTML=c.grid.map(p=>{
-    const cls=p==='K'?'k':p==='G'?'g':p==='S'?'s':'';
-    return`<div class="msq${cls?' '+cls:''}">${p||''}</div>`;
-  }).join('');
+  b.style.gridTemplateRows='repeat(5,38px)';
+  b.style.border='2.5px solid #5a3810';
+  b.style.background='#c8923a';
+  b.innerHTML=c.grid.map(p=>`<div class="msq">${modalPieceSvg(p)}</div>`).join('');
   document.getElementById('detailModal').classList.add('show');
   document.getElementById('detailModal').scrollTop=0;
 }
@@ -440,6 +459,9 @@ function openJoseki(key){
   document.getElementById('dm-usage').textContent=j.usage;
   const b=document.getElementById('dm-board');
   b.style.gridTemplateColumns='repeat(5,38px)';
+  b.style.gridTemplateRows='repeat(5,38px)';
+  b.style.border='2.5px solid #5a3810';
+  b.style.background='#c8923a';
   b.innerHTML=Array(25).fill('<div class="msq"></div>').join('');
   document.getElementById('detailModal').classList.add('show');
   document.getElementById('detailModal').scrollTop=0;

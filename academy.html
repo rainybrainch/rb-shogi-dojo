@@ -109,11 +109,17 @@ a{text-decoration:none;color:inherit}
 .puzzle-badge{background:var(--sky);color:var(--dark);font-size:.65rem;font-weight:700;
   padding:3px 10px;border-radius:20px;font-family:'Dela Gothic One',sans-serif}
 .puzzle-title{font-family:'Dela Gothic One',sans-serif;font-size:1rem;color:var(--sky)}
-.puzzle-board-mini{display:grid;grid-template-columns:repeat(5,32px);gap:2px;margin:12px auto;width:fit-content}
-.mini-sq{width:32px;height:32px;background:rgba(245,200,66,.06);border:1px solid var(--border);
-  display:flex;align-items:center;justify-content:center;font-size:1rem;border-radius:4px}
-.mini-sq.k{background:rgba(245,200,66,.18);border-color:var(--gold)}
-.mini-sq.a{background:rgba(91,200,232,.18);border-color:var(--sky)}
+/* Proper mini shogi board */
+.puzzle-board-mini{
+  display:grid;grid-template-columns:repeat(5,34px);grid-template-rows:repeat(5,34px);
+  gap:0;margin:12px auto;width:fit-content;
+  border:2.5px solid #5a3810;background:#c8923a;
+  box-shadow:0 2px 12px rgba(0,0,0,.5)}
+.mini-sq{
+  width:34px;height:34px;
+  background:transparent;border:1px solid #8b5e28;
+  display:flex;align-items:center;justify-content:center}
+.mini-sq svg{width:30px;height:30px;display:block}
 .puzzle-hint{font-size:.7rem;color:var(--muted);text-align:center;margin-top:8px}
 .puzzle-btn{display:block;text-align:center;margin-top:14px;
   background:var(--sky);color:var(--dark);font-family:'Dela Gothic One',sans-serif;
@@ -461,20 +467,37 @@ function updateStreak(){
   document.getElementById('statStreak').textContent=streak;
 }
 
-// Daily board mini display
+// Proper SVG shogi piece for mini board
+function miniPiece(kanji, side){
+  const isBk=side==='b';
+  const fill=isBk?'#f5e6c8':'#e8cfa8';
+  const textFill='#1a0800';
+  const rot=isBk?'':'rotate(180 15 15)';
+  return `<svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="15,1 29,8 29,29 1,29 1,8" fill="${fill}" stroke="#3a1a00" stroke-width="1"/>
+    <text x="15" y="21" text-anchor="middle" font-size="11" font-family="'Hiragino Kaku Gothic ProN',serif"
+      font-weight="bold" fill="${textFill}" transform="${rot}">${kanji}</text>
+  </svg>`;
+}
+
+// Daily board mini display (5×5, showing corner tsume position)
+// Position: 後手玉@1一, 先手飛@2三, 先手持ち:金 → ▲2二金打
 function renderDailyBoard(){
   const board=document.getElementById('dailyBoard');
   if(!board)return;
-  // Simple 5x5 excerpt showing a tsume position
-  const pieces=[
-    '','','♔','','' ,
-    '','♖','','','',
-    '','','','','',
-    '','','','','',
-    '','','♚','','',
+  // 5x5 grid: top-right corner of board (file 1-5, rank 1-5)
+  // Map: col in this grid = file (0=file5, 4=file1)
+  //      row = rank (0=rank1, 4=rank5)
+  const grid5=[
+    [null,null,null,null,{k:'玉',s:'w'}],  // rank1: 後手玉 at file1(col4)
+    [null,null,null,null,null],              // rank2: empty (▲2二金打の目標)
+    [null,null,null,{k:'飛',s:'b'},null],   // rank3: 先手飛 at file2(col3)
+    [null,null,null,null,null],
+    [null,null,null,null,null],
   ];
-  const classes=['','','k','','','','a','','','','','','','','','','','','','','','','k','',''];
-  board.innerHTML=pieces.map((p,i)=>`<div class="mini-sq ${classes[i]||''}">${p}</div>`).join('');
+  board.innerHTML=grid5.map(row=>
+    row.map(cell=>`<div class="mini-sq">${cell?miniPiece(cell.k,cell.s):''}</div>`).join('')
+  ).join('');
 }
 
 loadStats();
