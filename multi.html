@@ -415,6 +415,7 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
     <div class="sc">負: <strong id="sc-l">0</strong></div>
     <div class="sc">引: <strong id="sc-d">0</strong></div>
     <div class="sc" id="sc-rem"></div>
+    <div id="sc-streak" style="display:none;font-weight:700;font-size:.78rem;color:var(--gold);background:rgba(200,165,74,.12);padding:2px 10px;border-radius:20px;border:1px solid rgba(200,165,74,.3)"></div>
     <div class="sc" id="timer-disp">0:00</div>
     <button class="resign-all-btn" onclick="resignAll()" title="全盤投了">全投了</button>
     <div id="ti">あなたの番</div>
@@ -1065,7 +1066,7 @@ function startSession(){
   CFG.level=SEL_LEVEL;
   CFG.userSide=document.querySelector('.sbtn.sel')?.dataset.v||'b';
   CFG.timeSec=getTimeSec();
-  SCORE={w:0,l:0,d:0};SESSION_START=Date.now();
+  SCORE={w:0,l:0,d:0};SESSION_START=Date.now();sessionStreak=0;
   saveSettings();
 
   const sfen=HANDICAP_SFENS[SEL_HANDICAP]||null;
@@ -1295,6 +1296,11 @@ function updateScorebar(){
   const rem=GAMES.filter(g=>!g.over).length;
   document.title=rem>0?`[残${rem}局] 多面指し - RB将棋道場`:'多面指し - RB将棋道場';
   document.getElementById('sc-rem').textContent=rem>0?`残${rem}局`:'終了';
+  const streakEl=document.getElementById('sc-streak');
+  if(streakEl){
+    if(sessionStreak>=2){streakEl.textContent=`🔥 ${sessionStreak}連勝！`;streakEl.style.display='block';}
+    else{streakEl.style.display='none';}
+  }
   const ti=document.getElementById('ti');
   if(rem===0){ti.textContent='全対局終了';return;}
   const fg=GAMES[FOCUS];
@@ -1501,9 +1507,12 @@ function showHint(idx){
   }
 }
 
+let sessionStreak=0;
 function endGame(idx,result){
   const g=GAMES[idx];g.over=true;g.result=result;
-  if(result==='w')SCORE.w++;else if(result==='l')SCORE.l++;else SCORE.d++;
+  if(result==='w'){SCORE.w++;sessionStreak++;}
+  else if(result==='l'){SCORE.l++;sessionStreak=0;}
+  else{SCORE.d++;sessionStreak=0;}
   renderGame(idx);updateScorebar();
   if(GAMES.every(g=>g.over)){clearInterval(TIMER_ID);showResult();}
   else if(idx===FOCUS){advFocus();}
