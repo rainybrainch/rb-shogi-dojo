@@ -373,6 +373,19 @@ a{text-decoration:none;color:inherit}
   </div>
 </div>
 
+<!-- TODAY'S RECOMMENDATION -->
+<div id="recCard" style="margin:0 20px 20px;display:none">
+  <div style="font-family:'Dela Gothic One',sans-serif;font-size:.65rem;color:var(--muted);letter-spacing:.1em;margin-bottom:8px">🎯 今日のおすすめ</div>
+  <a id="recLink" href="#" style="display:flex;align-items:center;gap:14px;background:var(--card);border:2px solid var(--border);border-radius:14px;padding:14px 16px;text-decoration:none;box-shadow:4px 4px 0 var(--sky);border-color:rgba(91,200,232,.3)">
+    <div id="recIcon" style="font-size:2.2rem;flex-shrink:0"></div>
+    <div>
+      <div id="recTitle" style="font-family:'Dela Gothic One',sans-serif;font-size:.9rem;color:var(--sky);margin-bottom:3px"></div>
+      <div id="recMsg" style="font-size:.7rem;color:var(--muted);line-height:1.5"></div>
+    </div>
+    <div style="margin-left:auto;color:var(--sky);font-size:1rem">›</div>
+  </a>
+</div>
+
 <!-- MAIN MENU -->
 <div class="section">
   <div class="section-header">
@@ -969,6 +982,26 @@ renderProverb();
 renderWeekDots();
 renderRoadmap();
 renderRankCard();
+
+function renderRecommendation(){
+  const tsume=parseInt(localStorage.getItem('rb_tsume_solved')||'0');
+  const games=JSON.parse(localStorage.getItem('rb_multi_stats')||'{}');
+  const totalGames=(games.win||0)+(games.loss||0)+(games.draw||0);
+  const josekiStudied=Object.values(JSON.parse(localStorage.getItem('rb_joseki_studied')||'{}')).filter(Boolean).length;
+  const kifuViewed=(JSON.parse(localStorage.getItem('rb_kifu_viewed')||'[]')).length;
+  const rec={icon:'🧩',title:'詰将棋に挑戦しよう',msg:'まずは1手詰めから始めて詰みの感覚を養おう！',link:'tsume.html'};
+  if(tsume>=3&&totalGames<1){Object.assign(rec,{icon:'⚔️',title:'初めての対局へ',msg:'詰将棋に慣れたら実際にAIと対局してみよう！',link:'play.html'});}
+  else if(totalGames>=1&&josekiStudied<2){Object.assign(rec,{icon:'📐',title:'定跡・囲いを学ぼう',msg:'囲いを覚えると対局が安定して強くなる！',link:'joseki.html'});}
+  else if(josekiStudied>=2&&kifuViewed<1){Object.assign(rec,{icon:'📜',title:'名局棋譜を鑑賞しよう',msg:'トップ棋士の棋譜で新しい手筋を発見！',link:'kifu.html'});}
+  else if(tsume>=10){Object.assign(rec,{icon:'🧩',title:'もっと詰将棋を！',msg:'3手詰めにも挑戦してみよう。'+tsume+'問クリア中！',link:'tsume.html'});}
+  const card=document.getElementById('recCard');
+  const link=document.getElementById('recLink');
+  if(card){card.style.display='block';}
+  if(link)link.href=rec.link;
+  const ri=document.getElementById('recIcon');const rt=document.getElementById('recTitle');const rm=document.getElementById('recMsg');
+  if(ri)ri.textContent=rec.icon;if(rt)rt.textContent=rec.title;if(rm)rm.textContent=rec.msg;
+}
+renderRecommendation();
 </script>
 </body>
 </html>
