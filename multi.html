@@ -209,9 +209,26 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
 @media(max-width:600px){
   body{overflow:auto}
   #bg{overflow:visible;height:auto}
-  #game{overflow:auto;height:auto}
-  #scorebar{flex-wrap:wrap;gap:8px;padding:6px 10px}
+  #game{overflow:auto;height:auto;min-height:0}
+  #scorebar{flex-wrap:wrap;gap:6px;padding:5px 8px;font-size:.72rem}
+  .sbox{padding:20px 18px}
+  .level-grid{grid-template-columns:repeat(4,1fr)}
+  .bc-hd{gap:3px;padding:3px 6px}
 }
+
+/* 着手アニメーション */
+@keyframes drop-in{0%{opacity:0;transform:scale(.6)}60%{transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+.mp.new-piece{animation:drop-in .22s ease}
+
+/* 持ち時間 / 秒読みバー */
+.byo-bar{height:2px;background:var(--border);flex-shrink:0;overflow:hidden}
+.byo-fill{height:100%;background:var(--green);transition:width .9s linear}
+.byo-fill.warn{background:var(--gold)}
+.byo-fill.danger{background:var(--red)}
+
+/* 長押し選択防止 */
+.mb{-webkit-user-select:none;user-select:none}
+.mp{-webkit-user-select:none;user-select:none}
 </style>
 </head>
 <body>
@@ -266,6 +283,16 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
       <div class="side-row">
         <button class="sbtn sel" data-v="b" onclick="setSide(this)">☗ 先手</button>
         <button class="sbtn" data-v="w" onclick="setSide(this)">☖ 後手</button>
+      </div>
+    </div>
+
+    <div class="frow">
+      <label>持ち時間（1手あたりの制限）</label>
+      <div class="side-row" id="time-opts">
+        <button class="sbtn sel" data-v="0" onclick="setTimeOpt(this)">無制限</button>
+        <button class="sbtn" data-v="30" onclick="setTimeOpt(this)">30秒</button>
+        <button class="sbtn" data-v="60" onclick="setTimeOpt(this)">60秒</button>
+        <button class="sbtn" data-v="10" onclick="setTimeOpt(this)">10秒</button>
       </div>
     </div>
 
@@ -348,6 +375,50 @@ function sndCapture(){beep(660,0.07,0.2,'sawtooth');beep(440,0.05,0.15,'sawtooth
 function sndCheck(){beep(1200,0.08,0.25,'square');beep(1000,0.08,0.2,'square',0.1);}
 function sndWin(){[0,.1,.2,.35].forEach((d,i)=>beep([523,659,784,1047][i],0.12,0.2,'sine',d));}
 function sndLose(){[0,.15,.3].forEach((d,i)=>beep([440,370,330][i],0.15,0.15,'sine',d));}
+// ══════════════════════════════════════════════════════
+//  持ち時間管理
+// ══════════════════════════════════════════════════════
+let BYO_TIMER=null;
+let MOVE_START=0;
+function setTimeOpt(el){document.querySelectorAll('#time-opts .sbtn').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');}
+function getTimeSec(){return parseInt(document.querySelector('#time-opts .sbtn.sel')?.dataset.v||'0');}
+function startByoTimer(idx){
+  const secs=CFG.timeSec;if(!secs)return;
+  clearInterval(BYO_TIMER);
+  MOVE_START=Date.now();
+  const bar=document.getElementById('byob-'+idx);
+  const fill=document.getElementById('byof-'+idx);
+  if(bar)bar.style.display='block';
+  BYO_TIMER=setInterval(()=>{
+    const elapsed=(Date.now()-MOVE_START)/1000;
+    const rem=Math.max(0,secs-elapsed);
+    const pct=(rem/secs)*100;
+    if(fill){
+      fill.style.width=pct+'%';
+      fill.className='byo-fill'+(pct<20?' danger':pct<40?' warn':'');
+    }
+    if(rem<=0){
+      clearInterval(BYO_TIMER);
+      beep(880,0.15,0.3,'square');
+      // 時間切れ: ランダム手で自動着手
+      const g=GAMES[idx];
+      if(g&&!g.over&&g.turn===CFG.userSide){
+        const mvs=allLegal(g.grid,g.handB,g.handW,CFG.userSide);
+        if(mvs.length){
+          const mv=mvs[Math.floor(Math.random()*mvs.length)];
+          if(!mv.drop)mv.pieceType=g.grid[mv.from[0]][mv.from[1]].type;
+          showToast(`盤${idx+1}: 時間切れ、自動着手`,'#c8a54a');
+          execMove(idx,mv);
+        }
+      }
+    }
+  },200);
+}
+function stopByoTimer(idx){
+  clearInterval(BYO_TIMER);
+  const bar=document.getElementById('byob-'+idx);if(bar)bar.style.display='none';
+}
+
 function toggleSound(){
   SND_ON=!SND_ON;
   document.getElementById('snd-btn').textContent=SND_ON?'🔔':'🔕';
@@ -663,6 +734,7 @@ function startSession(){
   CFG.boards=parseInt(document.getElementById('bc-slider').value)||3;
   CFG.level=SEL_LEVEL;
   CFG.userSide=document.querySelector('.sbtn.sel')?.dataset.v||'b';
+  CFG.timeSec=getTimeSec();
   SCORE={w:0,l:0,d:0};SESSION_START=Date.now();
   saveSettings();
 
@@ -722,6 +794,7 @@ function buildBoardsUI(){
         <button class="resign-btn" onclick="resignGame(${g.id})">投了</button>
       </div>
       <div class="eval-bar"><div class="eval-fill" id="ef-${g.id}" style="width:50%"></div></div>
+      <div class="byo-bar" id="byob-${g.id}" style="display:none"><div class="byo-fill" id="byof-${g.id}" style="width:100%"></div></div>
       <div class="bi">
         <div class="hr" id="wh-${g.id}"></div>
         <div class="mb" id="mb-${g.id}"></div>
@@ -807,6 +880,8 @@ function renderBoard(idx){
       mp.className='mp '+(p.side==='b'?'b':'w')+(p.type.startsWith('+')?' pr':'');
       mp.style.fontSize=fs;
       mp.textContent=PJ[p.type]||p.type;
+      // 直前の着手マスにアニメーション
+      if(g.lastTo&&g.lastTo[0]===r&&g.lastTo[1]===c)mp.classList.add('new-piece');
       cell.appendChild(mp);
       // ホバーで利き表示（アクティブ盤のユーザー駒のみ）
       if(active&&p.side===CFG.userSide&&!g.sel&&!g.selDrop){
@@ -981,18 +1056,22 @@ function aiOnAll(){
 
 function switchFocus(idx){
   if(GAMES[idx].over||idx===FOCUS)return;
+  stopByoTimer(FOCUS);
   FOCUS=idx;buildBoardsUI();updateScorebar();
   const card=document.getElementById('card-'+idx);
   if(card)card.scrollIntoView({behavior:'smooth',block:'nearest'});
+  if(!GAMES[idx].over&&GAMES[idx].turn===CFG.userSide)startByoTimer(idx);
 }
 
 function advFocus(){
+  stopByoTimer(FOCUS);
   for(let i=1;i<=GAMES.length;i++){
     const idx=(FOCUS+i)%GAMES.length;
     if(!GAMES[idx].over&&GAMES[idx].turn===CFG.userSide){
       FOCUS=idx;buildBoardsUI();updateScorebar();
       const card=document.getElementById('card-'+idx);
       if(card)card.scrollIntoView({behavior:'smooth',block:'nearest'});
+      startByoTimer(idx);
       return;
     }
   }
