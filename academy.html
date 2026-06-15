@@ -238,6 +238,22 @@ a{text-decoration:none;color:inherit}
 .rank-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--sky));border-radius:3px;transition:.5s;min-width:4px}
 .rank-msg{font-size:.65rem;color:var(--muted);font-style:italic}
 
+/* ACTIVITY HEATMAP */
+.heatmap-card{margin:0 20px 20px;background:var(--card);border:2px solid var(--border);border-radius:14px;padding:14px 16px}
+.heatmap-title{font-family:'Dela Gothic One',sans-serif;font-size:.72rem;color:var(--muted);letter-spacing:.1em;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.heatmap-grid{display:flex;gap:3px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.heatmap-grid::-webkit-scrollbar{display:none}
+.heatmap-week{display:flex;flex-direction:column;gap:3px}
+.heatmap-day{width:12px;height:12px;border-radius:2px;background:rgba(255,255,255,.06);transition:.15s;cursor:default;position:relative}
+.heatmap-day.lv1{background:rgba(76,175,125,.25)}
+.heatmap-day.lv2{background:rgba(76,175,125,.5)}
+.heatmap-day.lv3{background:rgba(76,175,125,.75)}
+.heatmap-day.lv4{background:rgba(76,175,125,1);box-shadow:0 0 4px rgba(76,175,125,.6)}
+.heatmap-day.today{outline:2px solid var(--gold);outline-offset:1px}
+.heatmap-legend{display:flex;align-items:center;gap:4px;margin-top:8px;justify-content:flex-end}
+.heatmap-legend-label{font-size:.55rem;color:var(--muted)}
+.heatmap-legend span{width:10px;height:10px;border-radius:2px;display:inline-block}
+
 /* BOTTOM NAV */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;
   background:var(--dark2);border-top:2px solid var(--gold);
@@ -370,6 +386,24 @@ a{text-decoration:none;color:inherit}
     <div class="rank-next" id="rankNext">次の段位まで…</div>
     <div class="rank-bar-bg"><div class="rank-bar-fill" id="rankBarFill" style="width:0%"></div></div>
     <div class="rank-msg" id="rankMsg">将棋の旅を始めよう！</div>
+  </div>
+</div>
+
+<!-- ACTIVITY HEATMAP -->
+<div class="heatmap-card">
+  <div class="heatmap-title">
+    <span>📅 学習アクティビティ（過去12週）</span>
+    <span id="heatmap-total" style="font-size:.65rem;color:var(--gold);font-family:inherit;font-weight:700"></span>
+  </div>
+  <div class="heatmap-grid" id="heatmapGrid"></div>
+  <div class="heatmap-legend">
+    <span class="heatmap-legend-label">少</span>
+    <span style="background:rgba(255,255,255,.06);width:10px;height:10px;border-radius:2px;display:inline-block"></span>
+    <span class="heatmap-day lv1" style="display:inline-block"></span>
+    <span class="heatmap-day lv2" style="display:inline-block"></span>
+    <span class="heatmap-day lv3" style="display:inline-block"></span>
+    <span class="heatmap-day lv4" style="display:inline-block"></span>
+    <span class="heatmap-legend-label">多</span>
   </div>
 </div>
 
@@ -1002,6 +1036,54 @@ function renderRecommendation(){
   if(ri)ri.textContent=rec.icon;if(rt)rt.textContent=rec.title;if(rm)rm.textContent=rec.msg;
 }
 renderRecommendation();
+
+function renderHeatmap(){
+  const grid=document.getElementById('heatmapGrid');
+  const totalEl=document.getElementById('heatmap-total');
+  if(!grid)return;
+  const today=new Date();
+  const todayStr=today.toISOString().slice(0,10);
+  // Go back to Sunday of 12 weeks ago
+  const startDate=new Date(today);
+  const dow=startDate.getDay(); // 0=Sun
+  startDate.setDate(startDate.getDate()-dow-11*7);
+  let activeDays=0;
+  let currentWeek=null;
+  const d=new Date(startDate);
+  while(d<=today){
+    if(d.getDay()===0){
+      currentWeek=document.createElement('div');
+      currentWeek.className='heatmap-week';
+      grid.appendChild(currentWeek);
+    }
+    const ds=d.toISOString().slice(0,10);
+    const day=document.createElement('div');
+    day.className='heatmap-day';
+    if(ds===todayStr)day.classList.add('today');
+    // Count activity from localStorage keys
+    const tsumeKey='rb_tsume_best_';
+    const activeKey='rb_active_'+ds;
+    const goalKey='rb_goals_'+ds;
+    let count=0;
+    if(localStorage.getItem(activeKey)) count++;
+    const goals=JSON.parse(localStorage.getItem(goalKey)||'[false,false,false]');
+    count+=goals.filter(Boolean).length;
+    // Also check if any tsume was solved today (proxy: rb_last_active date)
+    if(ds===todayStr&&localStorage.getItem('rb_last_active')===today.toDateString()) count++;
+    if(count>0) activeDays++;
+    if(count>=4)day.classList.add('lv4');
+    else if(count===3)day.classList.add('lv3');
+    else if(count===2)day.classList.add('lv2');
+    else if(count===1)day.classList.add('lv1');
+    day.title=ds+(count?` (${count}アクティビティ)`:'');
+    if(currentWeek)currentWeek.appendChild(day);
+    d.setDate(d.getDate()+1);
+  }
+  if(totalEl)totalEl.textContent=activeDays+'日間学習';
+  // Scroll to rightmost (today)
+  grid.scrollLeft=grid.scrollWidth;
+}
+renderHeatmap();
 </script>
 </body>
 </html>
