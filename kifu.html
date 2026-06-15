@@ -114,6 +114,12 @@ a{text-decoration:none;color:inherit}
   <input class="search-box" id="searchBox" placeholder="棋士名・タイトル戦で検索..." oninput="renderList()">
 </div>
 
+<div style="display:flex;gap:10px;padding:0 16px 12px;font-size:.68rem;color:var(--muted)">
+  <span>📖 全 <strong id="totalCount" style="color:#fff">0</strong>局</span>
+  <span>🏷 <strong id="bookmarkCount" style="color:var(--gold)">0</strong>件ブックマーク</span>
+  <span>✓ <strong id="viewedCount" style="color:var(--green)">0</strong>局閲覧済</span>
+</div>
+
 <div class="filter-row">
   <button class="filter-btn active" onclick="setFilter('all',this)">全て</button>
   <button class="filter-btn" onclick="setFilter('meijin',this)">名人戦</button>
@@ -228,13 +234,14 @@ function renderList(){
   if(q)list=list.filter(k=>
     (k.sente+k.gote+k.title+k.tags.join('')+k.desc).toLowerCase().includes(q));
   const favs=getKifuFavs();
+  const viewed=getKifuViewed();
   document.getElementById('kifuList').innerHTML=list.map(k=>`
     <div class="kifu-card" onclick="openReplay(${k.id})">
       <button class="bm-btn" onclick="toggleKifuFav(${k.id},event)" title="ブックマーク">${favs.includes(k.id)?'🔖':'🏷'}</button>
       <div class="kifu-main">
-        <div class="kifu-num">${String(k.id).padStart(2,'0')}</div>
+        <div class="kifu-num" style="color:${viewed.includes(k.id)?'var(--green)':'var(--gold)'}">${String(k.id).padStart(2,'0')}</div>
         <div class="kifu-body">
-          <div class="kifu-title">▲${k.sente} vs △${k.gote}（${k.year}年）</div>
+          <div class="kifu-title">▲${k.sente} vs △${k.gote}（${k.year}年）${viewed.includes(k.id)?'<span style="font-size:.58rem;color:var(--green);background:rgba(76,175,125,.12);padding:1px 6px;border-radius:20px;margin-left:6px">閲覧済</span>':''}</div>
           <div class="kifu-meta">
             <span>${k.title}</span>
             <span>— ${k.result}</span>
@@ -247,6 +254,7 @@ function renderList(){
       </div>
       ${k.desc?`<div class="kifu-footer"><div class="kifu-footer-tag">${k.desc}</div></div>`:''}
     </div>`).join('');
+  updateKifuStats();
 }
 
 // REPLAY
@@ -383,6 +391,7 @@ let replayStates=[];let replayLastTos=[];
 function openReplay(id){
   currentKifu=KIFU_DB.find(k=>k.id===id);
   if(!currentKifu)return;
+  markViewed(id);
   replayPos=0;
   document.getElementById('rm-title').textContent=`▲${currentKifu.sente} vs △${currentKifu.gote}`;
   document.getElementById('rm-meta').textContent=`${currentKifu.title}（${currentKifu.year}年）— ${currentKifu.result}`;
@@ -438,6 +447,11 @@ function stopAutoPlay(){
 }
 
 function getKifuFavs(){return JSON.parse(localStorage.getItem('rb_kifu_favs')||'[]');}
+function getKifuViewed(){return JSON.parse(localStorage.getItem('rb_kifu_viewed')||'[]');}
+function markViewed(id){
+  const v=getKifuViewed();
+  if(!v.includes(id)){v.push(id);localStorage.setItem('rb_kifu_viewed',JSON.stringify(v));}
+}
 function toggleKifuFav(id,event){
   event.stopPropagation();
   const favs=getKifuFavs();
@@ -445,6 +459,17 @@ function toggleKifuFav(id,event){
   if(idx>=0)favs.splice(idx,1);else favs.push(id);
   localStorage.setItem('rb_kifu_favs',JSON.stringify(favs));
   renderList();
+}
+function updateKifuStats(){
+  const total=KIFU_DB.length;
+  const bm=getKifuFavs().length;
+  const v=getKifuViewed().length;
+  const tc=document.getElementById('totalCount');
+  const bc=document.getElementById('bookmarkCount');
+  const vc=document.getElementById('viewedCount');
+  if(tc)tc.textContent=total;
+  if(bc)bc.textContent=bm;
+  if(vc)vc.textContent=v;
 }
 
 function updateReplayDisplay(){
