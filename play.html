@@ -106,6 +106,17 @@ header{height:52px;background:rgba(8,8,15,.95);border-bottom:1px solid var(--bor
   font-size:.95rem;font-weight:700;font-family:inherit
 }
 
+/* Level grid */
+.lbtn{padding:5px 2px;border:1px solid var(--border);background:var(--card);color:var(--muted);border-radius:6px;cursor:pointer;font-size:.62rem;font-weight:700;font-family:inherit;text-align:center;transition:.12s;line-height:1.3;width:100%}
+.lbtn:hover{border-color:var(--gold);color:var(--gold)}
+.lbtn.sel{border-color:var(--gold);color:#000;background:var(--gold)}
+.lbtn.dan{border-color:rgba(112,96,192,.5)}
+.lbtn.dan.sel{background:#7060c0;border-color:#7060c0;color:#fff}
+.lbtn .sub-lv{font-size:.52rem;font-weight:400;display:block;opacity:.7}
+/* Capture highlight */
+.cell.capture{background:rgba(224,85,85,.25)!important}
+.cell.capture::after{content:'✕';position:absolute;font-size:.55rem;color:rgba(224,85,85,.8);top:1px;right:2px;pointer-events:none}
+
 /* Turn timer */
 .turn-clock{display:flex;gap:12px;margin-top:8px}
 .clock-box{flex:1;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 10px;text-align:center}
@@ -190,12 +201,7 @@ header{height:52px;background:rgba(8,8,15,.95);border-bottom:1px solid var(--bor
     </div>
     <div class="side-section">
       <div class="side-title">設定</div>
-      <select id="level-sel" style="width:100%;padding:6px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.82rem">
-        <option value="0">10級 — ランダム</option>
-        <option value="1">5級 — 弱い</option>
-        <option value="2" selected>1級 — 普通</option>
-        <option value="3">初段 — 強い</option>
-      </select>
+      <div id="level-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px"></div>
       <select id="side-sel" style="width:100%;padding:6px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.82rem;margin-top:6px">
         <option value="b">先手（☗）でプレイ</option>
         <option value="w">後手（☖）でプレイ</option>
@@ -254,6 +260,33 @@ function makePieceSvg(kanji,side,promoted){
     <text x="15" y="${yy}" text-anchor="middle" font-family="'Noto Serif JP',serif" font-size="${fs}" font-weight="700" fill="#1a0a00">${kanji}</text>
   </svg>`;
 }
+const LEVELS=[
+  {id:'10k',name:'10級',sub:'入門',  depth:0,random:1.0,klass:''},
+  {id:'8k', name:'8級', sub:'初心者',depth:1,random:0.4,klass:''},
+  {id:'6k', name:'6級', sub:'初級', depth:1,random:0.05,klass:''},
+  {id:'4k', name:'4級', sub:'中級', depth:2,random:0,   klass:''},
+  {id:'2k', name:'2級', sub:'中上級',depth:2,random:0,  klass:''},
+  {id:'1k', name:'1級', sub:'上級', depth:3,random:0,   klass:''},
+  {id:'1d', name:'初段', sub:'有段者',depth:3,random:0, klass:'dan'},
+  {id:'2d', name:'二段', sub:'有段者',depth:4,random:0, klass:'dan'},
+  {id:'3d', name:'三段', sub:'高段', depth:4,random:0,  klass:'dan'},
+  {id:'5d', name:'五段', sub:'強豪', depth:5,random:0,  klass:'dan'},
+];
+let SEL_LEVEL=LEVELS[5];
+
+function buildLevelGrid(){
+  const el=document.getElementById('level-grid');
+  if(!el)return;
+  el.innerHTML='';
+  LEVELS.forEach(lv=>{
+    const b=document.createElement('button');
+    b.className='lbtn '+(lv.klass||'')+(lv===SEL_LEVEL?' sel':'');
+    b.innerHTML=lv.name+'<span class="sub-lv">'+lv.sub+'</span>';
+    b.onclick=()=>{SEL_LEVEL=lv;document.querySelectorAll('.lbtn').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');};
+    el.appendChild(b);
+  });
+}
+
 const FILE_JP  = ['９','８','７','６','５','４','３','２','１'];
 const RANK_JP  = ['一','二','三','四','五','六','七','八','九'];
 const PIECE_VAL = {P:100,L:200,N:220,S:300,G:400,B:600,R:700,K:99999,
@@ -513,7 +546,8 @@ function minimax(grid,hB,hW,depth,alpha,beta,maximizing){
 
 function shuffle(a){return a.slice().sort(()=>Math.random()-.5)}
 
-function aiMove(grid,hB,hW,level){
+function aiMove(grid,hB,hW,lv){
+  const level=typeof lv==='number'?lv:3;
   // 相手視点で探索（今はAIは常に後手の想定 → maximizing=trueで後手視点）
   // level: 0=random,1=depth1,2=depth2,3=depth3
   const aiSide = G.aiSide;
@@ -573,7 +607,9 @@ function renderBoard(){
       const c = flip ? 8-ci : ci;
       const cell=document.createElement('div');
       cell.className='cell';
-      if(G.legalSq.some(([lr,lc])=>lr===r&&lc===c)) cell.classList.add('legal');
+      const isLegal=G.legalSq.some(([lr,lc])=>lr===r&&lc===c);
+      if(isLegal) cell.classList.add('legal');
+      if(isLegal&&G.grid[r][c]&&G.grid[r][c].side!==G.userSide) cell.classList.add('capture');
       const lastMv=G.moveHistory[G.moveHistory.length-1];
       if(lastMv&&!lastMv.drop&&lastMv.to[0]===r&&lastMv.to[1]===c) cell.classList.add('last-move');
       if(G.selected&&G.selected[0]===r&&G.selected[1]===c) cell.classList.add('selected');
@@ -803,8 +839,15 @@ function executeMove(mv){
 
 function doAiMove(){
   if(G.gameOver) return;
-  const level=parseInt(document.getElementById('level-sel').value)||2;
-  const mv=aiMove(G.grid,G.handB,G.handW,level);
+  const lv=SEL_LEVEL||LEVELS[5];
+  let mvs=legalMoves(G.grid,G.handB,G.handW,G.aiSide);
+  let mv=null;
+  if(lv.random>0&&Math.random()<lv.random){
+    mv=mvs[Math.floor(Math.random()*mvs.length)]||null;
+  } else {
+    const res=minimax(G.grid,G.handB,G.handW,lv.depth,-Infinity,Infinity,G.aiSide==='w');
+    mv=res.move;
+  }
   if(!mv){
     G.gameOver=true;
     renderStatus('AI が投了しました。あなたの勝ち！🏆');
@@ -969,6 +1012,7 @@ function newGame(){
 }
 
 // 起動
+buildLevelGrid();
 newGame();
 </script>
 </body>
