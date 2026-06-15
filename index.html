@@ -338,6 +338,7 @@ p { line-height:1.85; margin-bottom:14px; font-size:.93rem; color:#ccd0e8; }
 </aside>
 
 <main id="main">
+  <div id="todayDashboard" style="padding:16px 24px 0"></div>
   <div id="lessonContent"></div>
 </main>
 
@@ -1216,6 +1217,55 @@ function showGlossaryResult(term){
 document.getElementById('menuBtn').addEventListener('click', ()=>{
   document.getElementById('sidebar').classList.toggle('open');
 });
+
+// ── 今日のダッシュボード ─────────────────────────────
+(function renderTodayDash(){
+  const today=new Date().toISOString().slice(0,10);
+  const solved=JSON.parse(localStorage.getItem('rb_tsume_solved_ids')||'[]');
+  const streak=parseInt(localStorage.getItem('rb_streak')||localStorage.getItem('rb_tsume_streak')||'0');
+  const lastActive=localStorage.getItem('rb_last_active')||'';
+  const todayAct=parseInt(localStorage.getItem('rb_active_'+today)||'0');
+  const solvedCount=solved.length;
+
+  // Time greeting
+  const h=new Date().getHours();
+  const greet=h<12?'おはようございます':h<18?'こんにちは':'こんばんは';
+
+  const dashEl=document.getElementById('todayDashboard');
+  if(!dashEl)return;
+  dashEl.innerHTML=`
+<div style="background:linear-gradient(135deg,rgba(200,165,74,.08),rgba(74,127,212,.06));border:1px solid rgba(200,165,74,.2);border-radius:14px;padding:16px 18px;margin-bottom:16px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+    <div>
+      <div style="font-size:.65rem;color:var(--muted);letter-spacing:.08em">📅 ${today} — ${greet}</div>
+      <div style="font-family:'Noto Serif JP',serif;font-size:1.05rem;font-weight:900;color:var(--gold);margin-top:4px">今日の学習状況</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:1.3rem;font-family:'Noto Serif JP',serif;font-weight:900;color:var(--gold)">${streak > 0 ? '🔥 '+streak+'日連続' : '学習を始めよう'}</div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+    <div style="background:rgba(8,8,15,.5);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center">
+      <div style="font-family:'Noto Serif JP',serif;font-size:1.4rem;font-weight:900;color:var(--gold)">${solvedCount}</div>
+      <div style="font-size:.6rem;color:var(--muted);margin-top:2px">詰将棋 解答済</div>
+    </div>
+    <div style="background:rgba(8,8,15,.5);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center">
+      <div style="font-family:'Noto Serif JP',serif;font-size:1.4rem;font-weight:900;color:var(--green)">${todayAct||'—'}</div>
+      <div style="font-size:.6rem;color:var(--muted);margin-top:2px">本日の活動</div>
+    </div>
+    <div style="background:rgba(8,8,15,.5);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center">
+      <div style="font-family:'Noto Serif JP',serif;font-size:1.4rem;font-weight:900;color:var(--accent)">${lastActive===today?'✓ 活動済':'未活動'}</div>
+      <div style="font-size:.6rem;color:var(--muted);margin-top:2px">今日の状態</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a href="tsume.html" style="flex:1;min-width:100px;padding:8px;background:rgba(200,165,74,.12);border:1px solid rgba(200,165,74,.3);border-radius:8px;text-decoration:none;text-align:center;font-size:.72rem;font-weight:700;color:var(--gold)">🧩 詰将棋</a>
+    <a href="play.html" style="flex:1;min-width:100px;padding:8px;background:rgba(74,127,212,.12);border:1px solid rgba(74,127,212,.3);border-radius:8px;text-decoration:none;text-align:center;font-size:.72rem;font-weight:700;color:var(--accent)">♟ 対局</a>
+    <a href="academy.html" style="flex:1;min-width:100px;padding:8px;background:rgba(85,200,138,.1);border:1px solid rgba(85,200,138,.3);border-radius:8px;text-decoration:none;text-align:center;font-size:.72rem;font-weight:700;color:var(--green)">🏠 アカデミー</a>
+    <a href="joseki.html" style="flex:1;min-width:100px;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;text-decoration:none;text-align:center;font-size:.72rem;font-weight:700;color:var(--muted)">📐 定跡</a>
+  </div>
+</div>`;
+})();
 
 // 起動
 showLesson('ch1-l1');
