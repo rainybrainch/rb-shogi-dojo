@@ -365,6 +365,28 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
       </div>
     </div>
 
+    <div class="frow">
+      <label>クイックプリセット</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <button class="sbtn" onclick="applyPreset(1,1,'b','0','平手')" style="text-align:left;padding:8px 10px">
+          <div style="font-size:.72rem;font-weight:700;color:var(--gold)">🎯 入門</div>
+          <div style="font-size:.6rem;color:var(--muted);margin-top:2px">1面 / Lv1 / 無制限</div>
+        </button>
+        <button class="sbtn" onclick="applyPreset(3,3,'b','0','平手')" style="text-align:left;padding:8px 10px">
+          <div style="font-size:.72rem;font-weight:700;color:var(--sky,#5BC8E8)">⚔️ 標準</div>
+          <div style="font-size:.6rem;color:var(--muted);margin-top:2px">3面 / Lv3 / 無制限</div>
+        </button>
+        <button class="sbtn" onclick="applyPreset(5,5,'b','30','平手')" style="text-align:left;padding:8px 10px">
+          <div style="font-size:.72rem;font-weight:700;color:var(--gold)">🔥 多面道場</div>
+          <div style="font-size:.6rem;color:var(--muted);margin-top:2px">5面 / Lv5 / 30秒</div>
+        </button>
+        <button class="sbtn" onclick="applyPreset(10,7,'b','10','平手')" style="text-align:left;padding:8px 10px">
+          <div style="font-size:.72rem;font-weight:700;color:var(--red,#e05555)">💀 最上級</div>
+          <div style="font-size:.6rem;color:var(--muted);margin-top:2px">10面 / Lv7 / 10秒</div>
+        </button>
+      </div>
+    </div>
+
     <button class="start-btn" onclick="startSession()">対局開始 ▶</button>
     <p class="hint">Tab: 盤切替 ／ ?: ヘルプ ／ ホバーで駒の利き確認</p>
 
@@ -904,6 +926,23 @@ function updateLayoutPreview(n){
 }
 function updateBoardCount(v){document.getElementById('bc-val').textContent=v+'面';updateLayoutPreview(parseInt(v));}
 function setSide(el){document.querySelectorAll('.side-row .sbtn').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');}
+
+function applyPreset(boards,level,side,time,handicap){
+  const slider=document.getElementById('bc-slider');
+  slider.value=boards;updateBoardCount(boards);
+  SEL_LEVEL=level;
+  document.querySelectorAll('.lbtn').forEach(b=>{
+    b.classList.toggle('sel',parseInt(b.dataset.lv)===level);
+  });
+  document.querySelectorAll('.side-row .sbtn').forEach(b=>{
+    b.classList.toggle('sel',b.dataset.v===side);
+  });
+  document.querySelectorAll('#time-opts .sbtn').forEach(b=>{
+    b.classList.toggle('sel',b.dataset.v===time);
+  });
+  setHandicap(document.querySelector(`#handicap-opts .sbtn[data-v="${handicap}"]`)||document.querySelector('#handicap-opts .sbtn'));
+  showToast(`プリセット適用: ${boards}面 / Lv${level}`);
+}
 function setHandicap(el){document.querySelectorAll('#handicap-opts .sbtn').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');SEL_HANDICAP=el.dataset.v;}
 function buildLevelGrid(){
   const el=document.getElementById('level-grid');el.innerHTML='';
