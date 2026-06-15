@@ -32,7 +32,7 @@ a{text-decoration:none;color:inherit}
 .pcard.done{border-color:rgba(76,175,125,.3);box-shadow:3px 3px 0 var(--green)}
 .pcard-top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
 .mbadge{font-size:.62rem;font-weight:700;padding:2px 9px;border-radius:20px}
-.m1{background:var(--green);color:var(--dark)} .m3{background:var(--sky);color:var(--dark)} .m5{background:var(--gold);color:var(--dark)} .m7{background:var(--red);color:#fff} .m9{background:#9b59b6;color:#fff}
+.m1{background:var(--green);color:var(--dark)} .m3{background:var(--sky);color:var(--dark)} .m5{background:var(--gold);color:var(--dark)} .m7{background:var(--red);color:#fff} .m9{background:#9b59b6;color:#fff} .m11{background:#e67e22;color:#fff} .m13{background:#1a1a2e;color:var(--gold);border:1px solid var(--gold)}
 .pcard-title{font-family:'Dela Gothic One',sans-serif;font-size:.9rem;flex:1}
 .pcard-check{color:var(--green);font-size:1rem}
 .pcard-hint{font-size:.68rem;color:var(--muted)}
@@ -176,6 +176,8 @@ a{text-decoration:none;color:inherit}
   <button class="fb" onclick="setFilter(5,this)">5手詰</button>
   <button class="fb" onclick="setFilter(7,this)">7手詰</button>
   <button class="fb" onclick="setFilter(9,this)">9手詰</button>
+  <button class="fb" onclick="setFilter(11,this)">11手詰</button>
+  <button class="fb" onclick="setFilter(13,this)">13手詰</button>
 </div>
 
 <div class="plist" id="plist"></div>
@@ -931,6 +933,93 @@ const PUZZLES=[
      {type:'move',piece:'k',from:[1,6],to:[2,6],notation:'△3三玉'},
      {type:'drop',piece:'S',to:[2,7],notation:'▲2三銀打'},
    ]},
+
+  // ── 11手詰め ─────────────────────────────────────
+  {id:70,moves:11,title:'11手詰め #1',hint:'飛車を切り捨て金銀で王を追う！上級者への挑戦',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},
+     {r:0,c:7,p:'g',side:'w'},
+     {r:0,c:6,p:'g',side:'w'},
+     {r:1,c:7,p:'s',side:'w'},
+     {r:1,c:6,p:'n',side:'w'},
+     {r:2,c:8,p:'p',side:'w'},
+     {r:2,c:6,p:'p',side:'w'},
+     {r:5,c:8,p:'R',side:'b'},
+     {r:4,c:7,p:'B',side:'b'},
+     {r:6,c:5,p:'G',side:'b'},
+   ],
+   handB:{S:1,G:1},handW:{},
+   solution:[
+     {type:'move',piece:'R',from:[5,8],to:[0,8],notation:'▲1六飛'},
+     {type:'move',piece:'g',from:[0,7],to:[0,8],notation:'△2一金'},
+     {type:'move',piece:'B',from:[4,7],to:[1,4],promote:true,notation:'▲6六角成'},
+     {type:'move',piece:'k',from:[0,8],to:[1,8],notation:'△1一玉'},
+     {type:'drop',piece:'G',to:[0,7],notation:'▲2一金打'},
+     {type:'move',piece:'k',from:[1,8],to:[2,8],notation:'△1二玉'},
+     {type:'move',piece:'G',from:[0,7],to:[1,7],notation:'▲2二金'},
+     {type:'move',piece:'k',from:[2,8],to:[3,8],notation:'△1三玉'},
+     {type:'drop',piece:'S',to:[2,7],notation:'▲2三銀打'},
+     {type:'move',piece:'k',from:[3,8],to:[4,8],notation:'△1四玉'},
+     {type:'move',piece:'G',from:[6,5],to:[4,7],notation:'▲1五金'},
+   ]},
+  {id:71,moves:11,title:'11手詰め #2',hint:'桂の跳ねから角の力を最大限に活かす11手詰め',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},
+     {r:0,c:7,p:'g',side:'w'},
+     {r:1,c:8,p:'p',side:'w'},
+     {r:1,c:7,p:'s',side:'w'},
+     {r:2,c:6,p:'p',side:'w'},
+     {r:3,c:8,p:'p',side:'w'},
+     {r:4,c:8,p:'R',side:'b'},
+     {r:3,c:4,p:'B',side:'b'},
+     {r:5,c:6,p:'N',side:'b'},
+   ],
+   handB:{G:1,S:1},handW:{},
+   solution:[
+     {type:'move',piece:'N',from:[5,6],to:[3,7],notation:'▲2四桂'},
+     {type:'move',piece:'k',from:[0,8],to:[0,7],notation:'△2一玉'},
+     {type:'move',piece:'R',from:[4,8],to:[0,8],notation:'▲1五飛'},
+     {type:'move',piece:'k',from:[0,7],to:[0,6],notation:'△3一玉'},
+     {type:'move',piece:'B',from:[3,4],to:[0,7],promote:true,notation:'▲2六角成'},
+     {type:'move',piece:'k',from:[0,6],to:[0,7],notation:'△2一玉'},
+     {type:'drop',piece:'G',to:[0,6],notation:'▲3一金打'},
+     {type:'move',piece:'k',from:[0,7],to:[1,7],notation:'△2二玉'},
+     {type:'drop',piece:'S',to:[0,7],notation:'▲2一銀打'},
+     {type:'move',piece:'k',from:[1,7],to:[2,7],notation:'△2三玉'},
+     {type:'move',piece:'G',from:[0,6],to:[2,6],notation:'▲3三金'},
+   ]},
+
+  // ── 13手詰め ─────────────────────────────────────
+  {id:80,moves:13,title:'13手詰め #1',hint:'飛車捨て→角捨て→金銀連携。有段者の難問！',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},
+     {r:0,c:7,p:'g',side:'w'},
+     {r:0,c:6,p:'g',side:'w'},
+     {r:1,c:7,p:'s',side:'w'},
+     {r:1,c:6,p:'s',side:'w'},
+     {r:2,c:8,p:'p',side:'w'},
+     {r:2,c:7,p:'p',side:'w'},
+     {r:3,c:6,p:'p',side:'w'},
+     {r:5,c:8,p:'R',side:'b'},
+     {r:4,c:5,p:'B',side:'b'},
+     {r:6,c:6,p:'G',side:'b'},
+   ],
+   handB:{G:1,S:1,N:1},handW:{},
+   solution:[
+     {type:'move',piece:'R',from:[5,8],to:[2,8],notation:'▲1三飛成'},
+     {type:'move',piece:'p',from:[2,8],to:[2,8],notation:'△1三同歩'},
+     {type:'drop',piece:'N',to:[1,7],notation:'▲2二桂打'},
+     {type:'move',piece:'k',from:[0,8],to:[0,7],notation:'△2一玉'},
+     {type:'move',piece:'B',from:[4,5],to:[1,8],promote:true,notation:'▲1二角成'},
+     {type:'move',piece:'k',from:[0,7],to:[0,6],notation:'△3一玉'},
+     {type:'drop',piece:'G',to:[0,7],notation:'▲2一金打'},
+     {type:'move',piece:'k',from:[0,6],to:[1,6],notation:'△3二玉'},
+     {type:'drop',piece:'S',to:[0,6],notation:'▲3一銀打'},
+     {type:'move',piece:'k',from:[1,6],to:[2,6],notation:'△3三玉'},
+     {type:'move',piece:'G',from:[6,6],to:[3,6],notation:'▲3四金'},
+     {type:'move',piece:'k',from:[2,6],to:[3,5],notation:'△4四玉'},
+     {type:'move',piece:'G',from:[0,7],to:[3,4],notation:'▲4四金'},
+   ]},
 ];
 
 // ── 状態 ────────────────────────────────────────
@@ -981,7 +1070,7 @@ function updateStatDisplay(){
   document.getElementById('s-streak').textContent=streak;
   const pct=attempts>0?Math.round(solved.size/attempts*100):0;
   document.getElementById('s-rate').textContent=pct+'%';
-  const rank=solved.size>=50?'五段':solved.size>=40?'四段':solved.size>=30?'三段':solved.size>=20?'二段':solved.size>=12?'初段':solved.size>=8?'1級':solved.size>=5?'3級':solved.size>=2?'5級':'未達';
+  const rank=solved.size>=65?'七段':solved.size>=55?'六段':solved.size>=45?'五段':solved.size>=35?'四段':solved.size>=25?'三段':solved.size>=16?'二段':solved.size>=10?'初段':solved.size>=6?'1級':solved.size>=3?'3級':solved.size>=1?'5級':'未達';
   document.getElementById('s-rank').textContent=rank;
   document.getElementById('progressText').textContent=`${solved.size}/${PUZZLES.length}問`;
 }
@@ -996,7 +1085,7 @@ function setFilter(f,btn){
 
 function renderList(){
   const list=filterVal==='all'?PUZZLES:PUZZLES.filter(p=>p.moves===filterVal);
-  const mc={'1':'m1','3':'m3','5':'m5','7':'m7','9':'m9'};
+  const mc={'1':'m1','3':'m3','5':'m5','7':'m7','9':'m9','11':'m11','13':'m13'};
   document.getElementById('plist').innerHTML=list.map(p=>{
     const done=solved.has(p.id);
     const best=done?localStorage.getItem('rb_tsume_best_'+p.id):null;
