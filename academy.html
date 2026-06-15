@@ -591,6 +591,27 @@ a{text-decoration:none;color:inherit}
   </a>
 </div>
 
+<!-- WEEKLY GOAL -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">今週の学習記録</div>
+    <div class="section-badge" style="background:var(--green);color:var(--dark)">WEEK</div>
+  </div>
+  <div style="background:var(--card);border:2px solid rgba(76,175,125,.3);border-radius:14px;padding:16px 18px;box-shadow:4px 4px 0 var(--green)">
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:12px" id="weekDots"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-family:'Dela Gothic One',sans-serif;font-size:.78rem;color:var(--green)" id="weekCount">0/7日</div>
+        <div style="font-size:.62rem;color:var(--muted);margin-top:2px">今週の学習日数</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'Dela Gothic One',sans-serif;font-size:.78rem;color:var(--gold)" id="weekStreak">連続 0日</div>
+        <div style="font-size:.62rem;color:var(--muted);margin-top:2px">現在の連続記録</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </main>
 
 <!-- BOTTOM NAV -->
@@ -789,11 +810,45 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'),2000);
 }
 
+function renderWeekDots(){
+  const days=['月','火','水','木','金','土','日'];
+  const today=new Date();
+  const dayOfWeek=(today.getDay()+6)%7; // Mon=0
+  const dots=document.getElementById('weekDots');
+  if(!dots)return;
+  let activeDays=0;
+  dots.innerHTML=days.map((d,i)=>{
+    const date=new Date(today);
+    date.setDate(today.getDate()-dayOfWeek+i);
+    const key='rb_active_'+date.toISOString().slice(0,10);
+    const active=!!localStorage.getItem(key)||date.toDateString()===today.toDateString()&&localStorage.getItem('rb_last_active')===today.toDateString();
+    if(active)activeDays++;
+    const isFuture=i>dayOfWeek;
+    return`<div style="text-align:center">
+      <div style="width:100%;aspect-ratio:1;border-radius:50%;margin-bottom:4px;
+        background:${active?'var(--green)':isFuture?'rgba(255,255,255,.05)':'rgba(255,255,255,.08)'};
+        border:1.5px solid ${active?'var(--green)':isFuture?'rgba(255,255,255,.05)':'var(--border)'}"></div>
+      <div style="font-size:.55rem;color:${i===dayOfWeek?'var(--gold)':'var(--muted)'};font-weight:${i===dayOfWeek?'700':'400'}">${d}</div>
+    </div>`;
+  }).join('');
+  const wc=document.getElementById('weekCount');
+  const ws=document.getElementById('weekStreak');
+  if(wc)wc.textContent=activeDays+'/7日';
+  const streak=parseInt(localStorage.getItem('rb_streak')||'0');
+  if(ws)ws.textContent='連続 '+streak+'日';
+  // Save today as active
+  const todayKey='rb_active_'+today.toISOString().slice(0,10);
+  if(localStorage.getItem('rb_last_active')===today.toDateString()){
+    localStorage.setItem(todayKey,'1');
+  }
+}
+
 loadStats();
 renderDailyBoard();
 renderWelcome();
 renderGoal();
 renderProverb();
+renderWeekDots();
 </script>
 </body>
 </html>
