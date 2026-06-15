@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RB将棋道場 — 多面指しトレーニング</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Noto+Serif+JP:wght@900&display=swap');
+:root{
+  --bg:#08080f; --panel:#10101e; --card:#14142a; --border:#2a2a4a;
+  --gold:#c8a54a; --gold-lt:#e8c76a; --text:#dde0f0; --muted:#6678aa;
+  --red:#e05555; --green:#55c88a; --blue:#4a7fd4;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-serif;min-height:100vh;display:flex;flex-direction:column}
+a{color:inherit;text-decoration:none}
+
+header{height:52px;background:rgba(8,8,15,.95);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;position:sticky;top:0;z-index:20;flex-shrink:0}
+.logo{font-family:'Noto Serif JP',serif;font-size:1rem;font-weight:900;color:var(--gold)}
+.logo span{color:var(--muted);font-weight:400;font-size:.8rem;margin-left:6px}
+.header-right{margin-left:auto;display:flex;gap:10px;align-items:center}
+.chip{padding:5px 12px;border-radius:20px;font-size:.78rem;font-weight:700;border:1px solid var(--border);background:var(--card);cursor:pointer;transition:.15s}
+.chip:hover,.chip.active{border-color:var(--gold);color:var(--gold)}
+.btn-start{padding:7px 18px;background:var(--gold);color:#000;border:none;border-radius:8px;font-weight:700;font-size:.85rem;cursor:pointer;font-family:inherit;transition:.15s}
+.btn-start:hover{background:var(--gold-lt)}
+
+/* ── 設定パネル ── */
+#setup-panel{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  padding:40px 20px
+}
+.setup-box{
+  background:var(--panel);border:1px solid var(--border);border-radius:20px;
+  padding:36px 44px;max-width:500px;width:100%
+}
+.setup-box h1{color:var(--gold);font-family:'Noto Serif JP',serif;font-size:1.6rem;margin-bottom:6px}
+.setup-box p{color:var(--muted);font-size:.88rem;margin-bottom:28px}
+.form-row{margin-bottom:18px}
+.form-row label{display:block;font-size:.82rem;color:var(--muted);margin-bottom:6px;font-weight:700}
+.form-row select,.form-row input{
+  width:100%;padding:10px 14px;background:var(--card);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-family:inherit;font-size:.9rem
+}
+.form-row select:focus,.form-row input:focus{outline:none;border-color:var(--gold)}
+.form-row .options{display:flex;gap:8px}
+.opt-btn{
+  flex:1;padding:10px;border:1px solid var(--border);background:var(--card);
+  color:var(--muted);border-radius:8px;cursor:pointer;font-size:.88rem;font-weight:700;
+  font-family:inherit;transition:.15s;text-align:center
+}
+.opt-btn.sel{border-color:var(--gold);color:var(--gold);background:rgba(200,165,74,.1)}
+.setup-start{
+  width:100%;padding:14px;background:var(--gold);color:#000;border:none;
+  border-radius:10px;font-size:1rem;font-weight:900;cursor:pointer;font-family:inherit;
+  margin-top:10px;transition:.15s
+}
+.setup-start:hover{background:var(--gold-lt)}
+
+/* ── ゲームエリア ── */
+#game-area{display:none;flex:1;flex-direction:column;overflow:hidden}
+
+/* 全体スコアバー */
+#scorebar{
+  padding:8px 20px;background:var(--panel);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:16px;flex-shrink:0
+}
+.score-chip{font-size:.82rem;color:var(--muted)}
+.score-chip strong{color:var(--text)}
+#turn-indicator{
+  margin-left:auto;font-weight:700;font-size:.88rem;padding:4px 14px;
+  border-radius:20px;background:rgba(200,165,74,.15);color:var(--gold);
+  border:1px solid rgba(200,165,74,.3)
+}
+
+/* 盤面グリッド */
+#boards-grid{
+  flex:1;display:grid;gap:12px;padding:12px;overflow:auto;
+  /* columns set by JS */
+}
+
+/* 1つの盤 */
+.board-card{
+  background:var(--panel);border:2px solid var(--border);border-radius:14px;
+  overflow:hidden;display:flex;flex-direction:column;transition:.2s;
+  min-width:0
+}
+.board-card.active{border-color:var(--gold);box-shadow:0 0 20px rgba(200,165,74,.2)}
+.board-card.finished{border-color:var(--muted);opacity:.65}
+.board-card-header{
+  padding:7px 12px;display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid var(--border);flex-shrink:0
+}
+.board-num{
+  width:22px;height:22px;border-radius:50%;background:var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700
+}
+.board-card.active .board-num{background:var(--gold);color:#000}
+.board-status{font-size:.78rem;color:var(--muted);margin-left:auto}
+.board-card.active .board-status{color:var(--gold-lt);font-weight:700}
+
+.board-inner{padding:8px;flex:1;display:flex;flex-direction:column;gap:5px;align-items:center}
+.hand-row{display:flex;gap:3px;flex-wrap:wrap;min-height:22px;align-items:center;width:100%;justify-content:flex-start}
+.h-piece{
+  padding:1px 5px;background:var(--card);border:1px solid var(--border);
+  border-radius:4px;font-size:.68rem;cursor:pointer;transition:.12s;user-select:none
+}
+.h-piece:hover{border-color:var(--gold)}
+.h-piece.selected{border-color:var(--gold);background:rgba(200,165,74,.2)}
+.h-piece.white-hp{transform:rotate(180deg);display:inline-block}
+
+.mini-board{
+  display:grid;grid-template-columns:repeat(9,1fr);
+  border:1px solid #8a7040;background:#e8d5a0;width:100%;aspect-ratio:1;max-width:330px
+}
+.mc{
+  border:1px solid #c4a860;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;aspect-ratio:1;position:relative;transition:.1s
+}
+.mc.legal{background:rgba(74,127,212,.3)}
+.mc.legal::after{content:'';position:absolute;inset:20%;border-radius:50%;background:rgba(74,127,212,.5)}
+.mc.selected{background:rgba(200,165,74,.4)}
+.mc.last{background:rgba(200,165,74,.2)}
+.mp{
+  display:flex;align-items:center;justify-content:center;font-size:clamp(.5rem,.9vw,.78rem);
+  font-weight:700;border-radius:2px;width:90%;height:90%;
+}
+.mp.b{background:linear-gradient(160deg,#ffeaaa,#f0c040);color:#3a2800;border:1px solid #c8960a}
+.mp.w{background:linear-gradient(160deg,#ffe0e0,#f08080);color:#3a0000;border:1px solid #c83030;transform:rotate(180deg)}
+.mp.prom{color:#990000}
+
+/* 成り確認 */
+#prom-modal{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:50;
+  align-items:center;justify-content:center
+}
+#prom-modal.show{display:flex}
+.prom-box{background:var(--panel);border:2px solid var(--gold);border-radius:16px;padding:24px 32px;text-align:center}
+.prom-box h2{color:var(--gold);margin-bottom:16px;font-size:1.1rem}
+.pb{padding:9px 24px;margin:5px;border-radius:8px;border:none;cursor:pointer;font-size:.9rem;font-weight:700;font-family:inherit}
+
+/* 結果バナー */
+#result-banner{
+  display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:var(--panel);border:2px solid var(--gold);border-radius:14px;
+  padding:16px 28px;text-align:center;z-index:40;min-width:280px
+}
+#result-banner h2{color:var(--gold);font-size:1.1rem}
+#result-banner p{color:var(--muted);font-size:.85rem;margin-top:4px}
+#result-banner button{
+  margin-top:12px;padding:8px 20px;background:var(--gold);color:#000;border:none;
+  border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="logo">♟ RB将棋道場<span>多面指しトレーニング</span></a>
+  <div class="header-right">
+    <a href="play.html" class="chip">1局モード</a>
+    <button class="btn-start" id="restart-btn" style="display:none" onclick="showSetup()">設定に戻る</button>
+  </div>
+</header>
+
+<!-- 設定パネル -->
+<div id="setup-panel">
+  <div class="setup-box">
+    <h1>多面指しトレーニング</h1>
+    <p>複数の将棋AIと同時に対局し、実戦経験を積もう。</p>
+
+    <div class="form-row">
+      <label>同時対局数</label>
+      <div class="options" id="board-count-opts">
+        <div class="opt-btn sel" data-v="2" onclick="selOpt(this,'board-count-opts')">2面</div>
+        <div class="opt-btn" data-v="3" onclick="selOpt(this,'board-count-opts')">3面</div>
+        <div class="opt-btn" data-v="4" onclick="selOpt(this,'board-count-opts')">4面</div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label>AI レベル</label>
+      <div class="options" id="level-opts">
+        <div class="opt-btn" data-v="0" onclick="selOpt(this,'level-opts')">Lv1 弱</div>
+        <div class="opt-btn sel" data-v="1" onclick="selOpt(this,'level-opts')">Lv2 普通</div>
+        <div class="opt-btn" data-v="2" onclick="selOpt(this,'level-opts')">Lv3 強</div>
+        <div class="opt-btn" data-v="3" onclick="selOpt(this,'level-opts')">Lv4 最強</div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label>手番</label>
+      <div class="options" id="side-opts">
+        <div class="opt-btn sel" data-v="b" onclick="selOpt(this,'side-opts')">先手（☗）</div>
+        <div class="opt-btn" data-v="w" onclick="selOpt(this,'side-opts')">後手（☖）</div>
+      </div>
+    </div>
+
+    <button class="setup-start" onclick="startSession()">対局開始 ▶</button>
+  </div>
+</div>
+
+<!-- ゲームエリア -->
+<div id="game-area">
+  <div id="scorebar">
+    <div class="score-chip">勝: <strong id="sc-win">0</strong></div>
+    <div class="score-chip">負: <strong id="sc-lose">0</strong></div>
+    <div class="score-chip">引: <strong id="sc-draw">0</strong></div>
+    <div id="turn-indicator">あなたの番 (盤1)</div>
+  </div>
+  <div id="boards-grid"></div>
+</div>
+
+<!-- 成り確認 -->
+<div id="prom-modal">
+  <div class="prom-box">
+    <h2>成りますか？</h2>
+    <button class="pb" style="background:var(--gold);color:#000" onclick="resolvePromotion(true)">成る</button>
+    <button class="pb" style="background:var(--card);color:var(--text);border:1px solid var(--border)" onclick="resolvePromotion(false)">成らない</button>
+  </div>
+</div>
+
+<!-- 結果バナー -->
+<div id="result-banner">
+  <h2 id="result-title"></h2>
+  <p id="result-sub"></p>
+  <button onclick="showSetup()">もう一度</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  共通定数
+// ═══════════════════════════════════════════════════════════════
+const PIECE_JP={P:'歩',L:'香',N:'桂',S:'銀',G:'金',B:'角',R:'飛',K:'玉',
+  '+P':'と','+L':'杏','+N':'圭','+S':'全','+B':'馬','+R':'竜'};
+const PIECE_VAL={P:100,L:200,N:220,S:300,G:400,B:600,R:700,K:99999,
+  '+P':450,'+L':450,'+N':450,'+S':450,'+B':950,'+R':1100};
+const PROMOTE_MAP={P:'+P',L:'+L',N:'+N',S:'+S',B:'+B',R:'+R'};
+const UNPROMOTE=Object.fromEntries(Object.entries(PROMOTE_MAP).map(([k,v])=>[v,k]));
+
+// ═══════════════════════════════════════════════════════════════
+//  移動生成
+// ═══════════════════════════════════════════════════════════════
+function slide(grid,r,c,dirs){
+  const moves=[],side=grid[r][c].side;
+  for(const[dr,dc]of dirs){
+    let nr=r+dr,nc=c+dc;
+    while(nr>=0&&nr<9&&nc>=0&&nc<9){
+      const t=grid[nr][nc];
+      if(!t){moves.push([nr,nc]);}
+      else if(t.side!==side){moves.push([nr,nc]);break;}
+      else break;
+      nr+=dr;nc+=dc;
+    }
+  }
+  return moves;
+}
+function step(grid,r,c,dirs){
+  const moves=[],side=grid[r][c].side;
+  for(const[dr,dc]of dirs){
+    const nr=r+dr,nc=c+dc;
+    if(nr<0||nr>8||nc<0||nc>8)continue;
+    const t=grid[nr][nc];
+    if(!t||t.side!==side)moves.push([nr,nc]);
+  }
+  return moves;
+}
+function fwd(side){return side==='b'?-1:1;}
+function goldDirs(side){const f=fwd(side);return[[f,0],[0,1],[0,-1],[f,1],[f,-1],[-f,0]];}
+function getLegal(grid,r,c){
+  const p=grid[r][c];if(!p)return[];
+  const{type,side}=p,f=fwd(side);
+  switch(type){
+    case'P':return step(grid,r,c,[[f,0]]);
+    case'L':return slide(grid,r,c,[[f,0]]);
+    case'N':{const ds=[[f*2,1],[f*2,-1]];return ds.filter(([dr,dc])=>{const nr=r+dr,nc=c+dc;return nr>=0&&nr<9&&nc>=0&&nc<9&&(!grid[nr][nc]||grid[nr][nc].side!==side);}).map(([dr,dc])=>[r+dr,c+dc]);}
+    case'S':return step(grid,r,c,[[f,1],[f,-1],[f,0],[-f,1],[-f,-1]]);
+    case'G':case'+P':case'+L':case'+N':case'+S':return step(grid,r,c,goldDirs(side));
+    case'B':return slide(grid,r,c,[[1,1],[1,-1],[-1,1],[-1,-1]]);
+    case'R':return slide(grid,r,c,[[1,0],[-1,0],[0,1],[0,-1]]);
+    case'+B':return slide(grid,r,c,[[1,1],[1,-1],[-1,1],[-1,-1]]).concat(step(grid,r,c,[[1,0],[-1,0],[0,1],[0,-1]]));
+    case'+R':return slide(grid,r,c,[[1,0],[-1,0],[0,1],[0,-1]]).concat(step(grid,r,c,[[1,1],[1,-1],[-1,1],[-1,-1]]));
+    case'K':return step(grid,r,c,[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]);
+    default:return[];
+  }
+}
+function kingPos(grid,side){for(let r=0;r<9;r++)for(let c=0;c<9;c++){const p=grid[r][c];if(p&&p.type==='K'&&p.side===side)return[r,c];}return null;}
+function isAttacked(grid,tr,tc,bySide){
+  for(let r=0;r<9;r++)for(let c=0;c<9;c++){
+    const p=grid[r][c];if(!p||p.side!==bySide)continue;
+    if(getLegal(grid,r,c).some(([mr,mc])=>mr===tr&&mc===tc))return true;
+  }return false;
+}
+function applyMv(grid,hB,hW,mv){
+  const g=grid.map(row=>row.map(p=>p?{...p}:null));
+  const hb={...hB},hw={...hW};
+  const{from,to,promote,drop,side}=mv;
+  if(drop){g[to[0]][to[1]]={type:drop,side};}
+  else{
+    const[fr,fc]=from,[tr,tc]=to,piece={...g[fr][fc]},cap=g[tr][tc];
+    if(cap){const base=UNPROMOTE[cap.type]||cap.type;if(side==='b')hb[base]=(hb[base]||0)+1;else hw[base]=(hw[base]||0)+1;}
+    if(promote)piece.type=PROMOTE_MAP[piece.type]||piece.type;
+    g[tr][tc]=piece;g[fr][fc]=null;
+  }
+  return{grid:g,handB:hb,handW:hw};
+}
+function inCheck(grid,side){const kp=kingPos(grid,side);if(!kp)return false;return isAttacked(grid,kp[0],kp[1],side==='b'?'w':'b');}
+function canProm(type,side,fr,tr){if(type.startsWith('+')||type==='G'||type==='K')return false;if(side==='b')return fr<=2||tr<=2;return fr>=6||tr>=6;}
+function mustProm(type,side,tr){if(side==='b'){if((type==='P'||type==='L')&&tr===0)return true;if(type==='N'&&tr<=1)return true;}else{if((type==='P'||type==='L')&&tr===8)return true;if(type==='N'&&tr>=7)return true;}return false;}
+function canDrop(type,side,r,c,grid){
+  if(side==='b'){if((type==='P'||type==='L')&&r===0)return false;if(type==='N'&&r<=1)return false;}
+  else{if((type==='P'||type==='L')&&r===8)return false;if(type==='N'&&r>=7)return false;}
+  if(type==='P'){for(let rr=0;rr<9;rr++){const p=grid[rr][c];if(p&&p.type==='P'&&p.side===side)return false;}}
+  return true;
+}
+function allLegal(grid,hB,hW,side){
+  const moves=[];
+  const hand=side==='b'?hB:hW;
+  for(let r=0;r<9;r++)for(let c=0;c<9;c++){
+    const p=grid[r][c];if(!p||p.side!==side)continue;
+    for(const[tr,tc]of getLegal(grid,r,c)){
+      const cp=canProm(p.type,side,r,tr),mp=mustProm(p.type,side,tr);
+      for(const prom of(mp?[true]:cp?[false,true]:[false])){
+        const mv={from:[r,c],to:[tr,tc],promote:prom,side};
+        const{grid:ng}=applyMv(grid,hB,hW,mv);
+        if(!inCheck(ng,side))moves.push(mv);
+      }
+    }
+  }
+  for(const[type,cnt]of Object.entries(hand)){
+    if(!cnt)continue;
+    for(let r=0;r<9;r++)for(let c=0;c<9;c++){
+      if(grid[r][c]||!canDrop(type,side,r,c,grid))continue;
+      const mv={drop:type,to:[r,c],side,from:null,promote:false};
+      const{grid:ng}=applyMv(grid,hB,hW,mv);
+      if(!inCheck(ng,side))moves.push(mv);
+    }
+  }
+  return moves;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  AI
+// ═══════════════════════════════════════════════════════════════
+function evalBoard(grid,hB,hW){
+  let s=0;
+  for(let r=0;r<9;r++)for(let c=0;c<9;c++){const p=grid[r][c];if(!p)continue;const v=PIECE_VAL[p.type]||0;s+=p.side==='b'?v:-v;}
+  for(const[t,cnt]of Object.entries(hB))s+=(PIECE_VAL[t]||0)*cnt*.8;
+  for(const[t,cnt]of Object.entries(hW))s-=(PIECE_VAL[t]||0)*cnt*.8;
+  return s;
+}
+function shuffle(a){return a.slice().sort(()=>Math.random()-.5);}
+function minimax(grid,hB,hW,depth,alpha,beta,maxing){
+  const side=maxing?'w':'b';
+  const moves=allLegal(grid,hB,hW,side);
+  if(depth===0||!moves.length)return{score:evalBoard(grid,hB,hW),move:null};
+  let best=null;
+  if(maxing){
+    let val=-Infinity;
+    for(const mv of shuffle(moves)){const{grid:ng,handB:nb,handW:nw}=applyMv(grid,hB,hW,mv);const{score}=minimax(ng,nb,nw,depth-1,alpha,beta,false);if(score>val){val=score;best=mv;}alpha=Math.max(alpha,val);if(beta<=alpha)break;}
+    return{score:val,move:best};
+  }else{
+    let val=Infinity;
+    for(const mv of shuffle(moves)){const{grid:ng,handB:nb,handW:nw}=applyMv(grid,hB,hW,mv);const{score}=minimax(ng,nb,nw,depth-1,alpha,beta,true);if(score<val){val=score;best=mv;}beta=Math.min(beta,val);if(beta<=alpha)break;}
+    return{score:val,move:best};
+  }
+}
+function getAiMove(grid,hB,hW,level,aiSide){
+  const maxing=aiSide==='w';
+  if(level===0)return shuffle(allLegal(grid,hB,hW,aiSide))[0]||null;
+  const depth=[1,2,3,3][level]||2;
+  return minimax(grid,hB,hW,depth,-Infinity,Infinity,maxing).move;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  セッション管理
+// ═══════════════════════════════════════════════════════════════
+function startPos(){
+  const g=Array.from({length:9},()=>Array(9).fill(null));
+  const back=['L','N','S','G','K','G','S','N','L'];
+  for(let c=0;c<9;c++)g[0][c]={type:back[c],side:'w'};
+  g[1][1]={type:'R',side:'w'};g[1][7]={type:'B',side:'w'};
+  for(let c=0;c<9;c++)g[2][c]={type:'P',side:'w'};
+  for(let c=0;c<9;c++)g[8][c]={type:back[8-c],side:'b'};
+  g[7][7]={type:'R',side:'b'};g[7][1]={type:'B',side:'b'};
+  for(let c=0;c<9;c++)g[6][c]={type:'P',side:'b'};
+  return g;
+}
+
+// 設定
+let CFG={boards:2,level:1,userSide:'b'};
+
+// ゲーム配列
+let GAMES=[];
+// 現在フォーカス中の盤インデックス
+let FOCUS=0;
+// ペンディング成り
+let PENDING_PROM=null;
+// スコア
+let SCORE={win:0,lose:0,draw:0};
+
+function getOptVal(groupId){return document.querySelector(`#${groupId} .sel`)?.dataset.v;}
+function selOpt(el,groupId){document.querySelectorAll(`#${groupId} .opt-btn`).forEach(e=>e.classList.remove('sel'));el.classList.add('sel');}
+
+function showSetup(){
+  document.getElementById('setup-panel').style.display='flex';
+  document.getElementById('game-area').style.display='none';
+  document.getElementById('restart-btn').style.display='none';
+  document.getElementById('result-banner').style.display='none';
+}
+
+function startSession(){
+  CFG.boards=parseInt(getOptVal('board-count-opts'))||2;
+  CFG.level=parseInt(getOptVal('level-opts'))||1;
+  CFG.userSide=getOptVal('side-opts')||'b';
+  SCORE={win:0,lose:0,draw:0};
+  GAMES=Array.from({length:CFG.boards},(_,i)=>({
+    id:i,grid:startPos(),handB:{},handW:{},
+    turn:'b',over:false,result:null,
+    sel:null,selDrop:null,legalSq:[],moveNo:1,lastTo:null,
+  }));
+  FOCUS=0;
+  document.getElementById('setup-panel').style.display='none';
+  const ga=document.getElementById('game-area');
+  ga.style.display='flex';
+  ga.style.flexDirection='column';
+  document.getElementById('restart-btn').style.display='';
+  buildBoardsUI();
+  updateScorebar();
+
+  // 後手視点の場合、AIが先に指す
+  if(CFG.userSide==='w'){
+    setTimeout(()=>doAiOnAll(),200);
+  }
+}
+
+function buildBoardsUI(){
+  const grid=document.getElementById('boards-grid');
+  const n=CFG.boards;
+  const cols=n<=2?2:n<=4?2:3;
+  grid.style.gridTemplateColumns=`repeat(${Math.min(n,cols)},1fr)`;
+  grid.innerHTML='';
+  GAMES.forEach(g=>{
+    const card=document.createElement('div');
+    card.className='board-card'+(g.id===FOCUS?' active':'');
+    card.id=`card-${g.id}`;
+    card.innerHTML=`
+      <div class="board-card-header">
+        <div class="board-num">${g.id+1}</div>
+        <span style="font-size:.78rem;font-weight:700;color:var(--muted)">盤 ${g.id+1}</span>
+        <div class="board-status" id="status-${g.id}">待機中</div>
+      </div>
+      <div class="board-inner">
+        <div class="hand-row" id="whand-${g.id}"></div>
+        <div class="mini-board" id="mb-${g.id}"></div>
+        <div class="hand-row" id="bhand-${g.id}"></div>
+      </div>`;
+    grid.appendChild(card);
+    renderGame(g.id);
+  });
+}
+
+function renderGame(idx){
+  const g=GAMES[idx];
+  renderMiniBoard(idx);
+  renderMiniHand(idx,'b');
+  renderMiniHand(idx,'w');
+  // status
+  const st=document.getElementById(`status-${idx}`);
+  if(g.over){
+    const r=g.result;
+    if(r==='win')st.textContent='あなたの勝ち 🏆';
+    else if(r==='lose')st.textContent='AIの勝ち';
+    else st.textContent='引き分け';
+  } else if(idx===FOCUS&&g.turn===CFG.userSide){
+    st.textContent='あなたの番';
+  } else if(g.turn!==CFG.userSide){
+    st.textContent='AI思考中...';
+  } else {
+    st.textContent='待機中';
+  }
+  // card highlight
+  const card=document.getElementById(`card-${idx}`);
+  if(card){
+    card.className='board-card'+(g.over?' finished':idx===FOCUS&&!g.over?' active':'');
+  }
+}
+
+function renderMiniBoard(idx){
+  const g=GAMES[idx];
+  const el=document.getElementById(`mb-${idx}`);
+  if(!el)return;
+  el.innerHTML='';
+  for(let ri=0;ri<9;ri++){
+    for(let ci=0;ci<9;ci++){
+      const cell=document.createElement('div');
+      cell.className='mc';
+      const last=g.lastTo;
+      if(last&&last[0]===ri&&last[1]===ci)cell.classList.add('last');
+      if(g.sel&&g.sel[0]===ri&&g.sel[1]===ci)cell.classList.add('selected');
+      if(g.legalSq.some(([lr,lc])=>lr===ri&&lc===ci))cell.classList.add('legal');
+      if(!g.over&&idx===FOCUS&&g.turn===CFG.userSide){
+        cell.addEventListener('click',()=>onCellClick(idx,ri,ci));
+      }
+      const p=g.grid[ri][ci];
+      if(p){
+        const mp=document.createElement('div');
+        mp.className='mp '+(p.side==='b'?'b':'w');
+        if(p.type.startsWith('+'))mp.classList.add('prom');
+        mp.textContent=PIECE_JP[p.type]||p.type;
+        cell.appendChild(mp);
+      }
+      el.appendChild(cell);
+    }
+  }
+}
+
+function renderMiniHand(idx,side){
+  const g=GAMES[idx];
+  const elId=side==='b'?`bhand-${idx}`:`whand-${idx}`;
+  const el=document.getElementById(elId);
+  if(!el)return;
+  el.innerHTML='';
+  const hand=side==='b'?g.handB:g.handW;
+  const isUser=(side===CFG.userSide);
+  for(const[type,cnt]of Object.entries(hand)){
+    if(!cnt)continue;
+    const d=document.createElement('div');
+    d.className='h-piece'+(side==='w'?' white-hp':'');
+    if(g.selDrop&&g.selDrop===type&&idx===FOCUS&&isUser)d.classList.add('selected');
+    d.textContent=PIECE_JP[type]||type;
+    if(cnt>1){const s=document.createElement('sup');s.textContent=cnt;d.appendChild(s);}
+    if(isUser&&!g.over&&idx===FOCUS&&g.turn===CFG.userSide){
+      d.addEventListener('click',()=>onDropSel(idx,type));
+    }
+    el.appendChild(d);
+  }
+}
+
+function updateScorebar(){
+  document.getElementById('sc-win').textContent=SCORE.win;
+  document.getElementById('sc-lose').textContent=SCORE.lose;
+  document.getElementById('sc-draw').textContent=SCORE.draw;
+  const active=GAMES.find(g=>!g.over);
+  if(active){
+    document.getElementById('turn-indicator').textContent=`あなたの番 (盤${FOCUS+1})`;
+  } else {
+    document.getElementById('turn-indicator').textContent='全対局終了';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  プレイヤー操作
+// ═══════════════════════════════════════════════════════════════
+function onCellClick(idx,r,c){
+  const g=GAMES[idx];
+  if(g.over||g.turn!==CFG.userSide||idx!==FOCUS)return;
+
+  // 持ち駒打ちモード
+  if(g.selDrop){
+    if(g.legalSq.some(([lr,lc])=>lr===r&&lc===c)){
+      execMove(idx,{drop:g.selDrop,to:[r,c],side:CFG.userSide,from:null,promote:false});
+    }
+    g.selDrop=null;g.legalSq=[];
+    renderGame(idx);return;
+  }
+
+  const p=g.grid[r][c];
+
+  // 合法手への移動
+  if(g.sel&&g.legalSq.some(([lr,lc])=>lr===r&&lc===c)){
+    const[fr,fc]=g.sel;
+    const piece=g.grid[fr][fc];
+    const cp=canProm(piece.type,CFG.userSide,fr,r);
+    const mp=mustProm(piece.type,CFG.userSide,r);
+    const mv={from:[fr,fc],to:[r,c],side:CFG.userSide,promote:false,pieceType:piece.type};
+    if(mp){mv.promote=true;execMove(idx,mv);}
+    else if(cp){PENDING_PROM={idx,mv};document.getElementById('prom-modal').classList.add('show');}
+    else{execMove(idx,mv);}
+    g.sel=null;g.legalSq=[];
+    renderGame(idx);return;
+  }
+
+  // 駒選択
+  if(p&&p.side===CFG.userSide){
+    g.sel=[r,c];g.selDrop=null;
+    g.legalSq=getFilteredLegal(g,r,c);
+  } else {g.sel=null;g.legalSq=[];}
+  renderGame(idx);
+}
+
+function onDropSel(idx,type){
+  const g=GAMES[idx];
+  if(g.over||g.turn!==CFG.userSide||idx!==FOCUS)return;
+  g.sel=null;
+  if(g.selDrop===type){g.selDrop=null;g.legalSq=[];}
+  else{
+    g.selDrop=type;
+    g.legalSq=[];
+    for(let r=0;r<9;r++)for(let c=0;c<9;c++){
+      if(g.grid[r][c]||!canDrop(type,CFG.userSide,r,c,g.grid))continue;
+      const mv={drop:type,to:[r,c],side:CFG.userSide,from:null,promote:false};
+      const{grid:ng}=applyMv(g.grid,g.handB,g.handW,mv);
+      if(!inCheck(ng,CFG.userSide))g.legalSq.push([r,c]);
+    }
+  }
+  renderGame(idx);
+}
+
+function getFilteredLegal(g,r,c){
+  return getLegal(g.grid,r,c).filter(([tr,tc])=>{
+    const mv={from:[r,c],to:[tr,tc],side:g.grid[r][c].side,promote:false};
+    const{grid:ng}=applyMv(g.grid,g.handB,g.handW,mv);
+    return !inCheck(ng,g.grid[r][c].side);
+  });
+}
+
+function resolvePromotion(prom){
+  document.getElementById('prom-modal').classList.remove('show');
+  if(!PENDING_PROM)return;
+  const{idx,mv}=PENDING_PROM;
+  mv.promote=prom;PENDING_PROM=null;
+  execMove(idx,mv);
+}
+
+function execMove(idx,mv){
+  const g=GAMES[idx];
+  const{grid:ng,handB:nb,handW:nw}=applyMv(g.grid,g.handB,g.handW,mv);
+  g.grid=ng;g.handB=nb;g.handW=nw;
+  if(!mv.drop)g.lastTo=mv.to;else g.lastTo=mv.to;
+  g.turn=g.turn==='b'?'w':'b';
+  g.moveNo++;
+  g.sel=null;g.selDrop=null;g.legalSq=[];
+
+  // 詰み/合法手チェック
+  const nextMoves=allLegal(g.grid,g.handB,g.handW,g.turn);
+  if(!nextMoves.length){
+    // 詰んだ = 直前に指した側の勝ち
+    const winner=mv.side;
+    endGame(idx,winner===CFG.userSide?'win':'lose');
+    return;
+  }
+
+  renderGame(idx);
+
+  // AIが指す番
+  if(g.turn!==CFG.userSide){
+    setTimeout(()=>doAiMove(idx),80);
+  } else {
+    // 次のアクティブ盤に移動
+    advanceFocus();
+  }
+}
+
+function doAiMove(idx){
+  const g=GAMES[idx];
+  if(g.over)return;
+  const aiSide=CFG.userSide==='b'?'w':'b';
+  const mv=getAiMove(g.grid,g.handB,g.handW,CFG.level,aiSide);
+  if(!mv){endGame(idx,'win');return;}
+  if(!mv.drop)mv.pieceType=g.grid[mv.from[0]][mv.from[1]].type;
+  const{grid:ng,handB:nb,handW:nw}=applyMv(g.grid,g.handB,g.handW,mv);
+  g.grid=ng;g.handB=nb;g.handW=nw;
+  g.lastTo=mv.to;
+  g.turn=CFG.userSide;g.moveNo++;
+  const nextMoves=allLegal(g.grid,g.handB,g.handW,g.turn);
+  if(!nextMoves.length){endGame(idx,'lose');return;}
+  renderGame(idx);
+  // 全盤のAIが返した後にフォーカスを整理
+  checkAndSetFocus();
+}
+
+function doAiOnAll(){
+  // 後手でスタート時、AIが先に全盤指す
+  const aiSide=CFG.userSide==='b'?'w':'b';
+  if(GAMES[0].turn!==aiSide)return;
+  GAMES.forEach(g=>{
+    if(!g.over&&g.turn===aiSide) doAiMove(g.id);
+  });
+}
+
+function advanceFocus(){
+  // 次の自分の番の盤を探す
+  let next=-1;
+  for(let i=1;i<=GAMES.length;i++){
+    const idx=(FOCUS+i)%GAMES.length;
+    if(!GAMES[idx].over&&GAMES[idx].turn===CFG.userSide){next=idx;break;}
+  }
+  if(next===-1){
+    // 自分の番の盤がなければ待つ（AIが思考中）
+    updateScorebar();return;
+  }
+  FOCUS=next;
+  buildBoardsUI();
+  updateScorebar();
+}
+
+function checkAndSetFocus(){
+  // AI完了後、自分の番の盤にフォーカスを移す
+  if(GAMES[FOCUS].turn===CFG.userSide&&!GAMES[FOCUS].over)return;
+  advanceFocus();
+}
+
+function endGame(idx,result){
+  const g=GAMES[idx];
+  g.over=true;g.result=result;
+  if(result==='win')SCORE.win++;
+  else if(result==='lose')SCORE.lose++;
+  else SCORE.draw++;
+  renderGame(idx);
+  updateScorebar();
+  // 全盤終了チェック
+  if(GAMES.every(g=>g.over)){
+    showResult();
+  } else {
+    if(idx===FOCUS) advanceFocus();
+  }
+}
+
+function showResult(){
+  const b=document.getElementById('result-banner');
+  const total=GAMES.length;
+  const t=document.getElementById('result-title');
+  const s=document.getElementById('result-sub');
+  if(SCORE.win===total){t.textContent='完全勝利！🏆';s.textContent=`${total}局全て勝利しました`;}
+  else if(SCORE.win>SCORE.lose){t.textContent='勝ち越し！';s.textContent=`${SCORE.win}勝 ${SCORE.lose}敗`;}
+  else if(SCORE.win===SCORE.lose){t.textContent='互角の結果';s.textContent=`${SCORE.win}勝 ${SCORE.lose}敗`;}
+  else{t.textContent='次は勝とう';s.textContent=`${SCORE.win}勝 ${SCORE.lose}敗`;}
+  b.style.display='block';
+}
+
+// 初期表示
+showSetup();
+</script>
+</body>
+</html>
