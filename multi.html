@@ -143,8 +143,9 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
 .rank-bar{position:absolute;right:-14px;top:0;height:100%;display:flex;flex-direction:column;justify-content:space-around}
 /* ── 将棋盤（木目デザイン）──────────────────────── */
 .mb{display:grid;grid-template-columns:repeat(9,1fr);
-  border:2px solid #4a2e08;background:#c8923a;width:100%;aspect-ratio:1;
-  box-shadow:inset 0 0 0 1px #b07830}
+  border:3px solid #3a1e04;width:100%;aspect-ratio:1;
+  background-image:repeating-linear-gradient(90deg,transparent,transparent 97%,rgba(0,0,0,.07) 97%,rgba(0,0,0,.07) 100%),repeating-linear-gradient(0deg,transparent,transparent 97%,rgba(0,0,0,.07) 97%,rgba(0,0,0,.07) 100%),linear-gradient(135deg,#d4952a 0%,#bf8530 40%,#a86e20 100%);
+  box-shadow:inset 0 0 0 1.5px #d4a050,inset 0 0 20px rgba(100,50,0,.2),4px 4px 14px rgba(0,0,0,.6)}
 /* 盤面の升目 */
 .mc{border:.5px solid #7a4e1a;display:flex;align-items:center;justify-content:center;
   cursor:pointer;position:relative;transition:background .08s}
@@ -729,17 +730,19 @@ const PJ={P:'歩',L:'香',N:'桂',S:'銀',G:'金',B:'角',R:'飛',K:'玉',
   '+P':'と','+L':'杏','+N':'圭','+S':'全','+B':'馬','+R':'竜'};
 
 // ── SVG五角形駒の生成 ────────────────────────────────
+// Inject shared gradient defs once
+(function(){const d=document.createElement('div');d.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute"><defs><linearGradient id="mgPb" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#fff8e8"/><stop offset="55%" stop-color="#f2d98a"/><stop offset="100%" stop-color="#8b5c10" stop-opacity=".5"/></linearGradient><linearGradient id="mgPw" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#f0e8d0"/><stop offset="55%" stop-color="#d8c080"/><stop offset="100%" stop-color="#6a4800" stop-opacity=".5"/></linearGradient><linearGradient id="mgPp" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ff9090"/><stop offset="55%" stop-color="#d03030"/><stop offset="100%" stop-color="#7a0808" stop-opacity=".6"/></linearGradient><filter id="mpSh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1.5" stdDeviation="1.2" flood-color="#3a1400" flood-opacity=".55"/></filter></defs></svg>`;document.body.insertBefore(d.firstChild,document.body.firstChild);})();
+
 function makePieceSvg(kanji, side, promoted){
   const isBk=side==='b';
-  const fill=promoted?'#c84040':isBk?'#f5e6c8':'#e8cfa8';
-  const stroke='#3a1a00';
-  const textFill=promoted?'#fff':'#1a0800';
-  const twoChar=kanji.length>1;
-  const fontSize=twoChar?'9.5':'13';
-  const yOff=twoChar?'19':'22';
-  // 後手は回転させるのでtextも一緒に回転
+  const gid=promoted?'mgPp':isBk?'mgPb':'mgPw';
+  const stroke=promoted?'#6a0000':isBk?'#4a2800':'#3a1a00';
+  const hlCol=promoted?'rgba(255,160,160,.3)':'rgba(255,255,220,.35)';
+  const textCol=promoted?'#fff0f0':'#180800';
+  const fs=kanji.length>1?'9.5':'13';
+  const yy=kanji.length>1?'20':'23';
   const rot=isBk?'':'rotate(180 17 17)';
-  return `<svg viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg"><polygon points="17,1 33,9 33,33 1,33 1,9" fill="${fill}" stroke="${stroke}" stroke-width="1.2"/><text x="17" y="${yOff}" text-anchor="middle" font-size="${fontSize}" font-family="'Hiragino Kaku Gothic ProN','Meiryo',sans-serif" font-weight="bold" fill="${textFill}" transform="${rot}">${kanji}</text></svg>`;
+  return`<svg viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg"><polygon points="17,1.5 32.5,9 32.5,32 1.5,32 1.5,9" fill="url(#${gid})" stroke="${stroke}" stroke-width="1.3" filter="url(#mpSh)"/><polygon points="17,3.5 30.5,10.5 30.5,30 3.5,30 3.5,10.5" fill="none" stroke="${hlCol}" stroke-width=".8"/><text x="17" y="${yy}" text-anchor="middle" font-size="${fs}" font-family="'Noto Serif JP','游明朝',serif" font-weight="900" fill="${textCol}" transform="${rot}">${kanji}</text></svg>`;
 }
 
 const PV={P:100,L:250,N:270,S:350,G:440,B:700,R:800,K:99999,
