@@ -426,11 +426,159 @@ const PUZZLES=[
    ]},
 ];
 
-// Add more 1手詰め to fill
-for(let i=13;i<=20;i++){
-  const base=PUZZLES[i%5];
-  PUZZLES.push({...base,id:i,title:`1手詰め #${i-7}（練習）`});
-}
+  // ── 追加1手詰め ───────────────────────────────────
+  {id:13,moves:1,title:'1手詰め #6',hint:'角の遠距離利きが金打ちを支える',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},   // 後手玉@1一
+     {r:0,c:7,p:'s',side:'w'},   // 後手銀@2一
+     {r:3,c:5,p:'B',side:'b'},   // 先手角@4四(covers 2二 diagonally)
+   ],
+   handB:{G:1},handW:{},
+   solution:[{type:'drop',piece:'G',to:[1,7],notation:'▲2二金打'}]},
+
+  {id:14,moves:1,title:'1手詰め #7',hint:'飛車と金の連携で詰み！中央の玉を追い詰めよ',
+   pieces:[
+     {r:0,c:6,p:'k',side:'w'},   // 後手玉@3一
+     {r:0,c:7,p:'s',side:'w'},   // 後手銀@2一
+     {r:0,c:5,p:'s',side:'w'},   // 後手銀@4一
+     {r:4,c:6,p:'R',side:'b'},   // 先手飛@3五(covers 3二)
+   ],
+   handB:{G:1},handW:{},
+   solution:[{type:'drop',piece:'G',to:[1,6],notation:'▲3二金打'}]},
+
+  {id:15,moves:1,title:'1手詰め #8',hint:'銀打ちで角の利きを活かせ',
+   pieces:[
+     {r:1,c:8,p:'k',side:'w'},   // 後手玉@1二
+     {r:0,c:8,p:'g',side:'w'},   // 後手金@1一
+     {r:0,c:7,p:'p',side:'w'},   // 後手歩@2一
+     {r:1,c:6,p:'B',side:'b'},   // 先手角@3二(covers 2三,2一 diagonal)
+   ],
+   handB:{S:1},handW:{},
+   solution:[{type:'drop',piece:'S',to:[2,8],notation:'▲1三銀打'}]},
+
+  {id:16,moves:1,title:'1手詰め #9',hint:'飛車を引いて詰め筋を作れ',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},   // 後手玉@1一
+     {r:0,c:7,p:'g',side:'w'},   // 後手金@2一
+     {r:1,c:7,p:'p',side:'w'},   // 後手歩@2二
+     {r:5,c:8,p:'R',side:'b'},   // 先手飛@1六
+     {r:2,c:6,p:'G',side:'b'},   // 先手金@3三
+   ],
+   handB:{},handW:{},
+   solution:[{type:'move',piece:'R',from:[5,8],to:[1,8],notation:'▲1二飛'}]},
+
+  {id:17,moves:1,title:'1手詰め #10',hint:'香車の縦の利きで詰め！',
+   pieces:[
+     {r:0,c:7,p:'k',side:'w'},   // 後手玉@2一
+     {r:0,c:8,p:'s',side:'w'},   // 後手銀@1一
+     {r:0,c:6,p:'g',side:'w'},   // 後手金@3一
+     {r:1,c:5,p:'G',side:'b'},   // 先手金@4二(covers 3一+1四方向)
+   ],
+   handB:{L:1},handW:{},
+   solution:[{type:'drop',piece:'L',to:[1,7],notation:'▲2二香打'}]},
+
+  // ── 追加3手詰め ───────────────────────────────────
+  {id:18,moves:3,title:'3手詰め #4',hint:'飛車を走らせて玉を端に追い込め',
+   pieces:[
+     {r:0,c:7,p:'k',side:'w'},   // 後手玉@2一
+     {r:0,c:6,p:'g',side:'w'},   // 後手金@3一
+     {r:0,c:8,p:'g',side:'w'},   // 後手金@1一
+     {r:5,c:7,p:'R',side:'b'},   // 先手飛@2六
+     {r:3,c:5,p:'G',side:'b'},   // 先手金@4四
+   ],
+   handB:{G:1},handW:{},
+   solution:[
+     {type:'move',piece:'R',from:[5,7],to:[1,7],notation:'▲2二飛'},
+     {type:'move',piece:'k',from:[0,7],to:[0,8],notation:'△1一玉'},
+     {type:'drop',piece:'G',to:[0,7],notation:'▲2一金打'},
+   ]},
+
+  {id:19,moves:3,title:'3手詰め #5',hint:'銀を捨てて飛車を走らせる',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},   // 後手玉@1一
+     {r:0,c:7,p:'g',side:'w'},   // 後手金@2一
+     {r:8,c:8,p:'R',side:'b'},   // 先手飛@1九
+     {r:2,c:7,p:'G',side:'b'},   // 先手金@2三 (covers 1三,3三,1二,2二 etc.)
+   ],
+   handB:{S:1},handW:{},
+   solution:[
+     {type:'drop',piece:'S',to:[0,7],notation:'▲2一銀打'},
+     {type:'move',piece:'k',from:[0,8],to:[1,8],notation:'△1二玉'},
+     {type:'move',piece:'R',from:[8,8],to:[2,8],promote:true,notation:'▲1三飛成'},
+   ]},
+
+  {id:20,moves:3,title:'3手詰め #6',hint:'角で斜めに王手してから追い詰めよ',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},   // 後手玉@1一
+     {r:0,c:7,p:'g',side:'w'},   // 後手金@2一
+     {r:0,c:6,p:'g',side:'w'},   // 後手金@3一
+     {r:5,c:3,p:'B',side:'b'},   // 先手角@6六
+     {r:8,c:8,p:'R',side:'b'},   // 先手飛@1九
+   ],
+   handB:{},handW:{},
+   solution:[
+     {type:'move',piece:'B',from:[5,3],to:[2,6],notation:'▲3三角成'},
+     {type:'move',piece:'k',from:[0,8],to:[1,8],notation:'△1二玉'},
+     {type:'move',piece:'R',from:[8,8],to:[1,8],promote:true,notation:'▲1二飛成'},
+   ]},
+
+  // ── 追加5手詰め ───────────────────────────────────
+  {id:21,moves:5,title:'5手詰め #3',hint:'角の斜めと金の両方を使って追い詰める',
+   pieces:[
+     {r:0,c:8,p:'k',side:'w'},   // 後手玉@1一
+     {r:0,c:7,p:'g',side:'w'},   // 後手金@2一
+     {r:1,c:6,p:'p',side:'w'},   // 後手歩@3二
+     {r:8,c:8,p:'R',side:'b'},
+     {r:6,c:6,p:'B',side:'b'},
+   ],
+   handB:{G:1,S:1},handW:{},
+   solution:[
+     {type:'drop',piece:'S',to:[1,7],notation:'▲2二銀打'},
+     {type:'move',piece:'k',from:[0,8],to:[1,8],notation:'△1二玉'},
+     {type:'move',piece:'R',from:[8,8],to:[3,8],notation:'▲1四飛'},
+     {type:'move',piece:'k',from:[1,8],to:[2,7],notation:'△2三玉'},
+     {type:'drop',piece:'G',to:[2,8],notation:'▲1三金打'},
+   ]},
+
+  {id:22,moves:5,title:'5手詰め #4',hint:'飛車を切って銀・金で仕留める',
+   pieces:[
+     {r:1,c:8,p:'k',side:'w'},   // 後手玉@1二
+     {r:0,c:8,p:'g',side:'w'},   // 後手金@1一
+     {r:0,c:7,p:'g',side:'w'},   // 後手金@2一
+     {r:1,c:7,p:'p',side:'w'},   // 後手歩@2二
+     {r:4,c:8,p:'R',side:'b'},
+     {r:4,c:6,p:'G',side:'b'},
+   ],
+   handB:{S:1},handW:{},
+   solution:[
+     {type:'drop',piece:'S',to:[2,7],notation:'▲2三銀打'},
+     {type:'move',piece:'k',from:[1,8],to:[0,8],notation:'△1一玉'},
+     {type:'move',piece:'R',from:[4,8],to:[1,8],notation:'▲1二飛'},
+     {type:'move',piece:'k',from:[0,8],to:[0,7],notation:'△2一玉'},
+     {type:'move',piece:'R',from:[1,8],to:[1,7],promote:true,notation:'▲2二飛成'},
+   ]},
+
+  // ── 追加7手詰め ───────────────────────────────────
+  {id:23,moves:7,title:'7手詰め #3',hint:'長手数の詰将棋。正確な手順で追い詰めよ！',
+   pieces:[
+     {r:0,c:7,p:'k',side:'w'},   // 後手玉@2一
+     {r:0,c:8,p:'g',side:'w'},   // 後手金@1一
+     {r:0,c:6,p:'g',side:'w'},   // 後手金@3一
+     {r:1,c:7,p:'p',side:'w'},   // 後手歩@2二
+     {r:4,c:7,p:'R',side:'b'},
+     {r:4,c:5,p:'G',side:'b'},
+   ],
+   handB:{N:1,G:1},handW:{},
+   solution:[
+     {type:'drop',piece:'N',to:[2,6],notation:'▲3三桂打'},
+     {type:'move',piece:'k',from:[0,7],to:[0,8],notation:'△1一玉'},
+     {type:'move',piece:'R',from:[4,7],to:[1,7],notation:'▲2二飛'},
+     {type:'move',piece:'k',from:[0,8],to:[0,7],notation:'△2一玉'},
+     {type:'drop',piece:'G',to:[0,8],notation:'▲1一金打'},
+     {type:'move',piece:'k',from:[0,7],to:[1,7],notation:'△2二玉'},
+     {type:'move',piece:'G',from:[4,5],to:[2,5],notation:'▲4三金'},
+   ]},
+];
 
 // ── 状態 ────────────────────────────────────────
 let solved=new Set(JSON.parse(localStorage.getItem('rb_tsume_solved_ids')||'[]'));
