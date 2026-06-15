@@ -103,6 +103,24 @@ header{height:52px;background:rgba(8,8,15,.95);border-bottom:1px solid var(--bor
   font-size:.95rem;font-weight:700;font-family:inherit
 }
 
+/* Turn timer */
+.turn-clock{display:flex;gap:12px;margin-top:8px}
+.clock-box{flex:1;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 10px;text-align:center}
+.clock-time{font-family:'Noto Serif JP',serif;font-size:1.2rem;color:var(--gold);font-weight:900}
+.clock-label{font-size:.58rem;color:var(--muted);margin-top:1px}
+.clock-box.active-clock{border-color:var(--gold);background:rgba(200,165,74,.08)}
+
+/* Result overlay */
+#result-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;align-items:center;justify-content:center}
+#result-overlay.show{display:flex}
+.result-box{background:var(--panel);border:2px solid var(--gold);border-radius:18px;padding:32px 36px;text-align:center;box-shadow:8px 8px 0 rgba(200,165,74,.3)}
+.result-title{font-family:'Noto Serif JP',serif;font-size:1.6rem;color:var(--gold);margin-bottom:6px}
+.result-sub{font-size:.85rem;color:var(--muted);margin-bottom:20px}
+.result-stats{display:flex;gap:12px;justify-content:center;margin-bottom:20px}
+.result-stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 16px;min-width:70px}
+.result-stat-n{font-family:'Noto Serif JP',serif;font-size:1.2rem;color:var(--gold)}
+.result-stat-l{font-size:.6rem;color:var(--muted);margin-top:2px}
+
 /* AI thinking indicator */
 .thinking{animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
@@ -152,29 +170,49 @@ header{height:52px;background:rgba(8,8,15,.95);border-bottom:1px solid var(--bor
       <div class="side-title">状態</div>
       <div id="status-msg">あなたの番</div>
       <div id="formation-msg"></div>
-      <div id="eval-bar-wrap" style="display:none">
-        <div id="eval-label">形勢</div>
-        <div id="eval-bar"><div id="eval-fill"></div></div>
+      <div class="turn-clock" id="turnClock">
+        <div class="clock-box" id="clockB">
+          <div class="clock-time" id="clockBTime">0:00</div>
+          <div class="clock-label">▲先手</div>
+        </div>
+        <div class="clock-box" id="clockW">
+          <div class="clock-time" id="clockWTime">0:00</div>
+          <div class="clock-label">△後手</div>
+        </div>
       </div>
     </div>
     <div class="side-section">
       <div class="side-title">設定</div>
       <select id="level-sel" style="width:100%;padding:6px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.82rem">
-        <option value="0">Lv1 ランダム</option>
-        <option value="1">Lv2 弱い</option>
-        <option value="2" selected>Lv3 普通</option>
-        <option value="3">Lv4 強い</option>
+        <option value="0">10級 — ランダム</option>
+        <option value="1">5級 — 弱い</option>
+        <option value="2" selected>1級 — 普通</option>
+        <option value="3">初段 — 強い</option>
       </select>
       <select id="side-sel" style="width:100%;padding:6px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.82rem;margin-top:6px">
         <option value="b">先手（☗）でプレイ</option>
         <option value="w">後手（☖）でプレイ</option>
       </select>
       <button class="btn primary" id="new-game-btn" onclick="newGame()" style="margin-top:8px">新しい対局を始める</button>
+      <button class="btn" onclick="resignGame()" style="margin-top:4px;border-color:var(--red);color:var(--red)">投了する</button>
     </div>
     <div class="side-section" style="flex-shrink:0">
       <div class="side-title">棋譜</div>
     </div>
     <div id="move-list"></div>
+  </div>
+</div>
+
+<div id="result-overlay">
+  <div class="result-box">
+    <div class="result-title" id="result-title">勝利！</div>
+    <div class="result-sub" id="result-sub">おめでとうございます</div>
+    <div class="result-stats">
+      <div class="result-stat"><div class="result-stat-n" id="result-moves">0</div><div class="result-stat-l">手数</div></div>
+      <div class="result-stat"><div class="result-stat-n" id="result-time">0:00</div><div class="result-stat-l">対局時間</div></div>
+    </div>
+    <button class="btn primary" onclick="newGame()" style="width:100%;max-width:220px">もう一局</button>
+    <button class="btn" onclick="document.getElementById('result-overlay').classList.remove('show')" style="width:100%;max-width:220px;margin-top:6px">盤面を確認</button>
   </div>
 </div>
 
@@ -711,6 +749,8 @@ function executeMove(mv){
     const winner = G.turn==='b'?'後手':'先手';
     G.gameOver=true;
     renderStatus(`詰み！ ${winner}の勝ち 🏆`);
+    const isUserWin=(winner==='先手'&&G.userSide==='b')||(winner==='後手'&&G.userSide==='w');
+    setTimeout(()=>showResult(isUserWin?'🏆 勝利！':'💀 敗北',`詰み！ ${winner}の勝ち`),600);
     return;
   }
 
@@ -732,6 +772,7 @@ function doAiMove(){
   if(!mv){
     G.gameOver=true;
     renderStatus('AI が投了しました。あなたの勝ち！🏆');
+    setTimeout(()=>showResult('🏆 勝利！','AIが投了しました — おめでとうございます！'),600);
     return;
   }
   // pieceType を記録
@@ -748,6 +789,7 @@ function doAiMove(){
   if(nextMoves.length===0){
     G.gameOver=true;
     renderStatus('詰み！ AIの勝ち');
+    setTimeout(()=>showResult('💀 敗北','詰みました — 次は頑張りましょう！'),600);
     return;
   }
   renderStatus('あなたの番');
@@ -812,6 +854,45 @@ function checkFormations(){
 //  ゲーム管理
 // ═══════════════════════════════════════════════════════════════
 
+// ── クロック ──────────────────────────────────────
+let clockB=0,clockW=0,clockInterval=null,gameStartTime=null;
+
+function startClock(){
+  if(clockInterval)clearInterval(clockInterval);
+  clockInterval=setInterval(()=>{
+    if(G.gameOver){clearInterval(clockInterval);return;}
+    if(G.turn==='b')clockB++;else clockW++;
+    updateClockDisplay();
+  },1000);
+}
+function stopClock(){if(clockInterval){clearInterval(clockInterval);clockInterval=null;}}
+function updateClockDisplay(){
+  const fmt=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+  document.getElementById('clockBTime').textContent=fmt(clockB);
+  document.getElementById('clockWTime').textContent=fmt(clockW);
+  document.getElementById('clockB').classList.toggle('active-clock',G.turn==='b'&&!G.gameOver);
+  document.getElementById('clockW').classList.toggle('active-clock',G.turn==='w'&&!G.gameOver);
+}
+
+function showResult(title,sub){
+  stopClock();
+  const total=clockB+clockW;
+  const fmt=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+  document.getElementById('result-title').textContent=title;
+  document.getElementById('result-sub').textContent=sub;
+  document.getElementById('result-moves').textContent=G.moveHistory.length;
+  document.getElementById('result-time').textContent=fmt(total);
+  document.getElementById('result-overlay').classList.add('show');
+}
+
+function resignGame(){
+  if(G.gameOver)return;
+  if(!confirm('投了しますか？'))return;
+  G.gameOver=true;
+  const winner=G.userSide==='b'?'後手(AI)':'先手(AI)';
+  showResult('投了','AIの勝ち — お疲れさまでした');
+}
+
 function newGame(){
   G.grid=startPos();
   G.handB={}; G.handW={};
@@ -821,6 +902,8 @@ function newGame(){
   G.selected=null; G.selectedDrop=null; G.legalSq=[];
   G.moveHistory=[]; G.gameOver=false; G.pendingPromotion=null;
   SEEN_FORMATIONS.clear();
+  document.getElementById('result-overlay').classList.remove('show');
+  clockB=0;clockW=0;stopClock();updateClockDisplay();startClock();
 
   document.getElementById('white-label').textContent=G.userSide==='w'?'あなた（後手）':'AI（後手）';
   document.getElementById('black-label').textContent=G.userSide==='b'?'あなた（先手）':'AI（先手）';
