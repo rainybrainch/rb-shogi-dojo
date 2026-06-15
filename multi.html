@@ -240,6 +240,15 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
 /* 長押し選択防止 */
 .mb{-webkit-user-select:none;user-select:none}
 .mp{-webkit-user-select:none;user-select:none}
+
+/* AI着手フラッシュ */
+@keyframes ai-flash{0%{background:rgba(85,140,200,.18)}100%{background:transparent}}
+.bc.ai-moved{animation:ai-flash .5s ease}
+
+/* アクティブ盤 拡大（グリッド上でspan） */
+@media(min-width:700px){
+  .bc.active.focus-zoom{grid-row:span 1}
+}
 </style>
 </head>
 <body>
@@ -354,6 +363,7 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
 <div id="rb">
   <h2 id="rb-title"></h2>
   <p id="rb-sub"></p>
+  <div id="rb-boards" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:12px 0;max-width:480px"></div>
   <div class="rb-btns">
     <button style="background:var(--gold);color:#000" onclick="showSetup()">もう一度</button>
     <button style="background:var(--card);color:var(--text);border:1px solid var(--border)" onclick="rematch()">同じ設定でリマッチ</button>
@@ -691,7 +701,11 @@ function getAiMove(g,hB,hW,lv,aiSide,moveNo){
   if((lv.evalPlus||0)>=1&&moveNo&&moveNo<=8){const bm=getBookMove(g,hB,hW,aiSide,moveNo);if(bm)return bm;}
   if(Math.random()<(lv.random||0))return shuf(allLegal(g,hB,hW,aiSide))[0]||null;
   if(lv.depth===0)return shuf(allLegal(g,hB,hW,aiSide))[0]||null;
-  return minimax(g,hB,hW,lv.depth,-Infinity,Infinity,aiSide==='w',lv.evalPlus||0).move;
+  // 多面指し時は盤数に応じて深さを自動制限（CPU負荷軽減）
+  const boards=typeof GAMES!=='undefined'?GAMES.length:1;
+  const depthCap=boards>=8?2:boards>=5?3:99;
+  const depth=Math.min(lv.depth,depthCap);
+  return minimax(g,hB,hW,depth,-Infinity,Infinity,aiSide==='w',lv.evalPlus||0).move;
 }
 
 // ══════════════════════════════════════════════════════
@@ -1099,12 +1113,16 @@ function doAi(idx){
     if(!nx.length){sndLose();endGame(idx,'l');return;}
     if(g.inCheck)showToast(`盤${idx+1}：王手！`,'#e05555');
     renderGame(idx);checkFocus();
+    // AI着手フラッシュ
+    const card=document.getElementById('card-'+idx);
+    if(card){card.classList.remove('ai-moved');void card.offsetWidth;card.classList.add('ai-moved');}
   },10);
 }
 
 function aiOnAll(){
   const aiSide=CFG.userSide==='b'?'w':'b';
-  GAMES.forEach(g=>{if(!g.over&&g.turn===aiSide)doAi(g.id);});
+  const pending=GAMES.filter(g=>!g.over&&g.turn===aiSide);
+  pending.forEach((g,i)=>setTimeout(()=>doAi(g.id),i*60));
 }
 
 function switchFocus(idx){
@@ -1160,6 +1178,21 @@ function showResult(){
   else t.textContent='次は勝とう';
   const elapsed=Math.floor((Date.now()-SESSION_START)/1000);
   s.textContent=`${SCORE.w}勝 ${SCORE.l}敗${SCORE.d?` ${SCORE.d}引`:''} / ${n}局  (${Math.floor(elapsed/60)}分${elapsed%60}秒)  対 ${CFG.level.name}`;
+  // 盤別結果ミニカード
+  const rb=document.getElementById('rb-boards');
+  if(rb){
+    rb.innerHTML='';
+    GAMES.forEach(g=>{
+      const isW=g.result==='w',isD=g.result==='d';
+      const bg=isW?'rgba(85,200,138,.2)':isD?'rgba(200,165,74,.12)':'rgba(224,85,85,.12)';
+      const col=isW?'var(--green)':isD?'var(--gold)':'var(--red)';
+      const icon=isW?'🏆':isD?'🤝':'✕';
+      const d=document.createElement('div');
+      d.style.cssText=`padding:6px 10px;border-radius:8px;background:${bg};border:1px solid ${col};font-size:.72rem;color:${col};text-align:center;min-width:52px`;
+      d.innerHTML=`<div style="font-size:1rem">${icon}</div><div>盤${g.id+1}</div><div style="color:var(--muted);font-size:.6rem">${g.moveNo-1}手</div>`;
+      rb.appendChild(d);
+    });
+  }
   document.getElementById('rb').style.display='block';
   addSessionToStats(SCORE);
 }
