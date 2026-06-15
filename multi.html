@@ -316,6 +316,16 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
       </div>
     </div>
 
+    <div class="frow">
+      <label>駒落ち設定（上手が落とす）</label>
+      <div class="side-row" id="handicap-opts">
+        <button class="sbtn sel" data-v="平手" onclick="setHandicap(this)">平手</button>
+        <button class="sbtn" data-v="飛車落ち" onclick="setHandicap(this)">飛車落ち</button>
+        <button class="sbtn" data-v="角落ち" onclick="setHandicap(this)">角落ち</button>
+        <button class="sbtn" data-v="飛角落ち" onclick="setHandicap(this)">飛角落ち</button>
+      </div>
+    </div>
+
     <button class="start-btn" onclick="startSession()">対局開始 ▶</button>
     <p class="hint">Tab: 盤切替 ／ ?: ヘルプ ／ ホバーで駒の利き確認</p>
 
@@ -720,7 +730,8 @@ function updateLayoutPreview(n){
   for(let i=0;i<n;i++){const d=document.createElement('div');d.className='lp-cell';lp.appendChild(d);}
 }
 function updateBoardCount(v){document.getElementById('bc-val').textContent=v+'面';updateLayoutPreview(parseInt(v));}
-function setSide(el){document.querySelectorAll('.sbtn').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');}
+function setSide(el){document.querySelectorAll('.side-row .sbtn').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');}
+function setHandicap(el){document.querySelectorAll('#handicap-opts .sbtn').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');SEL_HANDICAP=el.dataset.v;}
 function buildLevelGrid(){
   const el=document.getElementById('level-grid');el.innerHTML='';
   LEVELS.forEach(lv=>{
@@ -739,6 +750,7 @@ function buildLevelGrid(){
 // ══════════════════════════════════════════════════════
 //  ゲーム管理
 // ══════════════════════════════════════════════════════
+// 平手（通常開始）
 function startPos(){
   const g=Array.from({length:9},()=>Array(9).fill(null));
   const bk=['L','N','S','G','K','G','S','N','L'];
@@ -748,6 +760,36 @@ function startPos(){
   for(let c=0;c<9;c++)g[8][c]={type:bk[8-c],side:'b'};
   g[7][7]={type:'R',side:'b'};g[7][1]={type:'B',side:'b'};
   for(let c=0;c<9;c++)g[6][c]={type:'P',side:'b'};
+  return g;
+}
+// 駒落ち開始局面（後手＝上手が駒を落とす）
+const HANDICAP_SFENS={
+  '平手':null,
+  '飛車落ち':'lnsgkgsnl/7b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL w - 1',
+  '角落ち':'lnsgkgsnl/1r7/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL w - 1',
+  '飛角落ち':'lnsgkgsnl/9/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL w - 1',
+  '二枚落ち':'lnsgkgsnl/9/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL w - 1',
+};
+let SEL_HANDICAP='平手';
+function startPosFromSfen(sfen){
+  if(!sfen)return startPos();
+  const rows=sfen.split(' ')[0].split('/');
+  const g=Array.from({length:9},()=>Array(9).fill(null));
+  rows.forEach((row,rank)=>{
+    let col=0,i=0;
+    while(i<row.length){
+      const ch=row[i];
+      if(ch>='1'&&ch<='9'){col+=parseInt(ch);i++;}
+      else if(ch==='+'){
+        const t=row[i+1];
+        const side=t===t.toUpperCase()?'w':'b';
+        g[rank][col]={type:'+'+t.toUpperCase(),side};col++;i+=2;
+      } else {
+        const side=ch===ch.toUpperCase()?'w':'b';
+        g[rank][col]={type:ch.toUpperCase(),side};col++;i++;
+      }
+    }
+  });
   return g;
 }
 
@@ -780,8 +822,10 @@ function startSession(){
   SCORE={w:0,l:0,d:0};SESSION_START=Date.now();
   saveSettings();
 
+  const sfen=HANDICAP_SFENS[SEL_HANDICAP]||null;
+  const initGrid=()=>startPosFromSfen(sfen);
   GAMES=Array.from({length:CFG.boards},(_,i)=>({
-    id:i,grid:startPos(),handB:{},handW:{},
+    id:i,grid:initGrid(),handB:{},handW:{},
     turn:'b',over:false,result:null,
     sel:null,selDrop:null,legalSq:[],lastTo:null,aiThinking:false,
     moveNo:1,inCheck:false,log:[],startedAt:Date.now(),evalHistory:[50],
@@ -1238,6 +1282,20 @@ document.addEventListener('keydown',e=>{
     for(let i=1;i<=GAMES.length;i++){const idx=(FOCUS-i+GAMES.length)%GAMES.length;if(!GAMES[idx].over){switchFocus(idx);break;}}
   }
 });
+
+// ── モバイルスワイプで盤切替 ──
+let _touchX=null;
+document.addEventListener('touchstart',e=>{if(e.touches.length===1)_touchX=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',e=>{
+  if(_touchX===null||document.getElementById('game').style.display==='none')return;
+  const dx=e.changedTouches[0].clientX-_touchX;_touchX=null;
+  if(Math.abs(dx)<60)return;
+  if(dx<0){// 左スワイプ → 次の盤
+    for(let i=1;i<=GAMES.length;i++){const idx=(FOCUS+i)%GAMES.length;if(!GAMES[idx].over){switchFocus(idx);break;}}
+  }else{// 右スワイプ → 前の盤
+    for(let i=1;i<=GAMES.length;i++){const idx=(FOCUS-i+GAMES.length)%GAMES.length;if(!GAMES[idx].over){switchFocus(idx);break;}}
+  }
+},{passive:true});
 
 // ── 初期化 ──
 buildLevelGrid();
