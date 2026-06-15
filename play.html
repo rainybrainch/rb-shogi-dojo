@@ -27,40 +27,40 @@ header{height:52px;background:rgba(8,8,15,.95);border-bottom:1px solid var(--bor
 .player-label.active{color:var(--gold-lt)}
 .hand-area{display:flex;gap:4px;flex-wrap:wrap;flex:1;min-height:36px;align-items:center}
 .hand-piece{
-  width:34px;height:34px;background:var(--card);border:1px solid var(--border);
-  border-radius:6px;display:flex;align-items:center;justify-content:center;
-  font-size:.75rem;cursor:pointer;transition:.15s;position:relative;user-select:none
+  width:34px;height:34px;cursor:pointer;transition:.15s;position:relative;
+  user-select:none;display:inline-flex;align-items:center;justify-content:center;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))
 }
-.hand-piece:hover{border-color:var(--gold);background:rgba(200,165,74,.1)}
-.hand-piece.selected{border-color:var(--gold);background:rgba(200,165,74,.2);box-shadow:0 0 8px rgba(200,165,74,.4)}
-.hand-piece .cnt{position:absolute;bottom:1px;right:3px;font-size:.6rem;color:var(--gold)}
-.hand-piece.white-piece{transform:rotate(180deg)}
+.hand-piece:hover{filter:drop-shadow(0 0 6px rgba(245,200,66,.7))}
+.hand-piece.selected svg polygon{fill:#ffe566!important}
+.hand-piece .cnt{position:absolute;bottom:-2px;right:-4px;font-size:.58rem;color:var(--gold);font-weight:700;background:rgba(10,10,20,.8);padding:0 2px;border-radius:3px;line-height:1.2}
+.hand-piece.white-piece svg{transform:rotate(180deg)}
 
 /* ── Shogi board ── */
 .board-wrap{position:relative}
-.file-labels{display:flex;justify-content:space-around;padding:0 1px;font-size:.7rem;color:var(--muted);width:calc(var(--cell)*9+2px)}
-.rank-labels{position:absolute;left:calc(var(--cell)*9+6px);top:1px;display:flex;flex-direction:column;height:calc(var(--cell)*9);justify-content:space-around}
+.file-labels{display:flex;justify-content:space-around;padding:0 1px;font-size:.7rem;color:var(--muted);width:calc(var(--cell)*9+4px)}
+.rank-labels{position:absolute;left:calc(var(--cell)*9+8px);top:1px;display:flex;flex-direction:column;height:calc(var(--cell)*9);justify-content:space-around}
 .rank-labels span{font-size:.7rem;color:var(--muted)}
 #board{
   display:grid;grid-template-columns:repeat(9,var(--cell));grid-template-rows:repeat(9,var(--cell));
-  border:2px solid #8a7040;background:#e8d5a0;position:relative
+  border:2.5px solid #4a2e08;background:#c8923a;position:relative;
+  box-shadow:inset 0 0 0 1px #b07830,4px 4px 16px rgba(0,0,0,.6)
 }
 .cell{
-  border:1px solid #c4a860;display:flex;align-items:center;justify-content:center;
+  border:1px solid #7a4e1a;display:flex;align-items:center;justify-content:center;
   cursor:pointer;position:relative;transition:.1s
 }
-.cell.legal{background:rgba(74,127,212,.25)}
-.cell.legal::after{content:'';position:absolute;inset:4px;border-radius:50%;background:rgba(74,127,212,.4);pointer-events:none}
-.cell.selected{background:rgba(200,165,74,.35)}
-.cell.last-move{background:rgba(200,165,74,.2)}
+.cell.legal{background:rgba(91,200,232,.2)}
+.cell.legal::after{content:'';position:absolute;inset:4px;border-radius:50%;background:rgba(91,200,232,.5);pointer-events:none}
+.cell.selected{background:rgba(245,200,66,.3)}
+.cell.last-move{background:rgba(245,200,66,.18)}
 .piece{
-  width:46px;height:46px;display:flex;align-items:center;justify-content:center;
-  font-size:.72rem;font-weight:700;border-radius:4px;user-select:none;
-  line-height:1.1;text-align:center;pointer-events:none
+  width:calc(var(--cell) - 6px);height:calc(var(--cell) - 6px);
+  display:flex;align-items:center;justify-content:center;
+  user-select:none;pointer-events:none
 }
-.piece.black{background:linear-gradient(160deg,#ffeaaa,#f0c040);color:#3a2800;border:1px solid #c8960a}
-.piece.white{background:linear-gradient(160deg,#ffe0e0,#f08080);color:#3a0000;border:1px solid #c83030;transform:rotate(180deg)}
-.piece.promoted{color:#990000}
+.piece svg{width:100%;height:100%;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))}
+.piece.white svg{transform:rotate(180deg)}
 
 /* ── Side panel ── */
 .side{width:220px;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
@@ -113,8 +113,8 @@ header{height:52px;background:rgba(8,8,15,.95);border-bottom:1px solid var(--bor
   .side{width:100%;border-left:none;border-top:1px solid var(--border);flex:none;max-height:200px}
   .wrap{flex-direction:column}
   .board-area{padding:10px}
-  .piece{width:34px;height:34px;font-size:.62rem}
-  .hand-piece{width:28px;height:28px;font-size:.65rem}
+  .piece{width:32px;height:32px}
+  .hand-piece{width:28px;height:28px}
 }
 </style>
 </head>
@@ -195,6 +195,18 @@ const PIECE_JP = {
   P:'歩',L:'香',N:'桂',S:'銀',G:'金',B:'角',R:'飛',K:'玉',
   '+P':'と','+L':'杏','+N':'圭','+S':'全','+B':'馬','+R':'竜'
 };
+
+const PIECE_PTS='15,1 29,8 29,29 1,29 1,8';
+function makePieceSvg(kanji,side,promoted){
+  const isBk=side==='b';
+  const fill=promoted?'#c84040':isBk?'#f5e6c8':'#e8cfa8';
+  const fs=kanji.length>1?'8.5':'12';
+  const yy=kanji.length>1?'18':'21';
+  return`<svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="${PIECE_PTS}" fill="${fill}" stroke="#3a1a00" stroke-width="1.2"/>
+    <text x="15" y="${yy}" text-anchor="middle" font-family="'Noto Serif JP',serif" font-size="${fs}" font-weight="700" fill="#1a0a00">${kanji}</text>
+  </svg>`;
+}
 const FILE_JP  = ['９','８','７','６','５','４','３','２','１'];
 const RANK_JP  = ['一','二','三','四','五','六','七','八','九'];
 const PIECE_VAL = {P:100,L:200,N:220,S:300,G:400,B:600,R:700,K:99999,
@@ -523,9 +535,9 @@ function renderBoard(){
       const p=G.grid[r][c];
       if(p){
         const el=document.createElement('div');
-        el.className='piece '+(p.side==='b'?'black':'white');
-        if(p.type.startsWith('+')) el.classList.add('promoted');
-        el.textContent = PIECE_JP[p.type]||p.type;
+        const promoted=p.type.startsWith('+');
+        el.className='piece '+(p.side==='b'?'black':'white')+(promoted?' promoted':'');
+        el.innerHTML=makePieceSvg(PIECE_JP[p.type]||p.type,p.side,promoted);
         cell.appendChild(el);
       }
       board.appendChild(cell);
@@ -561,7 +573,7 @@ function renderHand(id, hand, side){
     const d=document.createElement('div');
     d.className='hand-piece'+(side==='w'?' white-piece':'');
     if(G.selectedDrop&&G.selectedDrop.type===type&&G.selectedDrop.side===side) d.classList.add('selected');
-    d.innerHTML=`<span>${PIECE_JP[type]||type}</span>${cnt>1?`<span class="cnt">×${cnt}</span>`:''}`;
+    d.innerHTML=makePieceSvg(PIECE_JP[type]||type,side,false)+(cnt>1?`<span class="cnt">×${cnt}</span>`:'');
     if(side===G.userSide&&!G.gameOver&&G.turn===G.userSide){
       d.addEventListener('click',()=>onDropSelect(type,side));
     }
