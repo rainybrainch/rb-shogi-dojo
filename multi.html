@@ -112,6 +112,8 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
 .blv{font-size:.6rem;padding:1px 5px;border-radius:8px;background:var(--card);border:1px solid var(--border);color:var(--muted)}
 .resign-btn{font-size:.58rem;padding:1px 5px;border:1px solid rgba(224,85,85,.4);background:rgba(224,85,85,.1);color:#e08080;border-radius:4px;cursor:pointer;font-family:inherit;flex-shrink:0;display:none;transition:.1s}
 .hint-btn{font-size:.58rem;padding:1px 5px;border:1px solid rgba(85,200,138,.4);background:rgba(85,200,138,.1);color:#55c88a;border-radius:4px;cursor:pointer;font-family:inherit;flex-shrink:0;display:none;transition:.1s}
+.resign-all-btn{font-size:.68rem;padding:2px 8px;border:1px solid rgba(224,85,85,.35);background:rgba(224,85,85,.08);color:#e09090;border-radius:6px;cursor:pointer;font-family:inherit;flex-shrink:0;transition:.1s}
+.resign-all-btn:hover{background:rgba(224,85,85,.2)}
 .resign-btn:hover{background:rgba(224,85,85,.25)}
 .active .resign-btn{display:inline-block}
 
@@ -272,6 +274,7 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
     <div class="help-row"><span class="help-key">← →</span><span class="help-desc">前後の盤へ移動</span></div>
     <div class="help-row"><span class="help-key">Esc</span><span class="help-desc">駒選択を解除</span></div>
     <div class="help-row"><span class="help-key">?</span><span class="help-desc">このヘルプを閉じる</span></div>
+    <div class="help-row"><span class="help-key">P</span><span class="help-desc">一時停止 / 再開</span></div>
     <div class="help-row"><span class="help-key">盤クリック</span><span class="help-desc">その盤にフォーカス切替</span></div>
     <div class="help-row"><span class="help-key">駒ホバー</span><span class="help-desc">移動可能マスをプレビュー</span></div>
     <button class="help-close" onclick="toggleHelp()">閉じる</button>
@@ -356,6 +359,7 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
     <div class="sc">引: <strong id="sc-d">0</strong></div>
     <div class="sc" id="sc-rem"></div>
     <div class="sc" id="timer-disp">0:00</div>
+    <button class="resign-all-btn" onclick="resignAll()" title="全盤投了">全投了</button>
     <div id="ti">あなたの番</div>
   </div>
   <div id="bg"></div>
@@ -822,6 +826,20 @@ function setLevelUp(id){
   startSession();
 }
 
+function resignAll(){
+  if(!confirm('全ての対局を投了しますか？'))return;
+  GAMES.forEach(g=>{if(!g.over)endGame(g.id,'l');});
+}
+
+// ポーズ機能
+let PAUSED=false;
+function togglePause(){
+  if(GAMES.every(g=>g.over))return;
+  PAUSED=!PAUSED;
+  if(PAUSED){stopByoTimer(FOCUS);showToast('⏸ 一時停止','#c8a54a');}
+  else{if(!GAMES[FOCUS].over&&GAMES[FOCUS].turn===CFG.userSide)startByoTimer(FOCUS);showToast('▶ 再開','#55c88a');}
+}
+
 function startSession(){
   CFG.boards=parseInt(document.getElementById('bc-slider').value)||3;
   CFG.level=SEL_LEVEL;
@@ -1144,7 +1162,7 @@ function execMove(idx,mv){
 }
 
 function doAi(idx){
-  const g=GAMES[idx];if(g.over)return;
+  const g=GAMES[idx];if(g.over||PAUSED)return;
   const aiSide=CFG.userSide==='b'?'w':'b';
   g.aiThinking=true;refreshCard(idx);
   setTimeout(()=>{
@@ -1322,6 +1340,8 @@ document.addEventListener('keydown',e=>{
     if(ho.classList.contains('show')){ho.classList.remove('show');return;}
     const g=GAMES[FOCUS];if(!g||g.over)return;
     g.sel=null;g.selDrop=null;g.legalSq=[];renderGame(FOCUS);
+  }else if(e.key==='p'||e.key==='P'){
+    e.preventDefault();togglePause();
   }else if(e.key==='ArrowRight'||e.key==='ArrowDown'){
     e.preventDefault();
     for(let i=1;i<=GAMES.length;i++){const idx=(FOCUS+i)%GAMES.length;if(!GAMES[idx].over){switchFocus(idx);break;}}
