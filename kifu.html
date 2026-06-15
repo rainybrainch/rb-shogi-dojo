@@ -51,12 +51,17 @@ a{text-decoration:none;color:inherit}
 .modal-meta{font-size:.65rem;color:var(--muted);margin-top:3px}
 
 /* BOARD */
-.board-wrap{padding:14px;display:flex;flex-direction:column;align-items:center}
-.board-grid{display:grid;grid-template-columns:repeat(9,34px);gap:2px;border:2px solid rgba(245,200,66,.3);padding:5px;border-radius:8px;background:rgba(0,0,0,.3)}
-.bsq{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:.85rem;border-radius:3px;background:rgba(245,200,66,.04);border:1px solid rgba(245,200,66,.08);position:relative}
-.bsq.last{background:rgba(245,200,66,.2)}
-.piece{line-height:1;user-select:none}
-.piece.w{transform:rotate(180deg);display:inline-block;color:var(--red)}
+.board-wrap{padding:14px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.board-file-labels{display:flex;width:calc(36px*9);padding:0;justify-content:space-around;font-size:.55rem;color:var(--muted)}
+.board-grid{display:grid;grid-template-columns:repeat(9,36px);grid-template-rows:repeat(9,36px);
+  border:2px solid #4a2e08;background:#c8923a;
+  box-shadow:inset 0 0 0 1px #b07830,3px 3px 12px rgba(0,0,0,.5)}
+.bsq{width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  border:1px solid #7a4e1a;position:relative}
+.bsq.last{background:rgba(245,200,66,.35)}
+.piece{width:30px;height:30px;user-select:none;pointer-events:none}
+.piece svg{width:100%;height:100%;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
+.piece.w svg{transform:rotate(180deg)}
 
 /* CONTROLS */
 .replay-controls{display:flex;gap:8px;align-items:center;justify-content:center;padding:12px 16px;flex-wrap:wrap}
@@ -122,6 +127,9 @@ a{text-decoration:none;color:inherit}
       <div class="hand" style="text-align:right"><div class="hand-label">▲先手の持ち駒</div><div class="hand-content" id="rm-handB">なし</div></div>
     </div>
     <div class="board-wrap">
+      <div class="board-file-labels">
+        <span>９</span><span>８</span><span>７</span><span>６</span><span>５</span><span>４</span><span>３</span><span>２</span><span>１</span>
+      </div>
       <div class="board-grid" id="replayBoard"></div>
     </div>
     <div class="replay-controls">
@@ -224,36 +232,132 @@ function renderList(){
 let currentKifu=null;
 let replayPos=0;
 
-// Initial board (平手)
-function initBoard(){
-  const g=Array(9).fill(null).map(()=>Array(9).fill(null));
-  // Row 0 (rank 9, white)
-  const back=['l','n','s','g','k','g','s','n','l'];
-  back.forEach((p,c)=>g[0][c]={p,side:'w'});
-  g[1][1]={p:'r',side:'w'};g[1][7]={p:'b',side:'w'};
-  for(let c=0;c<9;c++)g[2][c]={p:'p',side:'w'};
-  // Row 8 (rank 1, black)
-  const frontB=['L','N','S','G','K','G','S','N','L'];
-  frontB.forEach((p,c)=>g[8][c]={p,side:'b'});
-  g[7][7]={p:'R',side:'b'};g[7][1]={p:'B',side:'b'};
-  for(let c=0;c<9;c++)g[6][c]={p:'P',side:'b'};
-  return g;
+// ── Piece constants ──
+const KANJI_TO_PIECE={'歩':'P','香':'L','桂':'N','銀':'S','金':'G','角':'B','飛':'R','玉':'K','王':'K','と':'+P','杏':'+L','圭':'+N','全':'+S','馬':'+B','竜':'+R'};
+const PIECE_KANJI={'P':'歩','L':'香','N':'桂','S':'銀','G':'金','B':'角','R':'飛','K':'玉','+P':'と','+L':'杏','+N':'圭','+S':'全','+B':'馬','+R':'竜'};
+const PROMOTE_MAP2={P:'+P',L:'+L',N:'+N',S:'+S',B:'+B',R:'+R'};
+const UNPROMOTE2={'+P':'P','+L':'L','+N':'N','+S':'S','+B':'B','+R':'R'};
+const RANK_IDX={'一':0,'二':1,'三':2,'四':3,'五':4,'六':5,'七':6,'八':7,'九':8};
+const PIECE_PTS2='15,1 29,8 29,29 1,29 1,8';
+
+function makeSvg(kanji,side,promoted){
+  const fill=promoted?'#c84040':side==='b'?'#f5e6c8':'#e8cfa8';
+  const fs=kanji.length>1?'7':'11';const yy=kanji.length>1?'16':'20';
+  return`<svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="${PIECE_PTS2}" fill="${fill}" stroke="#3a1a00" stroke-width="1.2"/>
+    <text x="15" y="${yy}" text-anchor="middle" font-family="'Noto Serif JP',serif" font-size="${fs}" font-weight="700" fill="#1a0a00">${kanji}</text>
+  </svg>`;
 }
 
-const PIECE_DISP={
-  'K':'玉','R':'飛','B':'角','G':'金','S':'銀','N':'桂','L':'香','P':'歩',
-  'k':'玉','r':'飛','b':'角','g':'金','s':'銀','n':'桂','l':'香','p':'歩',
-};
+// ── Board state ──
+function initState(){
+  const g=Array(9).fill(null).map(()=>Array(9).fill(null));
+  ['L','N','S','G','K','G','S','N','L'].forEach((p,c)=>{g[0][c]={p,side:'w'};g[8][c]={p,side:'b'};});
+  g[1][1]={p:'R',side:'w'};g[1][7]={p:'B',side:'w'};
+  g[7][7]={p:'R',side:'b'};g[7][1]={p:'B',side:'b'};
+  for(let c=0;c<9;c++){g[2][c]={p:'P',side:'w'};g[6][c]={p:'P',side:'b'};}
+  return{grid:g,handB:{},handW:{}};
+}
+function deepCopy(s){return{grid:s.grid.map(r=>r.map(p=>p?{...p}:null)),handB:{...s.handB},handW:{...s.handW}};}
 
-function renderBoard(g){
+// ── Move generation (simplified, for replay) ──
+function slideMoves2(g,r,c,dirs,side){
+  const m=[];
+  for(const [dr,dc]of dirs){let nr=r+dr,nc=c+dc;while(nr>=0&&nr<9&&nc>=0&&nc<9){const t=g[nr][nc];if(!t){m.push([nr,nc]);}else{if(t.side!==side)m.push([nr,nc]);break;}nr+=dr;nc+=dc;}}return m;
+}
+function stepMoves2(g,r,c,dirs,side){
+  return dirs.filter(([dr,dc])=>{const nr=r+dr,nc=c+dc;return nr>=0&&nr<9&&nc>=0&&nc<9&&(!g[nr][nc]||g[nr][nc].side!==side);}).map(([dr,dc])=>[r+dr,c+dc]);
+}
+function canReach(g,r,c,tr,tc){
+  const p=g[r][c];if(!p)return false;
+  const side=p.side,f=side==='b'?-1:1,pt=p.p;
+  const gold=()=>stepMoves2(g,r,c,[[f,0],[0,1],[0,-1],[f,1],[f,-1],[-f,0]],side);
+  let moves=[];
+  if(pt==='P')moves=stepMoves2(g,r,c,[[f,0]],side);
+  else if(pt==='L')moves=slideMoves2(g,r,c,[[f,0]],side);
+  else if(pt==='N')moves=[[f*2,1],[f*2,-1]].filter(([dr,dc])=>{const nr=r+dr,nc=c+dc;return nr>=0&&nr<9&&nc>=0&&nc<9&&(!g[nr][nc]||g[nr][nc].side!==side);}).map(([dr,dc])=>[r+dr,c+dc]);
+  else if(pt==='S')moves=stepMoves2(g,r,c,[[f,1],[f,-1],[f,0],[-f,1],[-f,-1]],side);
+  else if(pt==='G')moves=gold();
+  else if(pt==='B')moves=slideMoves2(g,r,c,[[1,1],[1,-1],[-1,1],[-1,-1]],side);
+  else if(pt==='R')moves=slideMoves2(g,r,c,[[1,0],[-1,0],[0,1],[0,-1]],side);
+  else if(pt==='+B')moves=[...slideMoves2(g,r,c,[[1,1],[1,-1],[-1,1],[-1,-1]],side),...stepMoves2(g,r,c,[[1,0],[-1,0],[0,1],[0,-1]],side)];
+  else if(pt==='+R')moves=[...slideMoves2(g,r,c,[[1,0],[-1,0],[0,1],[0,-1]],side),...stepMoves2(g,r,c,[[1,1],[1,-1],[-1,1],[-1,-1]],side)];
+  else if(pt==='K')moves=stepMoves2(g,r,c,[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]],side);
+  else moves=gold(); // +P,+L,+N,+S
+  return moves.some(([mr,mc])=>mr===tr&&mc===tc);
+}
+
+// ── Build replay states ──
+function buildStates(kifuMoves){
+  const states=[];
+  const lastTos=[];
+  let state=initState();
+  states.push(deepCopy(state));
+  let lastTo=[-1,-1];
+  for(const notation of kifuMoves){
+    const s=notation.replace(/[！？☗☖\s]/g,'');
+    if(!s||s.startsWith('まで'))break;
+    const isBk=s.startsWith('▲');
+    if(!s.startsWith('▲')&&!s.startsWith('△')){states.push(deepCopy(state));lastTos.push(lastTo);continue;}
+    const curSide=isBk?'b':'w';
+    const rest=s.slice(1);
+    const isDrop=rest.includes('打');
+    const isPromote=rest.includes('成')&&!rest.includes('不成');
+    let toRow,toCol,pieceKanji;
+    const isSame=rest[0]==='同';
+    if(isSame){[toRow,toCol]=lastTo;pieceKanji=rest[1];}
+    else{
+      const fn=parseInt(rest[0]);if(isNaN(fn)){states.push(deepCopy(state));lastTos.push(lastTo);continue;}
+      const ri=RANK_IDX[rest[1]];if(ri===undefined){states.push(deepCopy(state));lastTos.push(lastTo);continue;}
+      toRow=ri;toCol=9-fn;pieceKanji=rest[2];
+    }
+    const pt=KANJI_TO_PIECE[pieceKanji];if(!pt){states.push(deepCopy(state));lastTos.push(lastTo);continue;}
+    const g=state.grid,hB=state.handB,hW=state.handW;
+    if(isDrop){
+      const hand=curSide==='b'?hB:hW;
+      if(hand[pt]>0){hand[pt]--;if(!hand[pt])delete hand[pt];}
+      g[toRow][toCol]={p:pt,side:curSide};
+    }else{
+      let fr=-1,fc=-1;
+      outer:for(let r=0;r<9;r++)for(let c=0;c<9;c++){
+        const p=g[r][c];if(!p||p.side!==curSide||p.p!==pt)continue;
+        if(canReach(g,r,c,toRow,toCol)){fr=r;fc=c;break outer;}
+      }
+      if(fr<0){states.push(deepCopy(state));lastTos.push(lastTo);continue;}
+      const cap=g[toRow][toCol];
+      if(cap){const base=UNPROMOTE2[cap.p]||cap.p;if(curSide==='b')hB[base]=(hB[base]||0)+1;else hW[base]=(hW[base]||0)+1;}
+      const piece={...g[fr][fc]};
+      if(isPromote&&PROMOTE_MAP2[piece.p])piece.p=PROMOTE_MAP2[piece.p];
+      g[toRow][toCol]=piece;g[fr][fc]=null;
+    }
+    lastTo=[toRow,toCol];
+    states.push(deepCopy(state));
+    lastTos.push(lastTo);
+  }
+  return{states,lastTos};
+}
+
+// ── Render ──
+function renderReplayBoard(state,lastTo){
   const el=document.getElementById('replayBoard');
+  const g=state.grid;
   let html='';
+  const files=['９','８','７','６','５','４','３','２','１'];
   for(let r=0;r<9;r++)for(let c=0;c<9;c++){
-    const cell=g[r][c];
-    html+=`<div class="bsq">${cell?`<span class="piece${cell.side==='w'?' w':''}">${PIECE_DISP[cell.p]||cell.p}</span>`:''}</div>`;
+    const p=g[r][c];
+    const isLast=lastTo&&lastTo[0]===r&&lastTo[1]===c;
+    const promoted=p&&p.p.startsWith('+');
+    const kanji=p?PIECE_KANJI[p.p]||p.p:'';
+    html+=`<div class="bsq${isLast?' last':''}">${p?`<div class="piece${p.side==='w'?' w':''}">${makeSvg(kanji,p.side,promoted)}</div>`:''}</div>`;
   }
   el.innerHTML=html;
+  // Hands
+  const fmt=(h)=>Object.entries(h).filter(([,v])=>v>0).map(([k,v])=>`${PIECE_KANJI[k]||k}${v>1?'×'+v:''}`).join(' ')||'なし';
+  document.getElementById('rm-handB').textContent=fmt(state.handB);
+  document.getElementById('rm-handW').textContent=fmt(state.handW);
 }
+
+let replayStates=[];let replayLastTos=[];
 
 function openReplay(id){
   currentKifu=KIFU_DB.find(k=>k.id===id);
@@ -261,10 +365,10 @@ function openReplay(id){
   replayPos=0;
   document.getElementById('rm-title').textContent=`▲${currentKifu.sente} vs △${currentKifu.gote}`;
   document.getElementById('rm-meta').textContent=`${currentKifu.title}（${currentKifu.year}年）— ${currentKifu.result}`;
-  renderBoard(initBoard());
+  const{states,lastTos}=buildStates(currentKifu.moves);
+  replayStates=states;replayLastTos=lastTos;
+  renderReplayBoard(replayStates[0],null);
   document.getElementById('moveCounter').textContent='開始前';
-  document.getElementById('rm-handB').textContent='なし';
-  document.getElementById('rm-handW').textContent='なし';
   const moves=currentKifu.moves;
   document.getElementById('rm-moves').innerHTML=moves.map((m,i)=>`
     <div class="move-item" id="mv-${i}">
@@ -276,23 +380,22 @@ function openReplay(id){
 }
 
 function replayStep(d){
-  const moves=currentKifu.moves;
-  replayPos=Math.max(0,Math.min(moves.length,replayPos+d));
+  const max=replayStates.length-1;
+  replayPos=Math.max(0,Math.min(max,replayPos+d));
   updateReplayDisplay();
 }
-function replayGo(pos){replayPos=pos;updateReplayDisplay();}
-function replayEnd(){replayPos=currentKifu.moves.length;updateReplayDisplay();}
+function replayGo(pos){replayPos=0;updateReplayDisplay();}
+function replayEnd(){replayPos=replayStates.length-1;updateReplayDisplay();}
 
 function updateReplayDisplay(){
-  const moves=currentKifu.moves;
-  document.getElementById('moveCounter').textContent=replayPos===0?'開始前':`${replayPos}手目`;
-  document.querySelectorAll('.move-item').forEach((el,i)=>{
-    el.classList.toggle('active',i===replayPos-1);
-  });
-  // Scroll active move into view
-  const active=document.getElementById(`mv-${replayPos-1}`);
+  const pos=replayPos;
+  document.getElementById('moveCounter').textContent=pos===0?'開始前':`${pos}手目`;
+  document.querySelectorAll('.move-item').forEach((el,i)=>{el.classList.toggle('active',i===pos-1);});
+  const active=document.getElementById(`mv-${pos-1}`);
   if(active)active.scrollIntoView({block:'nearest'});
-  renderBoard(initBoard()); // simplified: just show initial board
+  const state=replayStates[Math.min(pos,replayStates.length-1)];
+  const lt=pos>0?replayLastTos[pos-1]:null;
+  renderReplayBoard(state,lt);
 }
 
 function closeReplay(){document.getElementById('replayModal').classList.remove('show');}
