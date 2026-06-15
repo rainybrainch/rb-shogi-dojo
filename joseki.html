@@ -60,6 +60,32 @@ a{text-decoration:none;color:inherit}
 .joseki-steps{padding:10px 16px 14px;border-top:1px solid var(--border);font-size:.72rem;color:#ccc;line-height:1.7}
 .step-num{color:var(--gold);font-weight:700}
 
+/* QUIZ */
+.quiz-wrap{padding:16px}
+.quiz-counter{font-size:.7rem;color:var(--muted);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.quiz-counter-bar{height:4px;background:rgba(255,255,255,.08);border-radius:2px;flex:1;margin:0 10px;overflow:hidden}
+.quiz-counter-fill{height:100%;background:var(--sky);border-radius:2px;transition:.4s}
+.quiz-question{background:var(--card);border:2px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;text-align:center}
+.quiz-q-label{font-size:.65rem;color:var(--muted);margin-bottom:6px}
+.quiz-q-text{font-family:'Dela Gothic One',sans-serif;font-size:1.1rem;color:var(--sky)}
+.quiz-q-board{margin:10px auto 0;display:inline-block}
+.quiz-choices{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.quiz-choice{background:var(--card);border:2px solid var(--border);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:.15s;font-family:'Dela Gothic One',sans-serif;font-size:.82rem}
+.quiz-choice:hover:not(.answered){border-color:rgba(91,200,232,.5);color:var(--sky)}
+.quiz-choice.correct{border-color:var(--green)!important;background:rgba(76,175,125,.15)!important;color:var(--green)!important}
+.quiz-choice.wrong{border-color:var(--red)!important;background:rgba(232,53,74,.1)!important;color:var(--red)!important}
+.quiz-choice.reveal{border-color:rgba(76,175,125,.5);color:rgba(76,175,125,.7)}
+.quiz-feedback{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:.8rem;display:none}
+.quiz-feedback.show{display:block}
+.quiz-feedback.ok{border-color:rgba(76,175,125,.5);color:var(--green)}
+.quiz-feedback.ng{border-color:rgba(232,53,74,.4);color:var(--red)}
+.quiz-next-btn{width:100%;padding:11px;background:var(--sky);color:var(--dark);border:none;border-radius:10px;font-family:'Dela Gothic One',sans-serif;font-size:.88rem;cursor:pointer;display:none}
+.quiz-next-btn.show{display:block}
+.quiz-result{text-align:center;padding:24px 16px}
+.quiz-score{font-family:'Dela Gothic One',sans-serif;font-size:2.5rem;color:var(--gold)}
+.quiz-score-sub{font-size:.8rem;color:var(--muted);margin-top:4px}
+.quiz-restart-btn{margin-top:20px;width:100%;padding:12px;background:var(--gold);color:var(--dark);border:none;border-radius:10px;font-family:'Dela Gothic One',sans-serif;font-size:.9rem;cursor:pointer;font-weight:700}
+
 /* MODAL */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:100;overflow-y:auto}
 .modal-overlay.show{display:block}
@@ -125,6 +151,7 @@ a{text-decoration:none;color:inherit}
 <div class="tabs">
   <div class="tab active" onclick="showTab('castles',this)" id="tab-castles">囲い <span id="castleCount" style="font-size:.6rem;opacity:.7">0/8</span></div>
   <div class="tab" onclick="showTab('joseki',this)" id="tab-joseki">定跡 <span id="josekiCount" style="font-size:.6rem;opacity:.7">0/6</span></div>
+  <div class="tab" onclick="showTab('quiz',this)" id="tab-quiz">🎯 クイズ</div>
 </div>
 <div style="margin:12px 16px 0;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -332,6 +359,13 @@ a{text-decoration:none;color:inherit}
 </div>
 </div>
 
+<!-- QUIZ PANE -->
+<div id="pane-quiz" style="display:none">
+  <div class="quiz-wrap" id="quizWrap">
+    <div id="quizBody"></div>
+  </div>
+</div>
+
 <!-- DETAIL MODAL -->
 <div class="modal-overlay" id="detailModal">
   <div class="modal">
@@ -367,8 +401,10 @@ a{text-decoration:none;color:inherit}
 function showTab(name,btn){
   document.getElementById('pane-castles').style.display=name==='castles'?'block':'none';
   document.getElementById('pane-joseki').style.display=name==='joseki'?'block':'none';
+  document.getElementById('pane-quiz').style.display=name==='quiz'?'block':'none';
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
+  if(name==='quiz')startQuiz();
 }
 
 // Castle board layouts (5x5 excerpt, bottom-right area of board)
@@ -583,6 +619,119 @@ function applyStudied(){
   const jcEl=document.getElementById('josekiCount');
   if(jcEl)jcEl.textContent=jDone+'/'+josekiKeys.length;
 }
+
+// ── QUIZ ──────────────────────────────────────────────────
+const QUIZ_Q=[
+  // 囲い: 説明→名前
+  {q:'金銀3枚で玉を上段から守る居飛車の代表的な囲いはどれ？',a:'矢倉',type:'castle',
+   choices:['矢倉','穴熊','美濃囲い','舟囲い'],hint:'縦からの攻めに強い持久戦向きの囲いです。'},
+  {q:'玉を端（9筋）に潜り込ませ金銀で包む、現代将棋最強クラスの囲いはどれ？',a:'穴熊',type:'castle',
+   choices:['穴熊','矢倉','金矢倉','ダイヤモンド美濃'],hint:'長期戦で最も効果を発揮する超堅陣です。'},
+  {q:'振り飛車の基本囲い。横からの攻めに強く素早く完成する囲いはどれ？',a:'美濃囲い',type:'castle',
+   choices:['美濃囲い','矢倉','穴熊','中住まい'],hint:'四間飛車・三間飛車の定番です。'},
+  {q:'最もシンプルな囲いで速攻志向のとき使う基本形はどれ？',a:'舟囲い',type:'castle',
+   choices:['舟囲い','美濃囲い','銀美濃','ダイヤモンド美濃'],hint:'完成が最も早い囲いです。'},
+  {q:'美濃囲いに銀を加えた形で、標準的な美濃より堅い囲いはどれ？',a:'銀美濃',type:'castle',
+   choices:['銀美濃','金矢倉','舟囲い','中住まい'],hint:'美濃の発展形で上級者が多用します。'},
+  {q:'金銀4枚を動員した超堅陣。「難攻不落」と言われる振り飛車の囲いはどれ？',a:'ダイヤモンド美濃',type:'castle',
+   choices:['ダイヤモンド美濃','穴熊','矢倉','銀美濃'],hint:'完成まで手数がかかりますが堅さは抜群です。'},
+  {q:'玉を中央付近に置く変則的な囲い。どちらの方向にも対応できる形はどれ？',a:'中住まい',type:'castle',
+   choices:['中住まい','舟囲い','矢倉','穴熊'],hint:'柔軟性が高いが堅さは不十分な囲いです。'},
+  {q:'矢倉に金を加えたバランスの良い囲いはどれ？',a:'金矢倉',type:'castle',
+   choices:['金矢倉','矢倉','舟囲い','中住まい'],hint:'攻守のバランスが良い矢倉の発展形です。'},
+  // 定跡: 説明→名前
+  {q:'「銀将を前線に押し出して飛車先を突破する」最もシンプルな攻撃戦法は？',a:'棒銀',type:'joseki',
+   choices:['棒銀','四間飛車','矢倉','雁木'],hint:'初心者が最初に覚える攻め方です。'},
+  {q:'飛車を4筋に振り、美濃囲いに組んで反撃を待つ「さばき」の将棋はどれ？',a:'四間飛車',type:'joseki',
+   choices:['四間飛車','中飛車','横歩取り','棒銀'],hint:'後手番で使いやすい振り飛車の基本です。'},
+  {q:'飛車を中央5筋に置いて戦う現代的な振り飛車の主流戦法はどれ？',a:'中飛車',type:'joseki',
+   choices:['中飛車','四間飛車','矢倉','雁木'],hint:'現代で最も人気の振り飛車です。'},
+  {q:'「将棋の純文学」と呼ばれる居飛車の王道戦法はどれ？',a:'矢倉',type:'joseki',
+   choices:['矢倉','雁木','棒銀','横歩取り'],hint:'定跡が最も深く研究された戦型です。'},
+  {q:'序盤から激しい戦いが起きる超難解な戦型。研究量が勝敗を左右するのはどれ？',a:'横歩取り',type:'joseki',
+   choices:['横歩取り','四間飛車','中飛車','棒銀'],hint:'上級者向きの攻め合い戦法です。'},
+  {q:'角道を閉じず金銀を組む現代で流行中の居飛車戦法はどれ？',a:'雁木',type:'joseki',
+   choices:['雁木','矢倉','横歩取り','棒銀'],hint:'矢倉の代替として現代棋士が多用します。'},
+  // 長所→囲い
+  {q:'「縦からの攻めに非常に強い」「持久戦向き」の囲いはどれ？',a:'矢倉',type:'castle',
+   choices:['矢倉','美濃囲い','中住まい','舟囲い'],hint:'金銀3枚で玉を上段から守ります。'},
+  {q:'「横からの攻めに非常に強い」「振り飛車の基本」の囲いはどれ？',a:'美濃囲い',type:'castle',
+   choices:['美濃囲い','矢倉','穴熊','舟囲い'],hint:'四間飛車や三間飛車と合わせて使います。'},
+  {q:'「現代棋士が最も多用する」「将棋で最も堅い囲いの一つ」はどれ？',a:'穴熊',type:'castle',
+   choices:['穴熊','矢倉','ダイヤモンド美濃','金矢倉'],hint:'玉を端に潜り込ませる現代の主流です。'},
+  {q:'初心者向きで「手順が簡単・攻め方がわかりやすい」戦法はどれ？',a:'棒銀',type:'joseki',
+   choices:['棒銀','矢倉','横歩取り','四間飛車'],hint:'最もシンプルな攻撃戦法です。'},
+];
+
+let quizSession=[],quizIdx=0,quizScore=0,quizAnswered=false;
+
+function shuffle(arr){return arr.slice().sort(()=>Math.random()-.5);}
+
+function startQuiz(){
+  quizSession=shuffle(QUIZ_Q).slice(0,10);
+  quizIdx=0;quizScore=0;quizAnswered=false;
+  renderQuizQuestion();
+}
+
+function renderQuizQuestion(){
+  const body=document.getElementById('quizBody');
+  if(quizIdx>=quizSession.length){showQuizResult();return;}
+  const q=quizSession[quizIdx];
+  const pct=Math.round(quizIdx/quizSession.length*100);
+  body.innerHTML=`
+  <div class="quiz-counter">
+    <span>${quizIdx+1} / ${quizSession.length}</span>
+    <div class="quiz-counter-bar"><div class="quiz-counter-fill" style="width:${pct}%"></div></div>
+    <span style="color:var(--gold)">✓ ${quizScore}</span>
+  </div>
+  <div class="quiz-question">
+    <div class="quiz-q-label">${q.type==='castle'?'🏯 囲いクイズ':'📐 定跡クイズ'}</div>
+    <div class="quiz-q-text">${q.q}</div>
+  </div>
+  <div class="quiz-choices" id="qChoices">
+    ${shuffle(q.choices).map(c=>`<div class="quiz-choice" onclick="checkAnswer(this,'${c.replace(/'/g,"\\'")}','${q.a.replace(/'/g,"\\'")}','${(q.hint||'').replace(/'/g,"\\'")}')"><div>${c}</div></div>`).join('')}
+  </div>
+  <div class="quiz-feedback" id="qFeedback"></div>
+  <button class="quiz-next-btn" id="qNextBtn" onclick="nextQuestion()">次の問題 →</button>`;
+}
+
+function checkAnswer(el,chosen,correct,hint){
+  if(quizAnswered)return;
+  quizAnswered=true;
+  const choices=document.querySelectorAll('.quiz-choice');
+  const fb=document.getElementById('qFeedback');
+  const ok=chosen===correct;
+  if(ok)quizScore++;
+  choices.forEach(c=>{
+    const t=c.querySelector('div').textContent;
+    if(t===correct)c.classList.add('correct');
+    else if(t===chosen&&!ok)c.classList.add('wrong');
+    else c.classList.add('reveal');
+  });
+  fb.className='quiz-feedback show '+(ok?'ok':'ng');
+  fb.textContent=(ok?'✓ 正解！ ':'✗ 不正解… 正解は「'+correct+'」')+' — '+hint;
+  document.getElementById('qNextBtn').classList.add('show');
+}
+
+function nextQuestion(){
+  quizIdx++;quizAnswered=false;
+  renderQuizQuestion();
+}
+
+function showQuizResult(){
+  const pct=Math.round(quizScore/quizSession.length*100);
+  const msg=pct>=90?'完璧！将棋マスター！':pct>=70?'よくできました！':pct>=50?'もう少しで合格！':'基礎から復習しよう';
+  const rank=pct>=90?'五段':pct>=70?'三段':pct>=50?'初段':'有段者への道';
+  document.getElementById('quizBody').innerHTML=`
+  <div class="quiz-result">
+    <div class="quiz-score">${quizScore} / ${quizSession.length}</div>
+    <div class="quiz-score-sub">${pct}% 正解 — ${rank}</div>
+    <div style="font-size:2rem;margin:14px 0">${pct>=90?'🏆':pct>=70?'⭐':pct>=50?'📚':'🎯'}</div>
+    <div style="font-size:.8rem;color:var(--muted)">${msg}</div>
+    <button class="quiz-restart-btn" onclick="startQuiz()">もう一度挑戦する</button>
+  </div>`;
+}
+// ── /QUIZ ─────────────────────────────────────────────────
 
 Object.keys(CASTLES).forEach(key=>renderCastleBoard(key,key));
 applyStudied();
