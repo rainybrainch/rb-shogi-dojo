@@ -111,6 +111,7 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
 .check-alert .bst{color:var(--red)!important;font-weight:700!important}
 .blv{font-size:.6rem;padding:1px 5px;border-radius:8px;background:var(--card);border:1px solid var(--border);color:var(--muted)}
 .resign-btn{font-size:.58rem;padding:1px 5px;border:1px solid rgba(224,85,85,.4);background:rgba(224,85,85,.1);color:#e08080;border-radius:4px;cursor:pointer;font-family:inherit;flex-shrink:0;display:none;transition:.1s}
+.hint-btn{font-size:.58rem;padding:1px 5px;border:1px solid rgba(85,200,138,.4);background:rgba(85,200,138,.1);color:#55c88a;border-radius:4px;cursor:pointer;font-family:inherit;flex-shrink:0;display:none;transition:.1s}
 .resign-btn:hover{background:rgba(224,85,85,.25)}
 .active .resign-btn{display:inline-block}
 
@@ -374,6 +375,7 @@ header{height:48px;background:rgba(8,8,15,.97);border-bottom:1px solid var(--bor
   <h2 id="rb-title"></h2>
   <p id="rb-sub"></p>
   <div id="rb-boards" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:12px 0;max-width:480px"></div>
+  <div id="rb-levelup" style="display:none;max-width:400px;text-align:center"></div>
   <div class="rb-btns">
     <button style="background:var(--gold);color:#000" onclick="showSetup()">もう一度</button>
     <button style="background:var(--card);color:var(--text);border:1px solid var(--border)" onclick="rematch()">同じ設定でリマッチ</button>
@@ -813,6 +815,12 @@ function rematch(){
   document.getElementById('rb').style.display='none';
   startSession();
 }
+function setLevelUp(id){
+  const lv=LEVELS.find(l=>l.id===id);if(!lv)return;
+  SEL_LEVEL=lv;
+  document.getElementById('rb').style.display='none';
+  startSession();
+}
 
 function startSession(){
   CFG.boards=parseInt(document.getElementById('bc-slider').value)||3;
@@ -876,6 +884,7 @@ function buildBoardsUI(){
         <span class="adv-chip neu" id="adv-${g.id}">±0</span>
         <span class="btimer" id="btimer-${g.id}">0:00</span>
         <button class="sfen-btn" id="sfenbtn-${g.id}" onclick="copySfen(${g.id})">SFEN</button>
+        <button class="hint-btn" id="hintbtn-${g.id}" onclick="showHint(${g.id})" style="display:none">ヒント</button>
         <span class="bst" id="bst-${g.id}">待機中</span>
         <button class="resign-btn" onclick="resignGame(${g.id})">投了</button>
       </div>
@@ -945,8 +954,9 @@ function refreshCard(idx){
   else if(g.aiThinking){st.innerHTML='<span class="ai-spinner"></span>思考中';}
   else if(isActive&&g.turn===CFG.userSide){st.textContent='あなたの番';}
   else{st.textContent='待機中';}
-  // 投了ボタン
+  // 投了・ヒントボタン
   const rb=card.querySelector('.resign-btn');if(rb)rb.style.display=isActive&&!g.over?'inline-block':'none';
+  const hb=card.querySelector('.hint-btn');if(hb)hb.style.display=isActive&&!g.over&&g.turn===CFG.userSide?'inline-block':'none';
 }
 
 function renderGame(idx){renderBoard(idx);renderHand(idx,'b');renderHand(idx,'w');refreshCard(idx);}
@@ -973,6 +983,7 @@ function renderBoard(idx){
   for(const r of rs)for(const c of cs){
     const cell=document.createElement('div');
     cell.className='mc';
+    cell.dataset.r=r;cell.dataset.c=c;
     // 成れるゾーン着色
     if(r<=2)cell.classList.add('pz-b');
     if(r>=6)cell.classList.add('pz-w');
@@ -1204,6 +1215,33 @@ function resignGame(idx){
   endGame(idx,'l');
 }
 
+// ヒント機能: 連打防止＆フォーカス盤のみ
+let _hintTimer=null;
+function showHint(idx){
+  const g=GAMES[idx];
+  if(g.over||g.turn!==CFG.userSide)return;
+  const mv=minimax(g.grid,g.handB,g.handW,Math.min(2,CFG.level.depth||2),-Infinity,Infinity,CFG.userSide==='w',0).move;
+  if(!mv)return;
+  if(mv.drop){
+    showToast(`ヒント：${PJ[mv.drop]}打 → ${9-mv.to[1]}${RJ[mv.to[0]]}`,'#55c88a');
+  } else {
+    const pt=g.grid[mv.from[0]][mv.from[1]]?.type;
+    showToast(`ヒント：${9-mv.from[1]}${RJ[mv.from[0]]}${PJ[pt]||'?'} → ${9-mv.to[1]}${RJ[mv.to[0]]}`,'#55c88a');
+  }
+  // マス点灯
+  const el=document.getElementById('mb-'+idx);
+  if(el){
+    const cells=el.querySelectorAll('.mc');
+    cells.forEach(c=>{
+      if(parseInt(c.dataset.r)===mv.to[0]&&parseInt(c.dataset.c)===mv.to[1]){
+        c.style.outline='2px solid #55c88a';
+        clearTimeout(_hintTimer);
+        _hintTimer=setTimeout(()=>{c.style.outline='';},1800);
+      }
+    });
+  }
+}
+
 function endGame(idx,result){
   const g=GAMES[idx];g.over=true;g.result=result;
   if(result==='w')SCORE.w++;else if(result==='l')SCORE.l++;else SCORE.d++;
@@ -1236,6 +1274,16 @@ function showResult(){
       d.innerHTML=`<div style="font-size:1rem">${icon}</div><div>盤${g.id+1}</div><div style="color:var(--muted);font-size:.6rem">${g.moveNo-1}手</div>`;
       rb.appendChild(d);
     });
+  }
+  // 連勝時レベルアップ提案
+  const upEl=document.getElementById('rb-levelup');
+  if(upEl){
+    const curIdx=LEVELS.indexOf(CFG.level);
+    if(SCORE.w===n&&curIdx<LEVELS.length-1){
+      const next=LEVELS[curIdx+1];
+      upEl.innerHTML=`<div style="margin-top:10px;padding:8px 14px;border-radius:8px;background:rgba(200,165,74,.12);border:1px solid rgba(200,165,74,.3);font-size:.78rem;color:var(--gold)">全局制覇！次は <strong>${next.name}</strong> に挑戦しますか？<br><button style="margin-top:6px;padding:3px 12px;border-radius:6px;background:var(--gold);color:#000;border:none;cursor:pointer;font-family:inherit;font-size:.75rem" onclick="setLevelUp('${next.id}')">昇級してリマッチ</button></div>`;
+      upEl.style.display='block';
+    } else {upEl.style.display='none';}
   }
   document.getElementById('rb').style.display='block';
   addSessionToStats(SCORE);
